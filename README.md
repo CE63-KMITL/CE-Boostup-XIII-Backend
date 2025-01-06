@@ -1,3 +1,7 @@
+## Description
+
+CE boostup 13 Website (Back-end) use [Nest](https://github.com/nestjs/nest) framework.
+
 ## Setup
 
 ```bash
