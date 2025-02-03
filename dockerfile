@@ -1,15 +1,16 @@
-FROM node:22
+FROM node:18-slim AS build
 WORKDIR /app
 
-COPY package.json ./
+COPY . .
 
-RUN npm i -g pnpm
-RUN pnpm i
+RUN npm i -g pnpm && pnpm i && pnpm run build
 
-COPY ./src ./src
-COPY ./tsconfig.build.json ./tsconfig.build.json
-COPY ./tsconfig.json ./tsconfig.json
-RUN pnpm run build
+FROM node:18-slim
+WORKDIR /app
+
+COPY --from=build /app/dist ./dist
+COPY ./package.json ./package.json
+RUN npm i -g pnpm && pnpm i --prod
 
 EXPOSE 3000
-CMD ["pnpm", "run", "start:prod"]
+CMD ["node", "./dist/main.js"]
