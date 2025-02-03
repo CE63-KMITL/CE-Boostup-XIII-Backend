@@ -1,15 +1,15 @@
-FROM node:22
+FROM node:23-alpine AS build
 WORKDIR /app
 
-COPY package.json ./
+COPY . .
 
-RUN npm i -g pnpm
-RUN pnpm i
+RUN npm i -g pnpm && pnpm i && pnpm run build && pnpm prune --prod
 
-COPY ./src ./src
-COPY ./tsconfig.build.json ./tsconfig.build.json
-COPY ./tsconfig.json ./tsconfig.json
-RUN pnpm run build
+FROM node:23-alpine
+WORKDIR /app
+
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/node_modules/ ./node_modules/
 
 EXPOSE 3000
-CMD ["pnpm", "run", "start:prod"]
+CMD ["node", "./dist/main.js"]
