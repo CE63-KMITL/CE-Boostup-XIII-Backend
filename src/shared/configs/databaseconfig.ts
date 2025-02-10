@@ -2,6 +2,8 @@ import { ConfigService } from '@nestjs/config';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { GLOBAL_CONFIG } from '../constants/global-config.constant';
 import { User } from '../../user/user.entity';
+import { Problem } from '../../problem/entities/problem.entity'
+
 import 'dotenv/config';
 
 const configService = new ConfigService();
@@ -14,6 +16,6 @@ export const databaseConfig: DataSourceOptions = {
    password: configService.get(GLOBAL_CONFIG.DB_PASSWORD),
    database: configService.get(GLOBAL_CONFIG.DB_NAME),
    logging: configService.get(GLOBAL_CONFIG.IS_DEVELOPMENT),
-   entities: [User],
+   entities: [User, Problem],
 };
 export default new DataSource(databaseConfig);

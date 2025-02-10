@@ -8,6 +8,7 @@ import { dotenvConfig } from './shared/configs/dotenv.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { databaseConfig } from './shared/configs/databaseconfig';
 import { GLOBAL_CONFIG } from './shared/constants/global-config.constant';
+import { ProblemModule } from './problem/problem.module';
 
 @Module({
    imports: [
