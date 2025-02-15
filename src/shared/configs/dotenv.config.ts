@@ -1,10 +1,14 @@
 import * as Joi from 'joi';
 
 export const dotenvConfig = Joi.object({
-  PORT: Joi.number().required(),
-  DB_HOST: Joi.string().required(),
-  DB_PORT: Joi.number().required(),
-  DB_USERNAME: Joi.string().required(),
-  DB_PASSWORD: Joi.string().required(),
-  DB_NAME: Joi.string().required(),
+   PORT: Joi.number().required(),
+   DB_HOST: Joi.string().required(),
+   DB_PORT: Joi.number().required(),
+   DB_USERNAME: Joi.string().required(),
+   DB_PASSWORD: Joi.string().required(),
+   DB_NAME: Joi.string().required(),
+   MAIL_HOST: Joi.string().required(),
+   MAIL_PORT: Joi.number().required(),
+   MAIL_USER: Joi.string().required(),
+   MAIL_PASS: Joi.string().required(),
 });
