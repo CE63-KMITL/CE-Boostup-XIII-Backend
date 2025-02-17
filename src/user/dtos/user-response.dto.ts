@@ -14,10 +14,10 @@ export class UserResponseDto {
   @Expose()
   @ApiProperty({
     example: "john_doe",
-    description: "Username",
+    description: "name",
     type: String,
   })
-  username: string;
+  name: string;
 
   @Exclude()
   password: string;
@@ -37,6 +37,14 @@ export class UserResponseDto {
     enum: Role,
   })
   role: Role;
+
+  @Expose()
+  @ApiProperty({
+    example: 0,
+    description: "User score",
+    type: Number,
+  })
+  score: number;
 
   @Expose()
   @ApiProperty({

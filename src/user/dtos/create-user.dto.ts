@@ -13,10 +13,10 @@ export class CreateUserDto {
   @IsNotEmpty()
   @ApiProperty({
     example: "john_doe",
-    description: "Username",
+    description: "name",
     type: String,
   })
-  username: string;
+  name: string;
 
   @IsEmail()
   @IsNotEmpty()

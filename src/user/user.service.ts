@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  InternalServerErrorException,
 } from "@nestjs/common";
 import { User } from "./user.entity";
 import { Repository } from "typeorm";
@@ -39,12 +40,24 @@ export class UserService {
     id: string,
     partialEntity: QueryDeepPartialEntity<User>
   ): Promise<UserResponseDto> {
+    if (partialEntity.score !== undefined) {
+      const score = Number(partialEntity.score);
+      if (isNaN(score) || score < 0) {
+        throw new BadRequestException("Score must be a valid number >= 0");
+      }
+    }
+
     try {
       await this.userRepository.update(id, partialEntity);
       const responseUser = await this.userRepository.findOne({ where: { id } });
+
+      if (!responseUser) {
+        throw new NotFoundException("User not found");
+      }
+
       return plainToInstance(UserResponseDto, responseUser);
     } catch (error) {
-      if (error instanceof Error) throw new NotFoundException("User no found");
+      throw new InternalServerErrorException("Error updating user");
     }
   }
 

@@ -1,4 +1,4 @@
-import { IsEmail } from "class-validator";
+import { IsEmail, IsNumber } from "class-validator";
 import {
   Entity,
   Column,
@@ -14,7 +14,7 @@ export class User {
   id: string;
 
   @Column({ nullable: false, unique: true })
-  username: string;
+  name: string;
 
   @Column({ nullable: false })
   password: string;
@@ -25,6 +25,10 @@ export class User {
 
   @Column({ nullable: false, default: Role.MEMBER, enum: Role, type: "enum" })
   role: Role;
+
+  @Column({ nullable: false, default: 0 })
+  @IsNumber()
+  score: number;
 
   @CreateDateColumn({ type: "timestamp", nullable: false })
   createdAt: Date;
