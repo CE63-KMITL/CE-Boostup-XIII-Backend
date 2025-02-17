@@ -32,6 +32,7 @@ export class UserService {
   }
   async findOne(id: string): Promise<UserResponseDto> {
     const responseUser = await this.userRepository.findOne({ where: { id } });
+    if (!responseUser) throw new NotFoundException("User not found");
     return plainToInstance(UserResponseDto, responseUser);
   }
   async update(
