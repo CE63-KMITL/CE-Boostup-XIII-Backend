@@ -39,7 +39,7 @@ export class UserController {
     description: "Create a new user",
     type: UserResponseDto,
   })
-  async reate(@Body() user: CreateUserDto): Promise<UserResponseDto> {
+  async create(@Body() user: CreateUserDto): Promise<UserResponseDto> {
     const reponseUser = await this.userService.create(user);
     return reponseUser;
   }
