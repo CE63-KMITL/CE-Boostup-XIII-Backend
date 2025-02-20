@@ -1,26 +1,37 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { EntityManager, Repository } from 'typeorm';
+import { Problem } from './entities/problem.entity';
 import { CreateProblemDto } from './dto/create-problem.dto';
-import { UpdateProblemDto } from './dto/update-problem.dto';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class ProblemService {
-  create(createProblemDto: CreateProblemDto) {
-    return 'This action adds a new problem';
+  constructor(
+    @InjectRepository(Problem)
+    private readonly problemsRepository: Repository<Problem>,
+    private readonly entityManager: EntityManager
+  ) {}
+  
+  async create(createProblemDto: CreateProblemDto) {
+    const problem = new Problem(createProblemDto)
+    await this.entityManager.save(problem)
   }
 
-  findAll() {
-    return `This action returns all problem`;
+  async findAll(): Promise<Problem[]> {
+    return this.problemsRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} problem`;
+  async findOne(id: number) {
+    return this.problemsRepository.findOneBy({ id });
   }
 
   update(id: number, updateProblemDto: UpdateProblemDto) {
-    return `This action updates a #${id} problem`;
+    const problem = await this.problemsRepository.findOneBy({ id });
+    // TODO: Update problem
+    return this.entityManager.save(problem);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} problem`;
+  async remove(id: number) {
+    await this.problemsRepository.delete(id);
   }
 }

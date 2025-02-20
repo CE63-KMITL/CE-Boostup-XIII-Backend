@@ -8,27 +8,27 @@ export class ProblemController {
   constructor(private readonly problemService: ProblemService) {}
 
   @Post()
-  create(@Body() createProblemDto: CreateProblemDto) {
+  async create(@Body() createProblemDto: CreateProblemDto) {
     return this.problemService.create(createProblemDto);
   }
 
   @Get()
-  findAll() {
+  async findAll() {
     return this.problemService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.problemService.findOne(+id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProblemDto: UpdateProblemDto) {
+  async update(@Param('id') id: string, @Body() updateProblemDto: UpdateProblemDto) {
     return this.problemService.update(+id, updateProblemDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
     return this.problemService.remove(+id);
   }
 }

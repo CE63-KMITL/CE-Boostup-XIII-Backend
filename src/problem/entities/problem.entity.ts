@@ -1,6 +1,5 @@
-import { UUID } from "crypto";
-import { User } from "Data";
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { User } from "./User";
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
 
 export type ScoreValue = 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5;
 
@@ -12,8 +11,8 @@ export class Problem {
     @Column()
     title: string;
     
-    @Column()
-    author: UUID;
+    @ManyToOne(() => User, (user) => user.id)
+    author: User;
     
     @Column({
         nullable: true
@@ -36,7 +35,7 @@ export class Problem {
     @Column({
         nullable: true
     })
-    tags: number;
+    tags: string[];
     
     
 }
