@@ -1,5 +1,6 @@
-import { User } from "./User";
+import { User } from "src/user/user.entity";
 import { Column, Entity, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
+import { UUID } from "typeorm/driver/mongodb/bson.typings";
 
 export type ScoreValue = 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5;
 
@@ -12,7 +13,7 @@ export class Problem {
     title: string;
     
     @ManyToOne(() => User, (user) => user.id)
-    author: User;
+    author: UUID;
     
     @Column({
         nullable: true
@@ -37,5 +38,7 @@ export class Problem {
     })
     tags: string[];
     
-    
+    constructor(problem: Partial<Problem>) {
+        Object.assign(this, problem)
+    }
 }

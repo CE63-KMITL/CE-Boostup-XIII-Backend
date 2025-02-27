@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { GLOBAL_CONFIG } from '../constants/global-config.constant';
 import { User } from '../../user/user.entity';
-import { Problem } from '../../problem/entities/problem.entity'
+import { Problem } from '../../problem/problem.entity'
 
 import 'dotenv/config';
 

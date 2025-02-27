@@ -1,8 +1,10 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Post, Get, Patch, Delete } from '@nestjs/common';
 import { EntityManager, Repository } from 'typeorm';
-import { Problem } from './entities/problem.entity';
+import { Problem } from './problem.entity';
 import { CreateProblemDto } from './dto/create-problem.dto';
+import { UpdateProblemDto } from './dto/update-problem.dto';
 import { InjectRepository } from '@nestjs/typeorm';
+
 
 @Injectable()
 export class ProblemService {
@@ -12,23 +14,25 @@ export class ProblemService {
     private readonly entityManager: EntityManager
   ) {}
   
+  @Post()
   async create(createProblemDto: CreateProblemDto) {
     const problem = new Problem(createProblemDto)
     await this.entityManager.save(problem)
   }
 
+  @Get()
   async findAll(): Promise<Problem[]> {
     return this.problemsRepository.find();
   }
 
+  @Get(':id')
   async findOne(id: number) {
     return this.problemsRepository.findOneBy({ id });
   }
 
-  update(id: number, updateProblemDto: UpdateProblemDto) {
-    const problem = await this.problemsRepository.findOneBy({ id });
-    // TODO: Update problem
-    return this.entityManager.save(problem);
+  async update(id: number, updateProblemDto: UpdateProblemDto) {
+    const problem = await this.problemsRepository.update(id, updateProblemDto);
+    return problem;
   }
 
   async remove(id: number) {
