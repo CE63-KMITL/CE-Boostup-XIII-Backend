@@ -11,33 +11,32 @@ export class Problem {
 
     @Column()
     title: string;
-    
+
     @ManyToOne(() => User, (user) => user.id)
     author: UUID;
-    
+
     @Column({
         nullable: true
     })
     description: string;
-    
-    
+
+
     @Column({
         nullable: true
     })
     default_code: string;
-    
+
     @Column({
         type: "enum",
         enum: [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5],
         default: 2
     })
     difficulty: ScoreValue
-    
-    @Column({
-        nullable: true
-    })
+
+    @Column('simple-array', { nullable: true, array: true })
+
     tags: string[];
-    
+
     constructor(problem: Partial<Problem>) {
         Object.assign(this, problem)
     }

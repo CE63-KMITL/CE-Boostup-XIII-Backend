@@ -6,7 +6,7 @@ import { sendMailDto } from './dtos/mail.dto';
 
 @Injectable()
 export class MailService {
-   constructor(private readonly configService: ConfigService) {}
+   constructor(private readonly configService: ConfigService) { }
 
    emailTransporter() {
       const transporter = nodemailer.createTransport({

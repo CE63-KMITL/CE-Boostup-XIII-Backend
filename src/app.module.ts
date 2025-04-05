@@ -7,6 +7,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { databaseConfig } from './shared/configs/databaseconfig';
 import { GLOBAL_CONFIG } from './shared/constants/global-config.constant';
 import { MailModule } from './mail/mail.module';
+import { UserModule } from './user/user.module';
+import { ProblemModule } from './problem/problem.module';
 
 @Module({
    imports: [
@@ -32,4 +34,4 @@ import { MailModule } from './mail/mail.module';
    controllers: [AppController],
    providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
