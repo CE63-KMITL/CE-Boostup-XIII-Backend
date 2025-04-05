@@ -5,8 +5,10 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from "typeorm";
 import { Role } from "../shared/enum/role.enum";
+import { ScoreLog } from "./score-log.entity";
 
 @Entity()
 export class User {
@@ -35,4 +37,7 @@ export class User {
 
   @UpdateDateColumn({ type: "timestamp", nullable: false })
   updatedAt: Date;
+
+  @OneToMany(() => ScoreLog, (scoreLog) => scoreLog.user)
+  scoreLogs: ScoreLog[];
 }

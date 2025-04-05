@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Inject,
   Injectable,
   NotFoundException,
   InternalServerErrorException,
@@ -11,12 +10,17 @@ import { CreateUserDto } from "./dtos/create-user.dto";
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
 import { plainToInstance } from "class-transformer";
 import { UserResponseDto } from "./dtos/user-response.dto";
+import { ScoreLog } from "./score-log.entity";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Role } from "src/shared/enum/role.enum";
 
 @Injectable()
 export class UserService {
   constructor(
-    @Inject("UserRepository")
-    private readonly userRepository: Repository<User>
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(ScoreLog)
+    private readonly scoreLogRepository: Repository<ScoreLog>,
   ) {}
   async findAll(): Promise<UserResponseDto[]> {
     const users = await this.userRepository.find();
@@ -68,4 +72,51 @@ export class UserService {
       if (error instanceof Error) throw new NotFoundException("User not found");
     }
   }
+
+  async modifyScore(
+    userId: string,
+    amount: number,
+    modifiedById: string,
+  ): Promise<User> {
+    const user = await this.userRepository.findOneOrFail({ 
+      where: { id: userId },
+    });
+      const result = await this.findEntityById(modifiedById);
+      if (result.role !== Role.DEV){
+        throw new BadRequestException("Only dev can modify score");
+      }
+
+    user.score += amount;
+    if (user.score < 0) user.score = 0;
+
+    const scoreLog = new ScoreLog();
+    scoreLog.amount = amount;
+    scoreLog.user = user;
+    scoreLog.modifiedBy = modifiedById;
+    
+    await this.scoreLogRepository.save(scoreLog);
+
+    return this.userRepository.save(user);
+  }
+
+  async findEntityById(id: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) throw new NotFoundException("User not found");
+    return user;
+  }
+
+  async getuser_scorelogs(id: string): Promise<ScoreLog[]> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['scoreLogs'], 
+    });
+    if (!user || !user.scoreLogs) {
+      return []; 
+    }
+    return user.scoreLogs; 
+  }
+
+  
+
 }
+
