@@ -1,4 +1,4 @@
-import * as Joi from 'joi';
+import * as Joi from "joi";
 
 export const dotenvConfig = Joi.object({
   PORT: Joi.number().required(),
@@ -7,4 +7,9 @@ export const dotenvConfig = Joi.object({
   DB_USERNAME: Joi.string().required(),
   DB_PASSWORD: Joi.string().required(),
   DB_NAME: Joi.string().required(),
+  IS_DEVELOPMENT: Joi.boolean().required(),
+  MAIL_HOST: Joi.string().required(),
+  MAIL_PORT: Joi.number().required(),
+  MAIL_USER: Joi.string().required(),
+  MAIL_PASS: Joi.string().required(),
 });

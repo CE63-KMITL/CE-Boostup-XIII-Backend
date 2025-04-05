@@ -1,15 +1,38 @@
-import { Exclude } from 'class-transformer';
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { IsEmail, IsNumber } from "class-validator";
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
+import { Role } from "../shared/enum/role.enum";
 
 @Entity()
 export class User {
-   @PrimaryGeneratedColumn('uuid')
-   id: string;
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
 
-   @Column()
-   username: string;
+  @Column({ nullable: false, unique: true })
+  name: string;
 
-   @Column()
-   @Exclude()
-   password: string;
+  @Column({ nullable: false })
+  password: string;
+
+  @Column({ nullable: false, unique: true })
+  @IsEmail()
+  email: string;
+
+  @Column({ nullable: false, default: Role.MEMBER, enum: Role, type: "enum" })
+  role: Role;
+
+  @Column({ nullable: false, default: 0 })
+  @IsNumber()
+  score: number;
+
+  @CreateDateColumn({ type: "timestamp", nullable: false })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: "timestamp", nullable: false })
+  updatedAt: Date;
 }

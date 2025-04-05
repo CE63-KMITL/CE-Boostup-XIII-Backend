@@ -6,9 +6,13 @@ import { dotenvConfig } from './shared/configs/dotenv.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { databaseConfig } from './shared/configs/databaseconfig';
 import { GLOBAL_CONFIG } from './shared/constants/global-config.constant';
+import { MailModule } from './mail/mail.module';
 
 @Module({
    imports: [
+      UserModule,
+      ProblemModule,
+      MailModule,
       ConfigModule.forRoot({
          isGlobal: true,
          validationSchema: dotenvConfig,
