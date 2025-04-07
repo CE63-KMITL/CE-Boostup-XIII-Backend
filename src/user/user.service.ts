@@ -48,9 +48,14 @@ export class UserService {
 		}
 
 		try {
+			const oldUser = await this.userRepository.findOne({ where: { id } });
+			const house = await this.housescoreRepository.findOne( { where: { id: oldUser.house } })
+			house.total -= oldUser.score
 			await this.userRepository.update(id, partialEntity);
+			
 			const responseUser = await this.userRepository.findOne({ where: { id } });
-
+			house.total += responseUser.score
+			await this.housescoreRepository.save(house)
 			if (!responseUser) {
 				throw new NotFoundException("User not found");
 			}
