@@ -17,7 +17,6 @@ import { UserResponseDto } from "./dtos/user-response.dto";
 import { ApiResponse, ApiTags } from "@nestjs/swagger";
 import { UserScoreResponseDto } from "./dtos/user-score-response.dto";
 import { ModifyScoreDto } from "./dtos/modify-score.dto";
-import { identity } from "rxjs";
 
 @Controller("user")
 @ApiTags("User")
