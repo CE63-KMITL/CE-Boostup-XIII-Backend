@@ -1,15 +1,9 @@
 import { Injectable } from "@nestjs/common";
-
-type RunCodeResult = {
-	output: string;
-	exit_code: number;
-	error_message: string;
-	used_time: number;
-};
+import { RunCodeResponseDto } from "./dtos/run_code-response.dto";
 
 @Injectable()
 export class RunCodeService {
-	static async run_code(input: string, code: string, timeout: number = 100): Promise<RunCodeResult | Response> {
+	async run_code(input: string, code: string, timeout: number = 100): Promise<RunCodeResponseDto> {
 		const result = await fetch("http://CE-Boostup-XIII-Compiler:3002/", {
 			method: "POST",
 			headers: {
@@ -24,7 +18,12 @@ export class RunCodeService {
 
 		if (!result.ok) {
 			console.log("Error: ", result);
-			return result;
+			return {
+				output: "",
+				exit_code: 1,
+				error_message: "Error running code",
+				used_time: -1,
+			};
 		}
 
 		return await result.json();
