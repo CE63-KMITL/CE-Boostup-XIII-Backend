@@ -6,7 +6,7 @@ import { HouseService } from "./house.service";
 
 @Controller("house")
 @ApiTags("House")
-export class UserController {
+export class HouseController {
 	// Consider renaming UserController to HouseController if appropriate
 	constructor(private readonly houseService: HouseService) {}
 

@@ -110,4 +110,8 @@ export class UserService {
 		}
 		return user.scoreLogs;
 	}
+
+	async findUsersByHouse(house: House): Promise<User[]> {
+		return this.userRepository.find({ where: { house } });
+	}
 }
