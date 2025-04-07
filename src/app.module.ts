@@ -9,6 +9,9 @@ import { GLOBAL_CONFIG } from './shared/constants/global-config.constant';
 import { MailModule } from './mail/mail.module';
 import { UserModule } from './user/user.module';
 import { ProblemModule } from './problem/problem.module';
+import { HouseScoreModule } from './house_score/house_score.module';
+
+
 
 @Module({
    imports: [
@@ -30,6 +33,8 @@ import { ProblemModule } from './problem/problem.module';
          }),
          inject: [ConfigService],
       }),
+      HouseScoreModule
+      ,
    ],
    controllers: [AppController],
    providers: [AppService],
