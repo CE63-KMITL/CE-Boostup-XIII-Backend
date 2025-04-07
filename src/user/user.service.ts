@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { plainToInstance } from "class-transformer";
+import { House } from "src/shared/enum/house.enum";
 import { Role } from "src/shared/enum/role.enum";
 import { Repository } from "typeorm";
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
@@ -13,10 +14,11 @@ import { User } from "./user.entity";
 export class UserService {
 	constructor(
 		@InjectRepository(User)
-		private readonly userRepository: Repository<User>,
+		public readonly userRepository: Repository<User>,
 		@InjectRepository(ScoreLog)
 		private readonly scoreLogRepository: Repository<ScoreLog>
 	) {}
+
 	async findAll(): Promise<UserResponseDto[]> {
 		const users = await this.userRepository.find();
 		return users.map((user) => plainToInstance(UserResponseDto, user));
@@ -62,6 +64,12 @@ export class UserService {
 		} catch (error) {
 			if (error instanceof Error) throw new NotFoundException("User not found");
 		}
+	}
+
+	async get_house(id: string): Promise<House> {
+		const user = await this.userRepository.findOne({ where: { id } });
+		if (!user) throw new NotFoundException("User not found");
+		return user.house;
 	}
 
 	async modifyScore(userId: string, amount: number, modifiedById: string): Promise<User> {

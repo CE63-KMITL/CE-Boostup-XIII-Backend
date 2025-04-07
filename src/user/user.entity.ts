@@ -1,4 +1,5 @@
 import { IsEmail, IsNumber } from "class-validator";
+import { House } from "src/shared/enum/house.enum";
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Role } from "../shared/enum/role.enum";
 import { ScoreLog } from "./score/score-log.entity";
@@ -17,6 +18,9 @@ export class User {
 	@Column({ nullable: false, unique: true })
 	@IsEmail()
 	email: string;
+
+	@Column({ nullable: false, default: House.NONE, enum: House, type: "enum" })
+	house: House;
 
 	@Column({ nullable: false, default: Role.MEMBER, enum: Role, type: "enum" })
 	role: Role;
