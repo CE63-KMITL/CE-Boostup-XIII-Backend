@@ -11,6 +11,9 @@ export class HouseScore {
   @Column('int')
   value: number; 
 
+  @Column('int')
+  total: number; 
+
   @CreateDateColumn()
   createdAt: Date; 
 

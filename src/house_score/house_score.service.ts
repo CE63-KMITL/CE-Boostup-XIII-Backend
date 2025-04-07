@@ -26,6 +26,7 @@ export class HouseScoreService {
     const score = new HouseScore();
     score.name = name;
     score.value = value;
+    score.total = value;
 
     try {
       const savedScore = await this.scoreRepository.save(score);
@@ -52,6 +53,7 @@ export class HouseScoreService {
     }
 
     score.value += value;
+    score.total +=value;
 
     try {
       const updatedScore = await this.scoreRepository.save(score);
@@ -78,6 +80,7 @@ export class HouseScoreService {
     }
 
     score.value = value;
+    score.total = value
 
     try {
       const updatedScore = await this.scoreRepository.save(score);
@@ -111,8 +114,9 @@ export class HouseScoreService {
         HttpStatus.BAD_REQUEST,
       );
     }
-
+    
     score.value -= value;
+    score.total -=value
 
     try {
       const updatedScore = await this.scoreRepository.save(score);
@@ -179,6 +183,7 @@ export class HouseScoreService {
       );
 
       score.value = value;
+      score.total = value
       await this.scoreRepository.save(score);
       return { success: true,message: 'Score updated successfully', score };
     } catch (error) {

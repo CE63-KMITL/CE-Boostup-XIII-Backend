@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { plainToInstance } from "class-transformer";
+import { House } from "src/shared/enum/house.enum";
 import { Role } from "src/shared/enum/role.enum";
 import { Repository } from "typeorm";
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
@@ -8,15 +9,19 @@ import { CreateUserDto } from "./dtos/create-user.dto";
 import { UserResponseDto } from "./dtos/user-response.dto";
 import { ScoreLog } from "./score/score-log.entity";
 import { User } from "./user.entity";
+import { HouseScore } from '../house_score/house_score.entity';
 
 @Injectable()
 export class UserService {
 	constructor(
 		@InjectRepository(User)
-		private readonly userRepository: Repository<User>,
+		public readonly userRepository: Repository<User>,
 		@InjectRepository(ScoreLog)
-		private readonly scoreLogRepository: Repository<ScoreLog>
+		private readonly scoreLogRepository: Repository<ScoreLog>,
+		@InjectRepository(HouseScore)
+		private readonly housescoreRepository: Repository<HouseScore>,
 	) {}
+
 	async findAll(): Promise<UserResponseDto[]> {
 		const users = await this.userRepository.find();
 		return users.map((user) => plainToInstance(UserResponseDto, user));
@@ -64,6 +69,12 @@ export class UserService {
 		}
 	}
 
+	async get_house(id: string): Promise<House> {
+		const user = await this.userRepository.findOne({ where: { id } });
+		if (!user) throw new NotFoundException("User not found");
+		return user.house;
+	}
+
 	async modifyScore(userId: string, amount: number, modifiedById: string): Promise<User> {
 		const user = await this.userRepository.findOneOrFail({
 			where: { id: userId },
@@ -72,16 +83,19 @@ export class UserService {
 		if (result.role !== Role.DEV) {
 			throw new BadRequestException("Only dev can modify score");
 		}
-
+		const house = await this.housescoreRepository.findOne( { where: { id: user.house } });
+		if (!house)throw new NotFoundException("house not found for user");
 		user.score += amount;
+		house.total +=amount;
 		if (user.score < 0) user.score = 0;
 
 		const scoreLog = new ScoreLog();
 		scoreLog.amount = amount;
 		scoreLog.user = user;
 		scoreLog.modifiedBy = modifiedById;
-
+		
 		await this.scoreLogRepository.save(scoreLog);
+		await this.housescoreRepository.save(house)
 
 		return this.userRepository.save(user);
 	}
@@ -101,5 +115,9 @@ export class UserService {
 			return [];
 		}
 		return user.scoreLogs;
+	}
+
+	async findUsersByHouse(house: House): Promise<User[]> {
+		return this.userRepository.find({ where: { house } });
 	}
 }

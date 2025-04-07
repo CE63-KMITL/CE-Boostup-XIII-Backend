@@ -1,0 +1,15 @@
+export enum House {
+	NONE = 0,
+	House1 = 1,
+	House2 = 2,
+	House3 = 3,
+	House4 = 4,
+	House5 = 5,
+	House6 = 6,
+	House7 = 7,
+	House8 = 8,
+	House9 = 9,
+	House10 = 10,
+	House11 = 11,
+	House12 = 12,
+}
