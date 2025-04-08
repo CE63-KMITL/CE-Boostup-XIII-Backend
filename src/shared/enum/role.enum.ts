@@ -7,4 +7,5 @@ export enum Role {
 export enum AvailableRoles {
   MEMBER = "member",
   DEV = "dev",
+  ADMIN = "admin"
 }

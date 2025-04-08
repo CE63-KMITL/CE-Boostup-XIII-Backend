@@ -3,35 +3,39 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
 import { ProblemModule } from './problem/problem.module';
+import { MailModule } from './mail/mail.module';
+import { AuthModule } from './auth/auth.module';
+
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { dotenvConfig } from './shared/configs/dotenv.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { databaseConfig } from './shared/configs/databaseconfig';
+import { dotenvConfig } from './shared/configs/dotenv.config';
 import { GLOBAL_CONFIG } from './shared/constants/global-config.constant';
-import { MailModule } from './mail/mail.module';
+
 
 @Module({
-   imports: [
-      UserModule,
-      ProblemModule,
-      MailModule,
-      ConfigModule.forRoot({
-         isGlobal: true,
-         validationSchema: dotenvConfig,
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationSchema: dotenvConfig,
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        ...databaseConfig,
+        autoLoadEntities: true,
+        synchronize: configService.get<boolean>(
+          GLOBAL_CONFIG.IS_DEVELOPMENT,
+        ),
       }),
-      TypeOrmModule.forRootAsync({
-         imports: [ConfigModule],
-         useFactory: (configService: ConfigService) => ({
-            ...databaseConfig,
-            autoLoadEntities: true,
-            synchronize: configService.get<boolean>(
-               GLOBAL_CONFIG.IS_DEVELOPMENT,
-            ),
-         }),
-         inject: [ConfigService],
-      }),
-   ],
-   controllers: [AppController],
-   providers: [AppService],
+    }),
+    UserModule,
+    ProblemModule,
+    MailModule,
+    AuthModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

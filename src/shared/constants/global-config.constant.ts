@@ -10,4 +10,5 @@ export const GLOBAL_CONFIG = {
    MAIL_PORT: 'MAIL_PORT',
    MAIL_USER: 'MAIL_USER',
    MAIL_PASS: 'MAIL_PASS',
+   TOKEN_KEY: 'TOKEN_KEY',
 };

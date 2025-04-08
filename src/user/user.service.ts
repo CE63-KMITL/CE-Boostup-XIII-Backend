@@ -11,6 +11,7 @@ import { CreateUserDto } from "./dtos/create-user.dto";
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
 import { plainToInstance } from "class-transformer";
 import { UserResponseDto } from "./dtos/user-response.dto";
+import * as bcrypt from 'bcryptjs'
 
 @Injectable()
 export class UserService {
@@ -24,6 +25,13 @@ export class UserService {
   }
   async create(user: CreateUserDto): Promise<UserResponseDto> {
     try {
+      // เข้ารหัส password ก่อน
+      const salt = await bcrypt.genSalt(10); // หรือจะใช้ค่า default ก็ได้
+      const hashedPassword = await bcrypt.hash(user.password, salt);
+  
+      // แทนที่ password เดิม
+      user.password = hashedPassword;
+  
       const responseUser = await this.userRepository.save(user);
       return plainToInstance(UserResponseDto, responseUser);
     } catch (error) {
@@ -31,11 +39,20 @@ export class UserService {
         throw new BadRequestException("User already exists");
     }
   }
+  
   async findOne(id: string): Promise<UserResponseDto> {
     const responseUser = await this.userRepository.findOne({ where: { id } });
     if (!responseUser) throw new NotFoundException("User not found");
     return plainToInstance(UserResponseDto, responseUser);
   }
+  
+  // async findOneByEmail(email: string): Promise<UserResponseDto> {
+  // const responseUser = await this.userRepository.findOne({ where: { email } });
+  // if (!responseUser) throw new NotFoundException("User not found");
+  // return plainToInstance(UserResponseDto, responseUser);
+  // }
+
+  
   async update(
     id: string,
     partialEntity: QueryDeepPartialEntity<User>

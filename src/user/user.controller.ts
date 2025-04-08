@@ -9,18 +9,23 @@ import {
   Patch,
   Delete,
   HttpCode,
+  UseGuards
 } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { CreateUserDto } from "./dtos/create-user.dto";
 import { UpdateUserDto } from "./dtos/update-user.dto";
 import { UserResponseDto } from "./dtos/user-response.dto";
 import { ApiResponse, ApiTags } from "@nestjs/swagger";
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles/roles.guard'
+import {Roles} from '../auth/roles/roles.decorator'
+import { Role } from '../shared/enum/role.enum'; 
 
 @Controller("user")
 @ApiTags("User")
 export class UserController {
   constructor(private readonly userService: UserService) {}
-
+  
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiResponse({
@@ -63,6 +68,16 @@ export class UserController {
     const user = await this.userService.findOne(id);
     return user;
   }
+
+  
+  // @Get('by-email/:email')
+  // async findOneByEmail(
+  //   @Param('email') email: string
+  // ): Promise<UserResponseDto> {
+  //   const user = await this.userService.findOneByEmail(email);
+  //   return user;
+  // }
+
 
   @Patch(":id")
   @HttpCode(HttpStatus.OK)
