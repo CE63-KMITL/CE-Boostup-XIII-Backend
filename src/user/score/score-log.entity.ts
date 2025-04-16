@@ -12,14 +12,13 @@ export class ScoreLog {
 	@Column({ type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
 	date: Date;
 
-	@Column({
-		type: "varchar",
-		nullable: false,
-		default: "system",
-	})
-	modifiedBy: string;
-
 	@ManyToOne(() => User, { nullable: true })
 	@JoinColumn({ name: "userId" })
 	user: User;
+
+	@ManyToOne(() => User, { nullable: false })
+    @JoinColumn({ name: "modifiedBy" })
+    modifiedBy: User;
+
+	
 }

@@ -99,7 +99,7 @@ export class UserService {
 		const scoreLog = new ScoreLog();
 		scoreLog.amount = amount;
 		scoreLog.user = user;
-		scoreLog.modifiedBy = modifiedById;
+		scoreLog.modifiedBy = result;
 
 		await this.scoreLogRepository.save(scoreLog);
 
@@ -115,7 +115,7 @@ export class UserService {
 	async getuser_scorelogs(id: string): Promise<ScoreLog[]> {
 		const user = await this.userRepository.findOne({
 			where: { id },
-			relations: ["scoreLogs"],
+			relations: ["scoreLogs","scoreLogs.modifiedBy"],
 		});
 		if (!user || !user.scoreLogs) {
 			return [];

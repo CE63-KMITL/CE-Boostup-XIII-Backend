@@ -86,7 +86,8 @@ export class UserController {
 			})
 		)
 		id: string
-	): Promise<UserScoreResponseDto> {
+	): Promise<UserScoreResponseDto> 
+	{
 		const user = await this.userService.findOne(id);
 		const score_logs = await this.userService.getuser_scorelogs(id);
 		const json = { score: user.score, scoreLogs: score_logs };
