@@ -112,11 +112,36 @@ export class UserService {
 		return user;
 	}
 
+	// async getuser_scorelogs(id: string): Promise<ScoreLog[]> {
+	// 	const user = await this.userRepository.findOne({
+	// 		where: { id },
+	// 		relations: ["scoreLogs","scoreLogs.modifiedBy"],
+	// 	});
+	// 	if (!user || !user.scoreLogs) {
+	// 		return [];
+	// 	}
+	// 	return user.scoreLogs;
+	// }
+
 	async getuser_scorelogs(id: string): Promise<ScoreLog[]> {
-		const user = await this.userRepository.findOne({
-			where: { id },
-			relations: ["scoreLogs","scoreLogs.modifiedBy"],
-		});
+		const user = await this.userRepository
+			.createQueryBuilder("user")
+			.leftJoinAndSelect("user.scoreLogs", "scoreLogs")
+			.leftJoinAndSelect("scoreLogs.user", "scoreLogUser")
+			.leftJoinAndSelect("scoreLogs.modifiedBy", "modifiedByUser")
+			.select([
+				"user.id",
+				"scoreLogs.id",
+				"scoreLogs.amount",
+				"scoreLogs.date",
+				"modifiedByUser.id",
+				"modifiedByUser.name",
+				// "modifiedByUser.studentId",
+				// "modifiedByUser.icon",
+			])
+			.where("user.id = :id", { id })
+			.getOne();
+	
 		if (!user || !user.scoreLogs) {
 			return [];
 		}
