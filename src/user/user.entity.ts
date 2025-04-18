@@ -37,4 +37,8 @@ export class User {
 
 	@OneToMany(() => ScoreLog, (scoreLog) => scoreLog.user)
 	scoreLogs: ScoreLog[];
+
+	@OneToMany(() => ScoreLog, (scoreLog) => scoreLog.modifiedBy)
+    modifiedScoreLogs: ScoreLog[];
+	
 }

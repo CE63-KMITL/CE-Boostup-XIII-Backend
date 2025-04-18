@@ -1,23 +1,35 @@
-import { NestFactory } from "@nestjs/core";
-import { AppModule } from "./app.module";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { GLOBAL_CONFIG } from "./shared/constants/global-config.constant";
-import { ConfigService } from "@nestjs/config";
 import { ValidationPipe } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { NestFactory } from "@nestjs/core";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { AppModule } from "./app.module";
+import { GLOBAL_CONFIG } from "./shared/constants/global-config.constant";
 
 async function bootstrap() {
-  const configService = new ConfigService();
+	const configService = new ConfigService();
 
-  const app = await NestFactory.create(AppModule);
+	const app = await NestFactory.create(AppModule);
 
-  const config = new DocumentBuilder()
-    .setTitle("boost up api")
-    .setDescription("This is the api for the boost up app")
-    .setVersion("1.0")
-    .build();
-  const documentFactory = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("docs", app, documentFactory);
-  app.useGlobalPipes(new ValidationPipe());
-  await app.listen(configService.get<string>(GLOBAL_CONFIG.PORT) ?? 3000);
+	if (process.env.FRONT_HOST == "") process.env.FRONT_HOST = "http://localhost:3001";
+
+	console.log(process.env.FRONT_HOST);
+
+	app.enableCors({
+		origin: process.env.FRONT_HOST,
+		methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+		allowedHeaders: "Content-Type, Accept, Authorization",
+		credentials: true,
+	});
+
+	const config = new DocumentBuilder()
+		.setTitle("boost up api")
+		.setDescription("This is the api for the boost up app")
+		.setVersion("1.0")
+		.build();
+
+	const documentFactory = SwaggerModule.createDocument(app, config);
+	SwaggerModule.setup("docs", app, documentFactory);
+	app.useGlobalPipes(new ValidationPipe());
+	await app.listen(configService.get<string>(GLOBAL_CONFIG.PORT) ?? 3000);
 }
 bootstrap();
