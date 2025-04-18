@@ -12,6 +12,8 @@ import { RolesGuard } from './roles/roles.guard';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { Reflector } from '@nestjs/core';
+import { UserService } from 'src/user/user.service';
+import { ScoreLog } from 'src/user/score/score-log.entity';
 
 
 @Module({
@@ -20,8 +22,8 @@ import { Reflector } from '@nestjs/core';
       secret: GLOBAL_CONFIG.TOKEN_KEY || 'qwertyuiop', // ✅ ต้องมีค่า!
       signOptions: { expiresIn: '1d' }, // ตั้งอายุ token ได้
     }),
-    TypeOrmModule.forFeature([User]), // ✅ ใช้แค่นี้
     UserModule,
+    TypeOrmModule.forFeature([User, ScoreLog]),
   ],
   controllers: [AuthController],
   providers: [AuthService,JwtAuthGuard,

@@ -18,25 +18,19 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
-  // create(createAuthDto: CreateAuthDto) {
-  //   return 'This action adds a new auth';
-  // }
+  
+  async openAccount(data: { email: string; house: string; key: string }) {
+    const { email, house, key } = data;
+    switch(key){
+      case "CE1":
+        console.log("key=ce1")
+        break;
+      default:
+        console.log("Unknown key")
 
-  // findAll() {
-  //   return `This action returns all auth`;
-  // }
+    }
 
-  // findOne(email: string , password: string) {
-  //   return `This action returns a #${email} auth`;
-  // }
-
-  // update(id: number, updateAuthDto: UpdateAuthDto) {
-  //   return `This action updates a #${id} auth`;
-  // }
-
-  // remove(id: number) {
-  //   return `This action removes a #${id} auth`;
-  // }
+  }
 
   async validateUser(email:string,password:string){
     const check_email = await this.userRepository.findOne({where:{email}})
@@ -82,7 +76,5 @@ export class AuthService {
     };
   }
   
-  // async forgetpassword(email:string){
-  // }
   
 }
