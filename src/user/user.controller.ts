@@ -38,17 +38,17 @@ export class UserController {
 	async findAll(): Promise<UserResponseDto[]> {
 		return await this.userService.findAll();
 	}
-	@Post()
-	@HttpCode(HttpStatus.CREATED)
-	@ApiResponse({
-		status: HttpStatus.CREATED,
-		description: "Create a new user",
-		type: UserResponseDto,
-	})
-	async create(@Body() user: CreateUserDto): Promise<UserResponseDto> {
-		const reponseUser = await this.userService.create(user);
-		return reponseUser;
-	}
+	// @Post()
+	// @HttpCode(HttpStatus.CREATED)
+	// @ApiResponse({
+	// 	status: HttpStatus.CREATED,
+	// 	description: "Create a new user",
+	// 	type: UserResponseDto,
+	// })
+	// async create(@Body() user: CreateUserDto): Promise<UserResponseDto> {
+	// 	const reponseUser = await this.userService.create(user);
+	// 	return reponseUser;
+	// }
 	@Get(":id")
 	@HttpCode(HttpStatus.OK)
 	@ApiResponse({

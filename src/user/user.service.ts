@@ -55,7 +55,11 @@ export class UserService {
         throw new BadRequestException("Score must be a valid number >= 0");
       }
     }
-
+	if (partialEntity.password !== undefined) {
+		const salt = await bcrypt.genSalt(10); // หรือใช้ค่าที่ตั้งไว้ใน config
+		const hashedPassword = await bcrypt.hash(partialEntity.password as string, salt);
+		partialEntity.password = hashedPassword;
+	}
 		try {
 			await this.userRepository.update(id, partialEntity);
 			const responseUser = await this.userRepository.findOne({ where: { id } });
