@@ -1,32 +1,38 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  ParseUUIDPipe,
-  HttpStatus,
-  Patch,
-  Delete,
-  HttpCode,
-  UseGuards
+	Body,
+	Controller,
+	Delete,
+	Get,
+	HttpCode,
+	HttpStatus,
+	Param,
+	ParseUUIDPipe,
+	Patch,
+	Post,
+	UseGuards,
 } from "@nestjs/common";
-import { UserService } from "./user.service";
-import { CreateUserDto } from "./dtos/create-user.dto";
+import { ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth } from "../auth/decorators/auth.decorator";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { Roles } from "../auth/roles/roles.decorator";
+import { RolesGuard } from "../auth/roles/roles.guard";
+import { Role } from "../shared/enum/role.enum";
 import { UpdateUserDto } from "./dtos/update-user.dto";
 import { UserResponseDto } from "./dtos/user-response.dto";
-import { ApiResponse, ApiTags } from "@nestjs/swagger";
 import { ModifyScoreDto } from "./score/dtos/modify-score.dto";
 import { UserScoreResponseDto } from "./score/dtos/score-response.dto";
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles/roles.guard'
-import {Roles} from '../auth/roles/roles.decorator'
-import { Role } from '../shared/enum/role.enum'; 
+import { UserService } from "./user.service";
+
 @Controller("user")
 @ApiTags("User")
 export class UserController {
 	constructor(private readonly userService: UserService) {}
 
+	/*
+	-------------------------------------------------------
+	Get All Users
+	-------------------------------------------------------
+	*/
 	@Get()
 	@HttpCode(HttpStatus.OK)
 	@ApiResponse({
@@ -38,6 +44,15 @@ export class UserController {
 	async findAll(): Promise<UserResponseDto[]> {
 		return await this.userService.findAll();
 	}
+
+	/*
+	-------------------------------------------------------
+	Protected Endpoints
+	-------------------------------------------------------
+	*/
+	@UseGuards(JwtAuthGuard, RolesGuard)
+	@Roles(Role.MEMBER)
+	@ApiBearerAuth()
 	// @Post()
 	// @HttpCode(HttpStatus.CREATED)
 	// @ApiResponse({
@@ -86,8 +101,7 @@ export class UserController {
 			})
 		)
 		id: string
-	): Promise<UserScoreResponseDto> 
-	{
+	): Promise<UserScoreResponseDto> {
 		const user = await this.userService.findOne(id);
 		const score_logs = await this.userService.getuser_scorelogs(id);
 		const json = { score: user.score, scoreLogs: score_logs };

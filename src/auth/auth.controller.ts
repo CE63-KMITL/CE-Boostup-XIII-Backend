@@ -5,6 +5,7 @@ import { Role } from "../shared/enum/role.enum";
 import { CreateUserDto } from "../user/dtos/create-user.dto";
 import { UserResponseDto } from "../user/dtos/user-response.dto";
 import { AuthService } from "./auth.service";
+import { ApiBearerAuth } from "./decorators/auth.decorator";
 import { LoginDto } from "./dto/login.dto";
 import { OpenAccountDto } from "./dto/open-account.dto";
 import { JwtAuthGuard } from "./jwt-auth.guard";
@@ -25,9 +26,28 @@ export class AuthController {
 	-------------------------------------------------------
 	*/
 	@Post("openaccount")
-	@ApiOperation({ summary: "Open a new bank account (placeholder)" })
-	@ApiResponse({ status: 201, description: "Account opened successfully." })
-	@ApiResponse({ status: 400, description: "Bad Request." })
+	@ApiOperation({
+		summary: "Open a new bank account",
+		description: "Create a new bank account with user's email and optional house/key information",
+	})
+	@ApiResponse({
+		status: 201,
+		description: "Account opened successfully.",
+		schema: {
+			example: {
+				message: "Account opened successfully",
+				user: {
+					email: "example@gmail.com",
+					house: "House1",
+					key: "secret123",
+				},
+			},
+		},
+	})
+	@ApiResponse({
+		status: 400,
+		description: "Bad Request - Invalid input data or email already exists",
+	})
 	async openAccount(@Query() query: OpenAccountDto) {
 		return this.authService.openAccount(query);
 	}
@@ -91,17 +111,19 @@ export class AuthController {
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles(Role.DEV)
 	@Get("dev")
+	@ApiBearerAuth()
 	@ApiOperation({ summary: "Test endpoint for DEV role" })
 	@ApiResponse({ status: 200, description: "Success (DEV only)" })
 	@ApiResponse({ status: 401, description: "Unauthorized" })
 	@ApiResponse({ status: 403, description: "Forbidden (Requires DEV role)" })
-	getAdminOnly() {
+	getstaffOnly() {
 		return "You are dev!";
 	}
 
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles(Role.MEMBER)
 	@Get("member")
+	@ApiBearerAuth()
 	@ApiOperation({ summary: "Test endpoint for MEMBER role" })
 	@ApiResponse({ status: 200, description: "Success (MEMBER only)" })
 	@ApiResponse({ status: 401, description: "Unauthorized" })
@@ -113,6 +135,7 @@ export class AuthController {
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@Roles(Role.MEMBER, Role.DEV)
 	@Get("all")
+	@ApiBearerAuth()
 	@ApiOperation({ summary: "Test endpoint for MEMBER or DEV roles" })
 	@ApiResponse({ status: 200, description: "Success (MEMBER or DEV)" })
 	@ApiResponse({ status: 401, description: "Unauthorized" })

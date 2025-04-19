@@ -1,11 +1,11 @@
 export enum Role {
-  ADMIN = "admin",
-  MEMBER = "member",
-  DEV = "dev",
+	DEV = "dev",
+	STAFF = "staff",
+	MEMBER = "member",
 }
 
 export enum AvailableRoles {
-  MEMBER = "member",
-  DEV = "dev",
-  ADMIN = "admin"
+	DEV = "dev",
+	MEMBER = "member",
+	STAFF = "staff",
 }

@@ -1,12 +1,12 @@
 declare module "Data" {
 	/**
-	 * ข้อมูลของ User แต่ละคน ไม่ว่าจะเป็น Member(คนทั่วไป), Admin หรือ Dev
+	 * ข้อมูลของ User แต่ละคน ไม่ว่าจะเป็น Member(คนทั่วไป), staff หรือ Dev
 	 */
 	export type User = {
 		ID: string;
 
 		Name: string;
-		Role: "Member" | "Admin" | "Dev";
+		Role: "Member" | "staff" | "Dev";
 
 		Email: string;
 		Password: string;
