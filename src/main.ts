@@ -23,9 +23,17 @@ async function bootstrap() {
 	});
 
 	const config = new DocumentBuilder()
-		.setTitle("boost up api")
-		.setDescription("This is the api for the boost up app")
+		.setTitle("CE-Boostup-XIII-Backend (API)")
 		.setVersion("1.0")
+		.addBearerAuth(
+			{
+				type: "http",
+				scheme: "bearer",
+				bearerFormat: "JWT",
+				in: "header",
+			},
+			"access-token"
+		)
 		.build();
 
 	const documentFactory = SwaggerModule.createDocument(app, config);
