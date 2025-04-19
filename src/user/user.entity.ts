@@ -19,10 +19,10 @@ export class User {
 	@IsEmail()
 	email: string;
 
-	@Column({ nullable: false, default: House.NONE, enum: House, type: "enum" })
+	@Column({ nullable: true, enum: House, type: "enum" })
 	house: House;
 
-	@Column({ nullable: false, default: Role.MEMBER, enum: Role, type: "enum" })
+	@Column({ nullable: true, enum: Role, type: "enum" })
 	role: Role;
 
 	@Column({ nullable: false, default: 0 })
@@ -39,6 +39,5 @@ export class User {
 	scoreLogs: ScoreLog[];
 
 	@OneToMany(() => ScoreLog, (scoreLog) => scoreLog.modifiedBy)
-    modifiedScoreLogs: ScoreLog[];
-	
+	modifiedScoreLogs: ScoreLog[];
 }

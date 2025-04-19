@@ -50,9 +50,7 @@ export class UserController {
 	Protected Endpoints
 	-------------------------------------------------------
 	*/
-	@UseGuards(JwtAuthGuard, RolesGuard)
-	@Roles(Role.MEMBER)
-	@ApiBearerAuth()
+
 	// @Post()
 	// @HttpCode(HttpStatus.CREATED)
 	// @ApiResponse({
@@ -64,8 +62,12 @@ export class UserController {
 	// 	const reponseUser = await this.userService.create(user);
 	// 	return reponseUser;
 	// }
+
 	@Get(":id")
 	@HttpCode(HttpStatus.OK)
+	@UseGuards(JwtAuthGuard, RolesGuard)
+	@Roles(Role.MEMBER)
+	@ApiBearerAuth()
 	@ApiResponse({
 		status: HttpStatus.OK,
 		description: "Get a user by id",
