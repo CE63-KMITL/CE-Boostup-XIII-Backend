@@ -1,15 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
-import { LoginDto } from './dto/login.dto';
-import {Auth} from './entities/auth.entity'
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
-import { User } from '../user/user.entity';
+import { Repository } from 'typeorm';
 import { GLOBAL_CONFIG } from '../shared/constants/global-config.constant';
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { User } from '../user/user.entity';
+import { LoginDto } from './dto/login.dto';
 
 
 @Injectable()

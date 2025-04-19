@@ -10,9 +10,10 @@ async function bootstrap() {
 
 	const app = await NestFactory.create(AppModule);
 
-	if (process.env.FRONT_HOST == "") process.env.FRONT_HOST = "http://localhost:3001 http://localhost:3003";
+	if (!process.env.FRONT_HOST || process.env.FRONT_HOST == "")
+		process.env.FRONT_HOST = "http://localhost:3001 http://localhost:3003";
 
-	console.log(process.env.FRONT_HOST);
+	console.log("Allowed", process.env.FRONT_HOST);
 
 	app.enableCors({
 		origin: process.env.FRONT_HOST.split(" ").filter((origin) => origin.length > 0),

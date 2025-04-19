@@ -1,6 +1,5 @@
 import { User } from "src/user/user.entity";
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { UUID } from "typeorm/driver/mongodb/bson.typings";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 export type ScoreValue = 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5;
 
@@ -12,8 +11,9 @@ export class Problem {
 	@Column()
 	title: string;
 
-	@ManyToOne(() => User, (user) => user.id)
-	author: UUID;
+	@ManyToOne(() => User, { nullable: false, onDelete: "CASCADE" })
+	@JoinColumn({ name: "author" })
+	author: User;
 
 	@Column({
 		nullable: true,
