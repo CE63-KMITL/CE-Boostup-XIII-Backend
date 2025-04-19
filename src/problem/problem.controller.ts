@@ -27,6 +27,12 @@ export class ProblemController {
 		return this.problemService.findOne(+id);
 	}
 
+	@ApiOkResponse({ type: String })
+	@Get("detail/:id")
+	async getDetail(@Param("id") id: string) {
+		return this.problemService.getDetail(+id);
+	}
+
 	@ApiOkResponse({ type: Problem })
 	@Patch(":id")
 	async update(@Param("id") id: string, @Body() updateProblemDto: UpdateProblemDto) {

@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { RunCodeResponseDto } from "./dtos/run_code-response.dto";
+import { RunCodeResponseDto } from "./dtos/run_code.dto";
 
 @Injectable()
 export class RunCodeService {

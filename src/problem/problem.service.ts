@@ -1,4 +1,4 @@
-import { Get, Injectable, Post } from "@nestjs/common";
+import { Get, Injectable, NotFoundException, Post } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { EntityManager, Repository } from "typeorm";
 import { CreateProblemDto, UpdateProblemDto } from "./dto/problem.dto";
@@ -25,9 +25,28 @@ export class ProblemService {
 
 	@Get(":id")
 	async findOne(id: number) {
-		return this.problemsRepository.findOneBy({ id });
+		const problem = await this.problemsRepository.findOneBy({ id });
+		if (!problem) {
+			throw new NotFoundException(`Problem with ID ${id} not found`);
+		}
+		return problem;
 	}
 
+	/*
+	-------------------------------------------------------
+	Get Problem Detail
+	-------------------------------------------------------
+	*/
+	async getDetail(id: number): Promise<string> {
+		const problem = await this.findOne(id);
+		return problem.description;
+	}
+
+	/*
+	-------------------------------------------------------
+	Update Problem
+	-------------------------------------------------------
+	*/
 	async update(id: number, updateProblemDto: UpdateProblemDto) {
 		const problem = await this.problemsRepository.update(id, updateProblemDto);
 		return problem;
