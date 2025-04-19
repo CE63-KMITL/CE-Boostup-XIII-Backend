@@ -1,5 +1,5 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from "@nestjs/common";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Request, UseGuards } from "@nestjs/common";
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { UserService } from "src/user/user.service";
 import { Role } from "../shared/enum/role.enum";
 import { CreateUserDto } from "../user/dtos/create-user.dto";
@@ -8,6 +8,8 @@ import { AuthService } from "./auth.service";
 import { AllowRole } from "./decorators/auth.decorator";
 import { LoginDto } from "./dto/login.dto";
 import { OpenAccountDto } from "./dto/open-account.dto";
+import { JwtAuthGuard } from "./jwt-auth.guard";
+import { RolesGuard } from "./roles/roles.guard";
 
 @ApiTags("Auth")
 @Controller("auth")
@@ -99,6 +101,21 @@ export class AuthController {
 	})
 	async login(@Body() logindata: LoginDto) {
 		return this.authService.login(logindata);
+	}
+
+	/*
+     -------------------------------------------------------
+     Get Role Endpoint
+     -------------------------------------------------------
+     */
+	@Get("role")
+	@UseGuards(JwtAuthGuard, RolesGuard)
+	@ApiBearerAuth("access-token")
+	@ApiOperation({ summary: "Get user role from token" })
+	@ApiResponse({ status: 200, description: "Success" })
+	@ApiResponse({ status: 401, description: "Unauthorized" })
+	async getRole(@Request() req) {
+		return { role: req.user.role };
 	}
 
 	/*
