@@ -110,6 +110,6 @@ export class AuthController {
 	@Roles(Role.MEMBER, Role.DEV)
 	@Get("all")
 	getAllRoles() {
-		return "everyone can see this (except admin)";
+		return "everyone can see this (except staff)";
 	}
 }
