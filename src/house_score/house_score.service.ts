@@ -1,8 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { HouseScore } from './house_score.entity';
-import { HttpException, HttpStatus } from '@nestjs/common';
 
 @Injectable()
 export class HouseScoreService {

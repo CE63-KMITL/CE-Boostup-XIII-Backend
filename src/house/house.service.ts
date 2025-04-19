@@ -7,7 +7,6 @@ export class HouseService {
 	constructor(private readonly userService: UserService) {}
 
 	async get_all_users_in_house(house: House) {
-		// Use the encapsulated method from UserService
 		return await this.userService.findUsersByHouse(house);
 	}
 }

@@ -3,7 +3,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 @Entity("houseScore")
 export class HouseScore {
   @PrimaryGeneratedColumn()
-  id: number; // Primary Key
+  id: number; 
 
   @Column()
   name: String;
