@@ -1,16 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { Roles } from "src/auth/roles/roles.decorator";
-import { RolesGuard } from "src/auth/roles/roles.guard";
 import { Role } from "src/shared/enum/role.enum";
-import { ApiBearerAuth } from "../auth/decorators/auth.decorator";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { AllowRole } from "../auth/decorators/auth.decorator";
 import { HouseScoreService } from "./house_score.service";
 
 @ApiTags("House Score")
 @Controller("houseScores")
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class HouseScoreController {
 	constructor(private readonly scoreService: HouseScoreService) {}
 
@@ -75,9 +70,7 @@ export class HouseScoreController {
 
 	// เพิ่มคะแนน
 	@Put("add/:name")
-	@ApiBearerAuth()
-	@UseGuards(JwtAuthGuard, RolesGuard)
-	@Roles(Role.STAFF)
+	@AllowRole(Role.STAFF)
 	async addScore(@Param("name") name: string, @Body() body: { value: number }) {
 		try {
 			return await this.scoreService.addScore(name, body.value);
@@ -88,9 +81,7 @@ export class HouseScoreController {
 
 	// ลดคะแนน
 	@Put("subtract/:name")
-	@ApiBearerAuth()
-	@UseGuards(JwtAuthGuard, RolesGuard)
-	@Roles(Role.STAFF)
+	@AllowRole(Role.STAFF)
 	async subtractScore(@Param("name") name: string, @Body() body: { value: number }) {
 		try {
 			return await this.scoreService.subtractScore(name, body.value);

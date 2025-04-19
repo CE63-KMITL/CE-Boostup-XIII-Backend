@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { User } from "src/user/user.entity";
+import { UserService } from "src/user/user.service";
 import { Repository } from "typeorm";
 import { GLOBAL_CONFIG } from "../shared/constants/global-config.constant";
 import { CreateProblemDto, ProblemSearchDto, UpdateProblemDto } from "./dto/problem.dto";
@@ -11,8 +11,7 @@ export class ProblemService {
 	constructor(
 		@InjectRepository(Problem)
 		private readonly problemsRepository: Repository<Problem>,
-		@InjectRepository(User) // Inject UserRepository
-		private readonly usersRepository: Repository<User>
+		private readonly userService: UserService
 	) {}
 
 	/*
@@ -21,14 +20,10 @@ export class ProblemService {
 	-------------------------------------------------------
 	*/
 	async create(createProblemDto: CreateProblemDto, userId: string): Promise<Problem> {
-		// Add userId parameter
-		const author = await this.usersRepository.findOneBy({ id: userId });
-		if (!author) {
-			throw new NotFoundException(`User with ID ${userId} not found`);
-		}
+		const author = await this.userService.findOne(userId);
 		const problem = this.problemsRepository.create({
 			...createProblemDto,
-			author: author, // Assign the found user as the author
+			author: author,
 		});
 		return this.problemsRepository.save(problem);
 	}

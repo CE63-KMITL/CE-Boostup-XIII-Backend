@@ -1,10 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiQuery, ApiTags } from "@nestjs/swagger";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from "@nestjs/common";
+import { ApiCreatedResponse, ApiOkResponse, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { Request } from "express";
-import { Roles } from "src/auth/roles/roles.decorator";
-import { RolesGuard } from "src/auth/roles/roles.guard";
+import { AllowRole } from "src/auth/decorators/auth.decorator";
 import { Role } from "src/shared/enum/role.enum";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { CreateProblemDto, ProblemSearchDto, UpdateProblemDto } from "./dto/problem.dto";
 import { Problem } from "./problem.entity";
 import { ProblemService } from "./problem.service";
@@ -14,14 +12,8 @@ import { ProblemService } from "./problem.service";
 export class ProblemController {
 	constructor(private readonly problemService: ProblemService) {}
 
-	/*
-	-------------------------------------------------------
-	Create Problem
-	-------------------------------------------------------
-	*/
 	@ApiCreatedResponse({ type: Problem })
-	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@AllowRole(Role.STAFF)
 	@Post()
 	async create(@Body() createProblemDto: CreateProblemDto, @Req() req: Request) {
 		const userId = (req.user as { userId: string }).userId;
@@ -29,6 +21,7 @@ export class ProblemController {
 	}
 
 	@ApiOkResponse({ type: Problem, isArray: true })
+	@AllowRole(Role.DEV)
 	@Get()
 	async findAll() {
 		return this.problemService.findAll();
@@ -39,8 +32,7 @@ export class ProblemController {
 	Search Problems
 	-------------------------------------------------------
 	*/
-	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@AllowRole(Role.MEMBER)
 	@ApiOkResponse({
 		schema: {
 			properties: {
@@ -76,32 +68,28 @@ export class ProblemController {
 	}
 
 	@ApiOkResponse({ type: Problem })
-	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
+	@AllowRole(Role.MEMBER)
 	@Get(":id")
 	async findOne(@Param("id") id: string) {
 		return this.problemService.findOne(+id);
 	}
 
 	@ApiOkResponse({ type: String })
-	@UseGuards(JwtAuthGuard, RolesGuard)
-	@Roles(Role.MEMBER)
-	@ApiBearerAuth()
+	@AllowRole(Role.MEMBER)
 	@Get("detail/:id")
 	async getDetail(@Param("id") id: string) {
 		return this.problemService.getDetail(+id);
 	}
 
 	@ApiOkResponse({ type: Problem })
-	@UseGuards(JwtAuthGuard, RolesGuard)
-	@Roles(Role.MEMBER)
-	@ApiBearerAuth()
+	@AllowRole(Role.STAFF)
 	@Patch(":id")
 	async update(@Param("id") id: string, @Body() updateProblemDto: UpdateProblemDto) {
 		return this.problemService.update(+id, updateProblemDto);
 	}
 
 	@ApiOkResponse({ type: Problem })
+	@AllowRole(Role.DEV)
 	@Delete(":id")
 	async remove(@Param("id") id: string) {
 		return this.problemService.remove(+id);

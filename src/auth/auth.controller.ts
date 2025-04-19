@@ -1,16 +1,13 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { UserService } from "src/user/user.service";
 import { Role } from "../shared/enum/role.enum";
 import { CreateUserDto } from "../user/dtos/create-user.dto";
 import { UserResponseDto } from "../user/dtos/user-response.dto";
 import { AuthService } from "./auth.service";
-import { ApiBearerAuth } from "./decorators/auth.decorator";
+import { AllowRole } from "./decorators/auth.decorator";
 import { LoginDto } from "./dto/login.dto";
 import { OpenAccountDto } from "./dto/open-account.dto";
-import { JwtAuthGuard } from "./jwt-auth.guard";
-import { Roles } from "./roles/roles.decorator";
-import { RolesGuard } from "./roles/roles.guard";
 
 @ApiTags("Auth")
 @Controller("auth")
@@ -25,10 +22,10 @@ export class AuthController {
 	Open Account Endpoint
 	-------------------------------------------------------
 	*/
+
 	@Post("openaccount")
 	@ApiOperation({
-		summary: "Open a new bank account",
-		description: "Create a new bank account with user's email and optional house/key information",
+		summary: "Create an account",
 	})
 	@ApiResponse({
 		status: 201,
@@ -57,6 +54,7 @@ export class AuthController {
 	Register Endpoint
 	-------------------------------------------------------
 	*/
+
 	@Post("register")
 	@HttpCode(HttpStatus.CREATED)
 	@ApiOperation({ summary: "Register a new user" })
@@ -108,10 +106,8 @@ export class AuthController {
 	Test Endpoints (Protected)
 	-------------------------------------------------------
 	*/
-	@UseGuards(JwtAuthGuard, RolesGuard)
-	@Roles(Role.DEV)
 	@Get("dev")
-	@ApiBearerAuth()
+	@AllowRole(Role.DEV)
 	@ApiOperation({ summary: "Test endpoint for DEV role" })
 	@ApiResponse({ status: 200, description: "Success (DEV only)" })
 	@ApiResponse({ status: 401, description: "Unauthorized" })
@@ -120,10 +116,8 @@ export class AuthController {
 		return "You are dev!";
 	}
 
-	@UseGuards(JwtAuthGuard, RolesGuard)
-	@Roles(Role.MEMBER)
 	@Get("member")
-	@ApiBearerAuth()
+	@AllowRole(Role.MEMBER)
 	@ApiOperation({ summary: "Test endpoint for MEMBER role" })
 	@ApiResponse({ status: 200, description: "Success (MEMBER only)" })
 	@ApiResponse({ status: 401, description: "Unauthorized" })
@@ -132,10 +126,8 @@ export class AuthController {
 		return "You are member!";
 	}
 
-	@UseGuards(JwtAuthGuard, RolesGuard)
-	@Roles(Role.MEMBER, Role.DEV)
 	@Get("all")
-	@ApiBearerAuth()
+	@AllowRole(Role.MEMBER, Role.DEV)
 	@ApiOperation({ summary: "Test endpoint for MEMBER or DEV roles" })
 	@ApiResponse({ status: 200, description: "Success (MEMBER or DEV)" })
 	@ApiResponse({ status: 401, description: "Unauthorized" })

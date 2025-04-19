@@ -1,21 +1,6 @@
-import {
-	Body,
-	Controller,
-	Delete,
-	Get,
-	HttpCode,
-	HttpStatus,
-	Param,
-	ParseUUIDPipe,
-	Patch,
-	Post,
-	UseGuards,
-} from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post } from "@nestjs/common";
 import { ApiResponse, ApiTags } from "@nestjs/swagger";
-import { ApiBearerAuth } from "../auth/decorators/auth.decorator";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
-import { Roles } from "../auth/roles/roles.decorator";
-import { RolesGuard } from "../auth/roles/roles.guard";
+import { AllowRole } from "../auth/decorators/auth.decorator";
 import { Role } from "../shared/enum/role.enum";
 import { UpdateUserDto } from "./dtos/update-user.dto";
 import { UserResponseDto } from "./dtos/user-response.dto";
@@ -65,9 +50,7 @@ export class UserController {
 
 	@Get(":id")
 	@HttpCode(HttpStatus.OK)
-	@UseGuards(JwtAuthGuard, RolesGuard)
-	@Roles(Role.MEMBER)
-	@ApiBearerAuth()
+	@AllowRole(Role.MEMBER)
 	@ApiResponse({
 		status: HttpStatus.OK,
 		description: "Get a user by id",
