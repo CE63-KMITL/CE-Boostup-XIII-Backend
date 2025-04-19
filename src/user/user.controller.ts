@@ -94,7 +94,7 @@ export class UserController {
 		description: "Get user score by id",
 		type: UserScoreResponseDto,
 	})
-	async get_score(
+	async getScore(
 		@Param(
 			"id",
 			new ParseUUIDPipe({
@@ -105,8 +105,8 @@ export class UserController {
 		id: string
 	): Promise<UserScoreResponseDto> {
 		const user = await this.userService.findOne(id);
-		const score_logs = await this.userService.getuser_scorelogs(id);
-		const json = { score: user.score, scoreLogs: score_logs };
+		const scoreLogs = await this.userService.getUserScoreLogs(id);
+		const json = { score: user.score, scoreLogs: scoreLogs };
 		return json;
 	}
 

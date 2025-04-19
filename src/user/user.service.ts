@@ -1,5 +1,6 @@
-import { BadRequestException,Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import * as bcrypt from "bcryptjs";
 import { plainToInstance } from "class-transformer";
 import { House } from "src/shared/enum/house.enum";
 import { Role } from "src/shared/enum/role.enum";
@@ -9,57 +10,52 @@ import { CreateUserDto } from "./dtos/create-user.dto";
 import { UserResponseDto } from "./dtos/user-response.dto";
 import { ScoreLog } from "./score/score-log.entity";
 import { User } from "./user.entity";
-import * as bcrypt from 'bcryptjs'
 
 @Injectable()
 export class UserService {
-  constructor(
+	constructor(
 		@InjectRepository(User)
 		public readonly userRepository: Repository<User>,
 		@InjectRepository(ScoreLog)
 		private readonly scoreLogRepository: Repository<ScoreLog>
 	) {}
 
-  async findAll(): Promise<UserResponseDto[]> {
-    const users = await this.userRepository.find();
-    return users.map((user) => plainToInstance(UserResponseDto, user));
-  }
-  async create(user: CreateUserDto): Promise<UserResponseDto> {
-    try {
-      // เข้ารหัส password ก่อน
-      const salt = await bcrypt.genSalt(10); // หรือจะใช้ค่า default ก็ได้
-      const hashedPassword = await bcrypt.hash(user.password, salt);
-  
-      // แทนที่ password เดิม
-      user.password = hashedPassword;
-  
-      const responseUser = await this.userRepository.save(user);
-      return plainToInstance(UserResponseDto, responseUser);
-    } catch (error) {
-      if (error instanceof Error)
-        throw new BadRequestException("User already exists");
-    }
-  }
-  async findOne(id: string): Promise<UserResponseDto> {
-    const responseUser = await this.userRepository.findOne({ where: { id } });
-    if (!responseUser) throw new NotFoundException("User not found");
-    return plainToInstance(UserResponseDto, responseUser);
-  }
-  async update(
-    id: string,
-    partialEntity: QueryDeepPartialEntity<User>
-  ): Promise<UserResponseDto> {
-    if (partialEntity.score !== undefined) {
-      const score = Number(partialEntity.score);
-      if (isNaN(score) || score < 0) {
-        throw new BadRequestException("Score must be a valid number >= 0");
-      }
-    }
-	if (partialEntity.password !== undefined) {
-		const salt = await bcrypt.genSalt(10); // หรือใช้ค่าที่ตั้งไว้ใน config
-		const hashedPassword = await bcrypt.hash(partialEntity.password as string, salt);
-		partialEntity.password = hashedPassword;
+	async findAll(): Promise<UserResponseDto[]> {
+		const users = await this.userRepository.find();
+		return users.map((user) => plainToInstance(UserResponseDto, user));
 	}
+	async create(user: CreateUserDto): Promise<UserResponseDto> {
+		try {
+			// เข้ารหัส password ก่อน
+			const salt = await bcrypt.genSalt(10); // หรือจะใช้ค่า default ก็ได้
+			const hashedPassword = await bcrypt.hash(user.password, salt);
+
+			// แทนที่ password เดิม
+			user.password = hashedPassword;
+
+			const responseUser = await this.userRepository.save(user);
+			return plainToInstance(UserResponseDto, responseUser);
+		} catch (error) {
+			if (error instanceof Error) throw new BadRequestException("User already exists");
+		}
+	}
+	async findOne(id: string): Promise<UserResponseDto> {
+		const responseUser = await this.userRepository.findOne({ where: { id } });
+		if (!responseUser) throw new NotFoundException("User not found");
+		return plainToInstance(UserResponseDto, responseUser);
+	}
+	async update(id: string, partialEntity: QueryDeepPartialEntity<User>): Promise<UserResponseDto> {
+		if (partialEntity.score !== undefined) {
+			const score = Number(partialEntity.score);
+			if (isNaN(score) || score < 0) {
+				throw new BadRequestException("Score must be a valid number >= 0");
+			}
+		}
+		if (partialEntity.password !== undefined) {
+			const salt = await bcrypt.genSalt(10); // หรือใช้ค่าที่ตั้งไว้ใน config
+			const hashedPassword = await bcrypt.hash(partialEntity.password as string, salt);
+			partialEntity.password = hashedPassword;
+		}
 		try {
 			await this.userRepository.update(id, partialEntity);
 			const responseUser = await this.userRepository.findOne({ where: { id } });
@@ -82,7 +78,7 @@ export class UserService {
 		}
 	}
 
-	async get_house(id: string): Promise<House> {
+	async getHouse(id: string): Promise<House> {
 		const user = await this.userRepository.findOne({ where: { id } });
 		if (!user) throw new NotFoundException("User not found");
 		return user.house;
@@ -127,7 +123,7 @@ export class UserService {
 	// 	return user.scoreLogs;
 	// }
 
-	async getuser_scorelogs(id: string): Promise<ScoreLog[]> {
+	async getUserScoreLogs(id: string): Promise<ScoreLog[]> {
 		const user = await this.userRepository
 			.createQueryBuilder("user")
 			.leftJoinAndSelect("user.scoreLogs", "scoreLogs")
@@ -145,7 +141,7 @@ export class UserService {
 			])
 			.where("user.id = :id", { id })
 			.getOne();
-	
+
 		if (!user || !user.scoreLogs) {
 			return [];
 		}

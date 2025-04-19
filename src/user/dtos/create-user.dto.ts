@@ -36,11 +36,10 @@ export class CreateUserDto {
 		message: `House must be a valid enum value.`,
 	})
 	@ApiProperty({
-		example: House.House1,
+		example: House.BARBARIAN,
 		description: "User house",
 		enum: House,
 		type: String,
-		default: House.NONE,
 	})
 	house: House;
 

@@ -26,14 +26,14 @@ export class AuthService {
 	}
 
 	async validateUser(email: string, password: string) {
-		const check_email = await this.userRepository.findOne({ where: { email } });
-		console.log(check_email);
-		if (!check_email) {
+		const checkEmail = await this.userRepository.findOne({ where: { email } });
+		console.log(checkEmail);
+		if (!checkEmail) {
 			console.log("Not found user");
 			return null;
 		}
-		const Password_compare = await bcrypt.compare(password, check_email.password);
-		return Password_compare ? check_email : null;
+		const passwordCompare = await bcrypt.compare(password, checkEmail.password);
+		return passwordCompare ? checkEmail : null;
 	}
 
 	async login(loginData: LoginDto): Promise<any> {
@@ -52,7 +52,7 @@ export class AuthService {
 		}
 
 		// create token
-		const token = jwt.sign({ user_id: user.id, email }, GLOBAL_CONFIG.TOKEN_KEY, { expiresIn: "1d" });
+		const token = jwt.sign({ userId: user.id, email }, GLOBAL_CONFIG.TOKEN_KEY, { expiresIn: "1d" });
 
 		// return token + user info
 		return {

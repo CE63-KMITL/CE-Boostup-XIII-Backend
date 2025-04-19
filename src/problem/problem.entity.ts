@@ -23,7 +23,7 @@ export class Problem {
 	@Column({
 		nullable: true,
 	})
-	default_code: string;
+	defaultCode: string;
 
 	@Column({
 		type: "decimal",
@@ -31,6 +31,11 @@ export class Problem {
 		default: 2,
 	})
 	difficulty: ScoreValue;
+
+	@Column({
+		nullable: true,
+	})
+	devStatus: string;
 
 	@Column("text", { array: true, nullable: true, default: [] })
 	tags: string[];

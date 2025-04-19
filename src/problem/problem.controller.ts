@@ -1,6 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { Request } from "express";
+import { Roles } from "src/auth/roles/roles.decorator";
+import { RolesGuard } from "src/auth/roles/roles.guard";
+import { Role } from "src/shared/enum/role.enum";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { CreateProblemDto, ProblemSearchDto, UpdateProblemDto } from "./dto/problem.dto";
 import { Problem } from "./problem.entity";
@@ -17,8 +20,8 @@ export class ProblemController {
 	-------------------------------------------------------
 	*/
 	@ApiCreatedResponse({ type: Problem })
-	@ApiBearerAuth()
 	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
 	@Post()
 	async create(@Body() createProblemDto: CreateProblemDto, @Req() req: Request) {
 		const userId = (req.user as { userId: string }).userId;
@@ -36,6 +39,8 @@ export class ProblemController {
 	Search Problems
 	-------------------------------------------------------
 	*/
+	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
 	@ApiOkResponse({
 		schema: {
 			properties: {
@@ -71,18 +76,26 @@ export class ProblemController {
 	}
 
 	@ApiOkResponse({ type: Problem })
+	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
 	@Get(":id")
 	async findOne(@Param("id") id: string) {
 		return this.problemService.findOne(+id);
 	}
 
 	@ApiOkResponse({ type: String })
+	@UseGuards(JwtAuthGuard, RolesGuard)
+	@Roles(Role.MEMBER)
+	@ApiBearerAuth()
 	@Get("detail/:id")
 	async getDetail(@Param("id") id: string) {
 		return this.problemService.getDetail(+id);
 	}
 
 	@ApiOkResponse({ type: Problem })
+	@UseGuards(JwtAuthGuard, RolesGuard)
+	@Roles(Role.MEMBER)
+	@ApiBearerAuth()
 	@Patch(":id")
 	async update(@Param("id") id: string, @Body() updateProblemDto: UpdateProblemDto) {
 		return this.problemService.update(+id, updateProblemDto);

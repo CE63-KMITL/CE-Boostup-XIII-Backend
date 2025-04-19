@@ -33,7 +33,7 @@ export class UserResponseDto {
 
 	@Expose()
 	@ApiProperty({
-		example: House.House1,
+		example: House.BARBARIAN,
 		description: "User house",
 		enum: House,
 	})
