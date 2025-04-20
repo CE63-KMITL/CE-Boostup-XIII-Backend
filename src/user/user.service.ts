@@ -7,7 +7,7 @@ import { Repository } from "typeorm";
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
 import { CreateUserDto } from "./dtos/create-user.dto";
 import { UserResponseDto } from "./dtos/user-response.dto";
-import { ProblemStatusEnum } from "./score/problem-status.entity";
+import { ProblemStatus, ProblemStatusEnum } from "./score/problem-status.entity";
 import { ScoreLog } from "./score/score-log.entity";
 import { User } from "./user.entity";
 
@@ -17,36 +17,47 @@ export class UserService {
 		@InjectRepository(User)
 		public readonly userRepository: Repository<User>,
 		@InjectRepository(ScoreLog)
-		private readonly scoreLogRepository: Repository<ScoreLog>
+		private readonly scoreLogRepository: Repository<ScoreLog>,
+		@InjectRepository(ProblemStatus)
+		private readonly problemStatusRepository: Repository<ProblemStatus>
 	) {}
 
+	/*
+	-------------------------------------------------------
+	User Management
+	-------------------------------------------------------
+	*/
 	async findAll(): Promise<UserResponseDto[]> {
 		const users = await this.userRepository.find();
 		return users.map((user) => plainToInstance(UserResponseDto, user));
 	}
+
+	async findOne(id: string): Promise<User> {
+		if (!id) throw new BadRequestException("ID is required");
+
+		const responseUser = await this.userRepository.findOne({ where: { id } });
+		if (!responseUser) throw new NotFoundException("User not found");
+
+		return responseUser;
+	}
+
+	async findEntityById(id: string): Promise<User> {
+		const user = await this.userRepository.findOne({ where: { id } });
+		if (!user) throw new NotFoundException("User not found");
+		return user;
+	}
+
 	async create(user: CreateUserDto): Promise<UserResponseDto> {
 		try {
-			// เข้ารหัส password ก่อน
-			const salt = await bcrypt.genSalt(10); // หรือจะใช้ค่า default ก็ได้
+			const salt = await bcrypt.genSalt(10);
 			const hashedPassword = await bcrypt.hash(user.password, salt);
-
-			// แทนที่ password เดิม
 			user.password = hashedPassword;
 
 			const responseUser = await this.userRepository.save(user);
 			return plainToInstance(UserResponseDto, responseUser);
 		} catch (error) {
-			if (error instanceof Error) throw new BadRequestException("User already exists");
+			throw new BadRequestException("User already exists");
 		}
-	}
-
-	async findOne(id: string): Promise<User> {
-		if (!id) {
-			throw new BadRequestException("ID is required");
-		}
-		const responseUser = await this.userRepository.findOne({ where: { id } });
-		if (!responseUser) throw new NotFoundException("User not found");
-		return responseUser;
 	}
 
 	async update(id: string, partialEntity: QueryDeepPartialEntity<User>): Promise<UserResponseDto> {
@@ -56,18 +67,17 @@ export class UserService {
 				throw new BadRequestException("Score must be a valid number >= 0");
 			}
 		}
+
 		if (partialEntity.password !== undefined) {
-			const salt = await bcrypt.genSalt(10); // หรือใช้ค่าที่ตั้งไว้ใน config
+			const salt = await bcrypt.genSalt(10);
 			const hashedPassword = await bcrypt.hash(partialEntity.password as string, salt);
 			partialEntity.password = hashedPassword;
 		}
+
 		try {
 			await this.userRepository.update(id, partialEntity);
 			const responseUser = await this.userRepository.findOne({ where: { id } });
-
-			if (!responseUser) {
-				throw new NotFoundException("User not found");
-			}
+			if (!responseUser) throw new NotFoundException("User not found");
 
 			return plainToInstance(UserResponseDto, responseUser);
 		} catch (error) {
@@ -79,20 +89,32 @@ export class UserService {
 		try {
 			await this.userRepository.delete(id);
 		} catch (error) {
-			if (error instanceof Error) throw new NotFoundException("User not found");
+			throw new NotFoundException("User not found");
 		}
 	}
 
+	/*
+	-------------------------------------------------------
+	House Management
+	-------------------------------------------------------
+	*/
 	async getHouse(id: string): Promise<House> {
 		const user = await this.userRepository.findOne({ where: { id } });
 		if (!user) throw new NotFoundException("User not found");
 		return user.house;
 	}
 
+	async findUsersByHouse(house: House): Promise<User[]> {
+		return this.userRepository.find({ where: { house } });
+	}
+
+	/*
+	-------------------------------------------------------
+	Score Management
+	-------------------------------------------------------
+	*/
 	async modifyScore(userId: string, amount: number, modifiedById: string): Promise<User> {
-		const user = await this.userRepository.findOneOrFail({
-			where: { id: userId },
-		});
+		const user = await this.userRepository.findOneOrFail({ where: { id: userId } });
 		const modifiedBy = await this.findOne(modifiedById);
 
 		user.score += amount;
@@ -104,26 +126,8 @@ export class UserService {
 		scoreLog.modifiedBy = modifiedBy;
 
 		await this.scoreLogRepository.save(scoreLog);
-
 		return this.userRepository.save(user);
 	}
-
-	async findEntityById(id: string): Promise<User> {
-		const user = await this.userRepository.findOne({ where: { id } });
-		if (!user) throw new NotFoundException("User not found");
-		return user;
-	}
-
-	// async getuser_scorelogs(id: string): Promise<ScoreLog[]> {
-	// 	const user = await this.userRepository.findOne({
-	// 		where: { id },
-	// 		relations: ["scoreLogs","scoreLogs.modifiedBy"],
-	// 	});
-	// 	if (!user || !user.scoreLogs) {
-	// 		return [];
-	// 	}
-	// 	return user.scoreLogs;
-	// }
 
 	async getUserScoreLogs(id: string): Promise<ScoreLog[]> {
 		const user = await this.userRepository
@@ -138,29 +142,49 @@ export class UserService {
 				"scoreLogs.date",
 				"modifiedByUser.id",
 				"modifiedByUser.name",
-				// "modifiedByUser.studentId",
-				// "modifiedByUser.icon",
+				"modifiedByUser.studentId",
+				"modifiedByUser.icon",
 			])
 			.where("user.id = :id", { id })
 			.getOne();
 
-		if (!user || !user.scoreLogs) {
-			return [];
-		}
+		if (!user || !user.scoreLogs) return [];
 		return user.scoreLogs;
 	}
 
-	async findUsersByHouse(house: House): Promise<User[]> {
-		return this.userRepository.find({ where: { house } });
+	/*
+	-------------------------------------------------------
+	Problem Status Management
+	-------------------------------------------------------
+	*/
+	async getProblemStatus(userId: string, problemId: number): Promise<ProblemStatusEnum> {
+		try {
+			const userProblem = await this.getUserProblem(userId, problemId);
+			return userProblem.status;
+		} catch (error) {
+			if (String(error).includes("Problem not found")) return ProblemStatusEnum.NOT_STARTED;
+		}
+		return null;
 	}
 
-	async getProblemStatus(userId: string, problemId: number): Promise<ProblemStatusEnum> {
-		const userWithProblemStatus = await this.userRepository.findOne({
-			where: { id: userId, problemStatus: { problem: { id: problemId } } },
-		});
-		if (!userWithProblemStatus) {
-			return ProblemStatusEnum.NOT_STARTED;
+	async getUserProblem(userId: string, problemId: number): Promise<ProblemStatus> {
+		const userProblem = await this.userRepository
+			.createQueryBuilder("user")
+			.where("user.id = :userId", { userId })
+			.leftJoinAndSelect("user.problemStatus", "problemStatus")
+			.andWhere("problemStatus.problemId = :problemId", { problemId })
+			.getOne();
+
+		if (!userProblem?.problemStatus?.length) {
+			throw new NotFoundException("Problem not found");
 		}
-		return userWithProblemStatus.problemStatus[0].status;
+		return userProblem.problemStatus[0];
+	}
+
+	async setProblemStatus(problemId: number, userId: string): Promise<ProblemStatus> {
+		const userProblem = await this.getUserProblem(userId, problemId);
+		userProblem.status = ProblemStatusEnum.IN_PROGRESS;
+		await this.problemStatusRepository.save(userProblem);
+		return userProblem;
 	}
 }

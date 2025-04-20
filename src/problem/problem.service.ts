@@ -49,7 +49,17 @@ export class ProblemService {
 	}
 
 	async search(query: ProblemSearchRequest, user): Promise<ProblemSearchRespond> {
-		const { searchText, idReverse, tag, difficulty, page = 1 } = query;
+		console.log(query);
+
+		let searchText = query.searchText;
+		let idReverse = Boolean(query.idReverse);
+		let tags = query.tags ? JSON.parse(query.tags) : [];
+		let minDifficulty = Number(query.minDifficulty);
+		let maxDifficulty = Number(query.maxDifficulty);
+		let status = query.status;
+		let page = Number(query.page);
+		let difficultySortBy = query.difficultySortBy;
+
 		const pageNumber = Number(page);
 		const take = GLOBAL_CONFIG.DEFAULT_PROBLEM_PAGE_SIZE;
 		const skip = (isNaN(pageNumber) || pageNumber < 1 ? 0 : pageNumber - 1) * take;
@@ -75,22 +85,54 @@ export class ProblemService {
 			);
 		}
 
-		if (tag && tag.length > 0) {
-			searchProblems.andWhere("problem.tags && ARRAY[:...tags]", { tags: tag });
+		console.log(tags);
+
+		if (tags && tags.length > 0) {
+			searchProblems.andWhere("problem.tags && ARRAY[:...tags]", { tags });
 		}
 
-		if (difficulty) {
-			searchProblems.andWhere("problem.difficulty = :difficulty", { difficulty });
+		if (minDifficulty || maxDifficulty) {
+			if (minDifficulty && maxDifficulty) {
+				searchProblems.andWhere("problem.difficulty BETWEEN :minDifficulty AND :maxDifficulty", {
+					minDifficulty: Number(minDifficulty),
+					maxDifficulty: Number(maxDifficulty),
+				});
+			} else if (minDifficulty) {
+				searchProblems.andWhere("problem.difficulty >= :minDifficulty", {
+					minDifficulty: Number(minDifficulty),
+				});
+			} else if (maxDifficulty) {
+				searchProblems.andWhere("problem.difficulty <= :maxDifficulty", {
+					maxDifficulty: Number(maxDifficulty),
+				});
+			}
 		}
-		searchProblems
-			.orderBy("problem.id", idReverse ? "DESC" : "ASC")
-			.skip(skip)
-			.take(take);
+		searchProblems.orderBy("problem.id", idReverse ? "DESC" : "ASC");
 
-		const [items, total] = (await searchProblems.getManyAndCount()) as [ProblemWithUserStatus[], number];
+		if (difficultySortBy) {
+			searchProblems.addOrderBy("problem.difficulty", difficultySortBy);
+		}
 
-		for (const item of items) {
-			item.status = await this.userService.getProblemStatus(user.id, item.id);
+		searchProblems.skip(skip).take(take);
+		let items: ProblemWithUserStatus[] = [];
+		let total = 0;
+
+		const [allItems, totalBeforeStatus] = await searchProblems.getManyAndCount();
+
+		const itemsWithStatus = await Promise.all(
+			allItems.map(async (item: ProblemWithUserStatus) => {
+				item.status = await this.userService.getProblemStatus(user.userId, item.id);
+				return item;
+			})
+		);
+
+		if (status && (status as string) !== "") {
+			items = itemsWithStatus.filter((item) => item.status === status);
+			total = items.length;
+			items = items.slice(skip, skip + take);
+		} else {
+			items = itemsWithStatus;
+			total = totalBeforeStatus;
 		}
 
 		return {

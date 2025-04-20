@@ -170,4 +170,10 @@ export class UserController {
 	): Promise<void> {
 		await this.userService.delete(id);
 	}
+
+	@AllowRole(Role.MEMBER)
+	@Post("setProblemStatus/:id")
+	async tryProblem(@Request() req, @Param("id") id: number) {
+		return this.userService.setProblemStatus(id, req.user.userId);
+	}
 }

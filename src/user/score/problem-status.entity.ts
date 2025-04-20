@@ -1,6 +1,7 @@
 import { IsEnum, IsOptional } from "class-validator";
 import { Problem } from "src/problem/problem.entity";
-import { Entity, JoinColumn, OneToOne, PrimaryColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
+import { User } from "../user.entity";
 
 export enum ProblemStatusEnum {
 	NOT_STARTED = "Not Started",
@@ -10,15 +11,32 @@ export enum ProblemStatusEnum {
 
 @Entity()
 export class ProblemStatus {
-	@OneToOne(() => Problem, { nullable: false })
-	@JoinColumn({ name: "problem" })
 	@PrimaryColumn()
+	userId: number;
+
+	@PrimaryColumn()
+	problemId: number;
+
+	@ManyToOne(() => User, (user) => user.problemStatus, { onDelete: "CASCADE" })
+	@JoinColumn({ name: "userId" })
+	user: User;
+
+	@ManyToOne(() => Problem, (problem) => problem, { onDelete: "CASCADE" })
+	@JoinColumn({ name: "problemId" })
 	problem: Problem;
 
+	@Column({ type: "text", nullable: true })
 	@IsOptional()
 	code: string;
 
-	@IsOptional()
 	@IsEnum(ProblemStatusEnum)
+	@IsOptional()
 	status: ProblemStatusEnum;
+
+	@Column({ type: "timestamp", nullable: true })
+	lastSubmitted: Date;
+
+	constructor(partial: Partial<ProblemStatus>) {
+		Object.assign(this, partial);
+	}
 }

@@ -12,6 +12,10 @@ export class User {
 
 	@Column({ nullable: true })
 	@IsOptional()
+	studentId: string;
+
+	@Column({ nullable: true })
+	@IsOptional()
 	icon: string;
 
 	@Column({ nullable: false, unique: true })
@@ -30,7 +34,7 @@ export class User {
 	@Column({ nullable: true, enum: Role, type: "enum" })
 	role: Role;
 
-	@OneToMany(() => ProblemStatus, (problemStatus) => problemStatus.problem)
+	@OneToMany(() => ProblemStatus, (problemStatus) => problemStatus.user)
 	problemStatus: ProblemStatus[];
 
 	@Column({ nullable: false, default: 0 })
