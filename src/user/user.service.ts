@@ -3,11 +3,11 @@ import { InjectRepository } from "@nestjs/typeorm";
 import * as bcrypt from "bcryptjs";
 import { plainToInstance } from "class-transformer";
 import { House } from "src/shared/enum/house.enum";
-import { Role } from "src/shared/enum/role.enum";
 import { Repository } from "typeorm";
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
 import { CreateUserDto } from "./dtos/create-user.dto";
 import { UserResponseDto } from "./dtos/user-response.dto";
+import { ProblemStatusEnum } from "./score/problem-status.entity";
 import { ScoreLog } from "./score/score-log.entity";
 import { User } from "./user.entity";
 
@@ -39,11 +39,16 @@ export class UserService {
 			if (error instanceof Error) throw new BadRequestException("User already exists");
 		}
 	}
-	async findOne(id: string): Promise<UserResponseDto> {
+
+	async findOne(id: string): Promise<User> {
+		if (!id) {
+			throw new BadRequestException("ID is required");
+		}
 		const responseUser = await this.userRepository.findOne({ where: { id } });
 		if (!responseUser) throw new NotFoundException("User not found");
-		return plainToInstance(UserResponseDto, responseUser);
+		return responseUser;
 	}
+
 	async update(id: string, partialEntity: QueryDeepPartialEntity<User>): Promise<UserResponseDto> {
 		if (partialEntity.score !== undefined) {
 			const score = Number(partialEntity.score);
@@ -88,10 +93,7 @@ export class UserService {
 		const user = await this.userRepository.findOneOrFail({
 			where: { id: userId },
 		});
-		const result = await this.findEntityById(modifiedById);
-		if (result.role !== Role.DEV) {
-			throw new BadRequestException("Only dev can modify score");
-		}
+		const modifiedBy = await this.findOne(modifiedById);
 
 		user.score += amount;
 		if (user.score < 0) user.score = 0;
@@ -99,7 +101,7 @@ export class UserService {
 		const scoreLog = new ScoreLog();
 		scoreLog.amount = amount;
 		scoreLog.user = user;
-		scoreLog.modifiedBy = result;
+		scoreLog.modifiedBy = modifiedBy;
 
 		await this.scoreLogRepository.save(scoreLog);
 
@@ -150,5 +152,15 @@ export class UserService {
 
 	async findUsersByHouse(house: House): Promise<User[]> {
 		return this.userRepository.find({ where: { house } });
+	}
+
+	async getProblemStatus(userId: string, problemId: number): Promise<ProblemStatusEnum> {
+		const userWithProblemStatus = await this.userRepository.findOne({
+			where: { id: userId, problemStatus: { problem: { id: problemId } } },
+		});
+		if (!userWithProblemStatus) {
+			return ProblemStatusEnum.NOT_STARTED;
+		}
+		return userWithProblemStatus.problemStatus[0].status;
 	}
 }

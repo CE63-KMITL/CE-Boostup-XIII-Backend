@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsArray, IsBoolean, IsNumber, IsOptional, IsString } from "class-validator";
 
-export class CreateProblemDto {
+export class CreateProblemRequest {
 	@ApiProperty({ example: "Sample Problem Title" })
 	title: string;
 
@@ -18,7 +18,7 @@ export class CreateProblemDto {
 	tags: string[];
 }
 
-export class UpdateProblemDto {
+export class UpdateProblemRequest {
 	@ApiProperty({ example: "Updated Problem Title", required: false })
 	@IsOptional()
 	title: string;
@@ -43,7 +43,7 @@ export class UpdateProblemDto {
 	tags: string[];
 }
 
-export class ProblemSearchDto {
+export class ProblemSearchRequest {
 	@IsOptional()
 	@IsString()
 	searchText: string;
