@@ -1,32 +1,23 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  ParseUUIDPipe,
-  HttpStatus,
-  Patch,
-  Delete,
-  HttpCode,
-  UseGuards
-} from "@nestjs/common";
-import { UserService } from "./user.service";
-import { CreateUserDto } from "./dtos/create-user.dto";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post } from "@nestjs/common";
+import { ApiResponse, ApiTags } from "@nestjs/swagger";
+import { AllowRole } from "../auth/decorators/auth.decorator";
+import { Role } from "../shared/enum/role.enum";
 import { UpdateUserDto } from "./dtos/update-user.dto";
 import { UserResponseDto } from "./dtos/user-response.dto";
-import { ApiResponse, ApiTags } from "@nestjs/swagger";
 import { ModifyScoreDto } from "./score/dtos/modify-score.dto";
 import { UserScoreResponseDto } from "./score/dtos/score-response.dto";
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles/roles.guard'
-import {Roles} from '../auth/roles/roles.decorator'
-import { Role } from '../shared/enum/role.enum'; 
+import { UserService } from "./user.service";
+
 @Controller("user")
 @ApiTags("User")
 export class UserController {
 	constructor(private readonly userService: UserService) {}
 
+	/*
+	-------------------------------------------------------
+	Get All Users
+	-------------------------------------------------------
+	*/
 	@Get()
 	@HttpCode(HttpStatus.OK)
 	@ApiResponse({
@@ -38,6 +29,13 @@ export class UserController {
 	async findAll(): Promise<UserResponseDto[]> {
 		return await this.userService.findAll();
 	}
+
+	/*
+	-------------------------------------------------------
+	Protected Endpoints
+	-------------------------------------------------------
+	*/
+
 	// @Post()
 	// @HttpCode(HttpStatus.CREATED)
 	// @ApiResponse({
@@ -49,8 +47,10 @@ export class UserController {
 	// 	const reponseUser = await this.userService.create(user);
 	// 	return reponseUser;
 	// }
+
 	@Get(":id")
 	@HttpCode(HttpStatus.OK)
+	@AllowRole(Role.MEMBER)
 	@ApiResponse({
 		status: HttpStatus.OK,
 		description: "Get a user by id",
@@ -77,7 +77,7 @@ export class UserController {
 		description: "Get user score by id",
 		type: UserScoreResponseDto,
 	})
-	async get_score(
+	async getScore(
 		@Param(
 			"id",
 			new ParseUUIDPipe({
@@ -86,11 +86,10 @@ export class UserController {
 			})
 		)
 		id: string
-	): Promise<UserScoreResponseDto> 
-	{
+	): Promise<UserScoreResponseDto> {
 		const user = await this.userService.findOne(id);
-		const score_logs = await this.userService.getuser_scorelogs(id);
-		const json = { score: user.score, scoreLogs: score_logs };
+		const scoreLogs = await this.userService.getUserScoreLogs(id);
+		const json = { score: user.score, scoreLogs: scoreLogs };
 		return json;
 	}
 

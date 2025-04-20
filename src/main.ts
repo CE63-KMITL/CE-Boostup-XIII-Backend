@@ -10,9 +10,10 @@ async function bootstrap() {
 
 	const app = await NestFactory.create(AppModule);
 
-	if (process.env.FRONT_HOST == "") process.env.FRONT_HOST = "http://localhost:3001 http://localhost:3003";
+	if (!process.env.FRONT_HOST || process.env.FRONT_HOST == "")
+		process.env.FRONT_HOST = "http://localhost:3001 http://localhost:3003";
 
-	console.log(process.env.FRONT_HOST);
+	console.log("Allowed", process.env.FRONT_HOST);
 
 	app.enableCors({
 		origin: process.env.FRONT_HOST.split(" ").filter((origin) => origin.length > 0),
@@ -22,9 +23,17 @@ async function bootstrap() {
 	});
 
 	const config = new DocumentBuilder()
-		.setTitle("boost up api")
-		.setDescription("This is the api for the boost up app")
+		.setTitle("CE-Boostup-XIII-Backend (API)")
 		.setVersion("1.0")
+		.addBearerAuth(
+			{
+				type: "http",
+				scheme: "bearer",
+				bearerFormat: "JWT",
+				in: "header",
+			},
+			"access-token"
+		)
 		.build();
 
 	const documentFactory = SwaggerModule.createDocument(app, config);
