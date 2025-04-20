@@ -31,8 +31,10 @@ export class ProblemService {
 	async findAll(): Promise<Problem[]> {
 		return this.problemsRepository.find();
 	}
-
 	async findOne(id: number): Promise<Problem> {
+		if (isNaN(id)) {
+			throw new NotFoundException(`Invalid problem ID`);
+		}
 		const problem = await this.problemsRepository.findOneBy({ id });
 		if (!problem) {
 			throw new NotFoundException(`Problem with ID ${id} not found`);
@@ -46,33 +48,19 @@ export class ProblemService {
 	}
 
 	async search(query: ProblemSearchDto) {
-		console.log(query);
 		const { searchText, idReverse, tag, difficulty, page = 1 } = query;
 		const pageNumber = Number(page);
 		const take = GLOBAL_CONFIG.DEFAULT_PROBLEM_PAGE_SIZE;
 		const skip = (isNaN(pageNumber) || pageNumber < 1 ? 0 : pageNumber - 1) * take;
 
-		console.log(
-			"searchText",
-			searchText,
-			"idReverse",
-			idReverse,
-			"tag",
-			tag,
-			"difficulty",
-			difficulty,
-			"take",
-			take,
-			"skip",
-			skip
-		);
-
 		const result = this.problemsRepository
 			.createQueryBuilder("problem")
 			.leftJoinAndSelect("problem.author", "author");
 
-		if (searchText) {
-			result.andWhere("(LOWER(author.name) LIKE LOWER(:term) OR LOWER(problem.name) LIKE LOWER(:term))", {
+		console.log(query);
+
+		if (searchText && searchText != "") {
+			result.andWhere("(LOWER(author.name) LIKE LOWER(:term) OR LOWER(problem.title) LIKE LOWER(:term))", {
 				term: `%${searchText}%`,
 			});
 		}

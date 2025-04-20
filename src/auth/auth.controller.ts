@@ -115,7 +115,7 @@ export class AuthController {
 	@ApiResponse({ status: 200, description: "Success" })
 	@ApiResponse({ status: 401, description: "Unauthorized" })
 	async getRole(@Request() req) {
-		return { role: req.user.role };
+		return { role: (await this.userService.findOne(req.user.id)).role };
 	}
 
 	/*

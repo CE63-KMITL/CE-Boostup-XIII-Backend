@@ -63,7 +63,6 @@ export class ProblemController {
 	@ApiQuery({ name: "page", required: false, type: "number", description: "Page number (starts from 1)" })
 	@Get("search")
 	async search(@Query() query: ProblemSearchDto) {
-		console.log("not pass", query);
 		return this.problemService.search(query);
 	}
 
