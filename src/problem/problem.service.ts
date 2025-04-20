@@ -49,10 +49,8 @@ export class ProblemService {
 	}
 
 	async search(query: ProblemSearchRequest, user): Promise<ProblemSearchRespond> {
-		console.log(query);
-
 		let searchText = query.searchText;
-		let idReverse = Boolean(query.idReverse);
+		let idReverse = query.idReverse == "true";
 		let tags = query.tags ? JSON.parse(query.tags) : [];
 		let minDifficulty = Number(query.minDifficulty);
 		let maxDifficulty = Number(query.maxDifficulty);
@@ -84,8 +82,6 @@ export class ProblemService {
 				}
 			);
 		}
-
-		console.log(tags);
 
 		if (tags && tags.length > 0) {
 			searchProblems.andWhere("problem.tags && ARRAY[:...tags]", { tags });
