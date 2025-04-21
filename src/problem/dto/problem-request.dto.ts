@@ -1,7 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsArray, IsBoolean, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsEnum, IsOptional, IsString } from "class-validator";
+import { ProblemStatusEnum } from "src/user/score/problem-status.entity";
+import { ProblemStaffStatus } from "../problem.entity";
 
-export class CreateProblemDto {
+export class CreateProblemRequest {
 	@ApiProperty({ example: "Sample Problem Title" })
 	title: string;
 
@@ -14,11 +16,11 @@ export class CreateProblemDto {
 	@ApiProperty({ example: 3, description: "Difficulty level (0.5 to 5)" })
 	difficulty: 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5;
 
-	@ApiProperty({ example: ["math", "algorithm"] })
+	@ApiProperty({ example: ["Basic I/O", "If - else"] })
 	tags: string[];
 }
 
-export class UpdateProblemDto {
+export class UpdateProblemRequest {
 	@ApiProperty({ example: "Updated Problem Title", required: false })
 	@IsOptional()
 	title: string;
@@ -43,25 +45,42 @@ export class UpdateProblemDto {
 	tags: string[];
 }
 
-export class ProblemSearchDto {
+enum ProblemSearchSortBy {
+	ASC = "ASC",
+	DESC = "DESC",
+}
+
+export class ProblemSearchRequest {
 	@IsOptional()
 	@IsString()
 	searchText: string;
 
 	@IsOptional()
-	@IsBoolean()
-	idReverse: boolean;
+	@IsString()
+	idReverse: string;
 
 	@IsOptional()
-	@IsArray()
-	@IsString({ each: true })
-	tag: string[];
+	@IsString()
+	tags: string;
 
 	@IsOptional()
-	@IsNumber()
-	difficulty: number;
+	@IsString()
+	minDifficulty: string = "0.5";
 
 	@IsOptional()
-	@IsNumber()
-	page: number = 1;
+	@IsString()
+	maxDifficulty: string = "5";
+
+	@IsOptional()
+	@IsString()
+	status: ProblemStatusEnum | ProblemStaffStatus;
+
+	@IsOptional()
+	@IsString()
+	page: string = "1";
+
+	@IsOptional()
+	@IsString()
+	@IsEnum(ProblemSearchSortBy)
+	difficultySortBy: ProblemSearchSortBy = ProblemSearchSortBy.ASC;
 }

@@ -115,7 +115,7 @@ export class AuthController {
 	@ApiResponse({ status: 200, description: "Success" })
 	@ApiResponse({ status: 401, description: "Unauthorized" })
 	async getRole(@Request() req) {
-		return { role: (await this.userService.findOne(req.user.id)).role };
+		return { role: (await this.userService.findOne(req.user.userId)).role };
 	}
 
 	/*
@@ -125,7 +125,6 @@ export class AuthController {
 	*/
 	@Get("dev")
 	@AllowRole(Role.DEV)
-	@ApiOperation({ summary: "Test endpoint for DEV role" })
 	@ApiResponse({ status: 200, description: "Success (DEV only)" })
 	@ApiResponse({ status: 401, description: "Unauthorized" })
 	@ApiResponse({ status: 403, description: "Forbidden (Requires DEV role)" })
@@ -135,7 +134,6 @@ export class AuthController {
 
 	@Get("member")
 	@AllowRole(Role.MEMBER)
-	@ApiOperation({ summary: "Test endpoint for MEMBER role" })
 	@ApiResponse({ status: 200, description: "Success (MEMBER only)" })
 	@ApiResponse({ status: 401, description: "Unauthorized" })
 	@ApiResponse({ status: 403, description: "Forbidden (Requires MEMBER role)" })
@@ -145,7 +143,6 @@ export class AuthController {
 
 	@Get("all")
 	@AllowRole(Role.MEMBER, Role.DEV)
-	@ApiOperation({ summary: "Test endpoint for MEMBER or DEV roles" })
 	@ApiResponse({ status: 200, description: "Success (MEMBER or DEV)" })
 	@ApiResponse({ status: 401, description: "Unauthorized" })
 	@ApiResponse({ status: 403, description: "Forbidden (Requires MEMBER or DEV role)" })

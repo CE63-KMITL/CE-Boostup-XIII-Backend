@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post } from "@nestjs/common";
+import {
+	Body,
+	Controller,
+	Delete,
+	Get,
+	HttpCode,
+	HttpStatus,
+	Param,
+	ParseUUIDPipe,
+	Patch,
+	Post,
+	Request,
+} from "@nestjs/common";
 import { ApiResponse, ApiTags } from "@nestjs/swagger";
 import { AllowRole } from "../auth/decorators/auth.decorator";
 import { Role } from "../shared/enum/role.enum";
@@ -26,6 +38,7 @@ export class UserController {
 		type: UserResponseDto,
 		isArray: true,
 	})
+	@AllowRole(Role.DEV)
 	async findAll(): Promise<UserResponseDto[]> {
 		return await this.userService.findAll();
 	}
@@ -100,10 +113,10 @@ export class UserController {
 		description: "Get user score by id",
 		type: UserResponseDto,
 	})
-	async addScore(@Body() modifyScoreDto: ModifyScoreDto): Promise<UserResponseDto> {
-		const modifiedBy = await this.userService.findEntityById(modifyScoreDto.modifiedById);
-
-		return this.userService.modifyScore(modifyScoreDto.userId, Math.abs(modifyScoreDto.amount), modifiedBy.id);
+	@AllowRole(Role.STAFF)
+	async addScore(@Request() req, @Body() modifyScoreDto: ModifyScoreDto): Promise<UserResponseDto> {
+		console.log(req);
+		return this.userService.modifyScore(modifyScoreDto.userId, Math.abs(modifyScoreDto.amount), req.user.userId);
 	}
 
 	@Post("score/subtract")
@@ -112,9 +125,9 @@ export class UserController {
 		description: "Get user score by id",
 		type: UserResponseDto,
 	})
-	async subtractScore(@Body() modifyScoreDto: ModifyScoreDto): Promise<UserResponseDto> {
-		const modifiedBy = await this.userService.findEntityById(modifyScoreDto.modifiedById);
-		return this.userService.modifyScore(modifyScoreDto.userId, -Math.abs(modifyScoreDto.amount), modifiedBy.id);
+	@AllowRole(Role.STAFF)
+	async subtractScore(@Request() req, @Body() modifyScoreDto: ModifyScoreDto): Promise<UserResponseDto> {
+		return this.userService.modifyScore(modifyScoreDto.userId, -Math.abs(modifyScoreDto.amount), req.user.userId);
 	}
 
 	@Patch(":id")
@@ -156,5 +169,11 @@ export class UserController {
 		id: string
 	): Promise<void> {
 		await this.userService.delete(id);
+	}
+
+	@AllowRole(Role.MEMBER)
+	@Post("setProblemStatus/:id")
+	async tryProblem(@Request() req, @Param("id") id: number) {
+		return this.userService.setProblemStatus(id, req.user.userId);
 	}
 }

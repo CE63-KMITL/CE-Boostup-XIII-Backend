@@ -17,8 +17,6 @@ export class ScoreLog {
 	user: User;
 
 	@ManyToOne(() => User, { nullable: false })
-    @JoinColumn({ name: "modifiedBy" })
-    modifiedBy: User;
-
-	
+	@JoinColumn({ name: "modifiedBy" })
+	modifiedBy: User;
 }
