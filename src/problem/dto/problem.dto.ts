@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional } from "class-validator";
+import { IsArray, IsBoolean, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateProblemDto {
 	@ApiProperty({ example: "Sample Problem Title" })
@@ -41,4 +41,27 @@ export class UpdateProblemDto {
 	@ApiProperty({ example: ["meme", "algorithm"], required: false })
 	@IsOptional()
 	tags: string[];
+}
+
+export class ProblemSearchDto {
+	@IsOptional()
+	@IsString()
+	searchText: string;
+
+	@IsOptional()
+	@IsBoolean()
+	idReverse: boolean;
+
+	@IsOptional()
+	@IsArray()
+	@IsString({ each: true })
+	tag: string[];
+
+	@IsOptional()
+	@IsNumber()
+	difficulty: number;
+
+	@IsOptional()
+	@IsNumber()
+	page: number = 1;
 }

@@ -8,7 +8,7 @@ import {
   Matches,
 } from "class-validator";
 import { House } from "src/shared/enum/house.enum";
-import { AvailableRoles, Role } from "src/shared/enum/role.enum";
+import { Role } from "src/shared/enum/role.enum";
 
 export class CreateUserDto {
   @IsString()
@@ -43,16 +43,15 @@ export class CreateUserDto {
     message: `House must be a valid enum value.`,
   })
   @ApiProperty({
-    example: House.House1,
+    example: House.BARBARIAN,
     description: "User house",
     enum: House,
     type: String,
-    default: House.NONE,
   })
   house: House;
 
   @IsOptional()
-  @IsEnum(AvailableRoles, {
+  @IsEnum(Role, {
     message: `Role must be a valid enum value: ${Role.DEV} or ${Role.MEMBER}`,
   })
   @ApiPropertyOptional({
@@ -63,13 +62,4 @@ export class CreateUserDto {
     default: Role.MEMBER,
   })
   role: Role;
-
-  @IsOptional()
-  @Matches(/^\d{8}$/, { message: "student id should be 8-digit number " })
-  @ApiPropertyOptional({
-    example: "67011501",
-    description: "student id",
-    type: String,
-  })
-  studentId?: string;
 }

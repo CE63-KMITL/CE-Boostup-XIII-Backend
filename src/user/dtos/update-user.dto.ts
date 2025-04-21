@@ -28,7 +28,7 @@ export class UpdateUserDto {
 
   @IsNumber()
   @IsOptional()
-  @ApiPropertyOptional({
+  @ApiPropertyOptional({      
     example: 100,
     description: "User score",
     type: Number,
