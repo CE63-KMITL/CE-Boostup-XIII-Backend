@@ -31,7 +31,7 @@ export class User {
 	@Column({ nullable: true, enum: House, type: "enum" })
 	house: House;
 
-	@Column({ nullable: true, enum: Role, type: "enum" })
+	@Column({ nullable: false, enum: Role, type: "enum" })
 	role: Role;
 
 	@OneToMany(() => ProblemStatus, (problemStatus) => problemStatus.user)
