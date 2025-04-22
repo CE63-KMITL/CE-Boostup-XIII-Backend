@@ -1,6 +1,6 @@
 import { Request } from 'express';
-import { Role } from 'src/shared/enum/role.enum';
+import { jwtPayloadDto } from '../dto/jwt-payload.dto';
 
 export interface authenticatedRequest extends Request {
-	user: { userId: string; role: Role; email: string };
+	user: jwtPayloadDto;
 }

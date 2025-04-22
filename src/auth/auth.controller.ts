@@ -26,6 +26,7 @@ import { OpenAccountDto } from './dto/open-account.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './roles/roles.guard';
 import { authenticatedRequest } from './interfaces/authenticated-request.interface';
+import { loginResponseDto } from './dto/login-response.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -99,21 +100,12 @@ export class AuthController {
 		description: 'Login with email and password',
 	})
 	@ApiResponse({
-		status: 201,
+		status: HttpStatus.OK,
 		description: 'login success',
-		schema: {
-			example: {
-				token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-				user: {
-					id: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-					email: 'user@example.com',
-					name: 'user',
-				},
-			},
-		},
+		type: loginResponseDto,
 	})
 	@ApiResponse({
-		status: 401,
+		status: HttpStatus.UNAUTHORIZED,
 		description: 'Wrong email or password',
 	})
 	async login(@Body() logindata: LoginDto) {
