@@ -3,7 +3,8 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { UserService } from "src/user/user.service";
 import { Repository } from "typeorm";
 import { GLOBAL_CONFIG } from "../shared/constants/global-config.constant";
-import { CreateProblemDto, ProblemSearchDto, UpdateProblemDto } from "./dto/problem.dto";
+import { CreateProblemRequest, ProblemSearchRequest, UpdateProblemRequest } from "./dto/problem-request.dto";
+import { ProblemSearchRespond, ProblemWithUserStatus } from "./dto/problem-respond.dto";
 import { Problem } from "./problem.entity";
 
 @Injectable()
@@ -19,10 +20,10 @@ export class ProblemService {
 	Create Problem
 	-------------------------------------------------------
 	*/
-	async create(createProblemDto: CreateProblemDto, userId: string): Promise<Problem> {
+	async create(createProblemRequest: CreateProblemRequest, userId: string): Promise<Problem> {
 		const author = await this.userService.findOne(userId);
 		const problem = this.problemsRepository.create({
-			...createProblemDto,
+			...createProblemRequest,
 			author: author,
 		});
 		return this.problemsRepository.save(problem);
@@ -47,38 +48,88 @@ export class ProblemService {
 		return problem.description || "No detail available";
 	}
 
-	async search(query: ProblemSearchDto) {
-		const { searchText, idReverse, tag, difficulty, page = 1 } = query;
+	async search(query: ProblemSearchRequest, user): Promise<ProblemSearchRespond> {
+		let searchText = query.searchText;
+		let idReverse = query.idReverse == "true";
+		let tags = query.tags ? JSON.parse(query.tags) : [];
+		let minDifficulty = Number(query.minDifficulty);
+		let maxDifficulty = Number(query.maxDifficulty);
+		let status = query.status;
+		let page = Number(query.page);
+		let difficultySortBy = query.difficultySortBy;
+
 		const pageNumber = Number(page);
 		const take = GLOBAL_CONFIG.DEFAULT_PROBLEM_PAGE_SIZE;
 		const skip = (isNaN(pageNumber) || pageNumber < 1 ? 0 : pageNumber - 1) * take;
-
-		const result = this.problemsRepository
+		const searchProblems = this.problemsRepository
 			.createQueryBuilder("problem")
-			.leftJoinAndSelect("problem.author", "author");
-
-		console.log(query);
+			.leftJoin("problem.author", "author")
+			.select([
+				"problem.id",
+				"problem.title",
+				"problem.difficulty",
+				"problem.devStatus",
+				"problem.tags",
+				"author.name",
+				"author.icon",
+			]);
 
 		if (searchText && searchText != "") {
-			result.andWhere("(LOWER(author.name) LIKE LOWER(:term) OR LOWER(problem.title) LIKE LOWER(:term))", {
-				term: `%${searchText}%`,
-			});
+			searchProblems.andWhere(
+				"(LOWER(author.name) LIKE LOWER(:term) OR LOWER(problem.title) LIKE LOWER(:term))",
+				{
+					term: `%${searchText}%`,
+				}
+			);
 		}
 
-		if (tag && tag.length > 0) {
-			result.andWhere("problem.tags && ARRAY[:...tags]", { tags: tag });
+		if (tags && tags.length > 0) {
+			searchProblems.andWhere("problem.tags && ARRAY[:...tags]", { tags });
 		}
 
-		if (difficulty) {
-			result.andWhere("problem.difficulty = :difficulty", { difficulty });
+		if (minDifficulty || maxDifficulty) {
+			if (minDifficulty && maxDifficulty) {
+				searchProblems.andWhere("problem.difficulty BETWEEN :minDifficulty AND :maxDifficulty", {
+					minDifficulty: Number(minDifficulty),
+					maxDifficulty: Number(maxDifficulty),
+				});
+			} else if (minDifficulty) {
+				searchProblems.andWhere("problem.difficulty >= :minDifficulty", {
+					minDifficulty: Number(minDifficulty),
+				});
+			} else if (maxDifficulty) {
+				searchProblems.andWhere("problem.difficulty <= :maxDifficulty", {
+					maxDifficulty: Number(maxDifficulty),
+				});
+			}
+		}
+		searchProblems.orderBy("problem.id", idReverse ? "DESC" : "ASC");
+
+		if (difficultySortBy) {
+			searchProblems.addOrderBy("problem.difficulty", difficultySortBy);
 		}
 
-		result
-			.orderBy("problem.id", idReverse ? "DESC" : "ASC")
-			.skip(skip)
-			.take(take);
+		searchProblems.skip(skip).take(take);
+		let items: ProblemWithUserStatus[] = [];
+		let total = 0;
 
-		const [items, total] = await result.getManyAndCount();
+		const [allItems, totalBeforeStatus] = await searchProblems.getManyAndCount();
+
+		const itemsWithStatus = await Promise.all(
+			allItems.map(async (item: ProblemWithUserStatus) => {
+				item.status = await this.userService.getProblemStatus(user.userId, item.id);
+				return item;
+			})
+		);
+
+		if (status && (status as string) !== "") {
+			items = itemsWithStatus.filter((item) => item.status === status);
+			total = items.length;
+			items = items.slice(skip, skip + take);
+		} else {
+			items = itemsWithStatus;
+			total = totalBeforeStatus;
+		}
 
 		return {
 			items,
@@ -86,9 +137,9 @@ export class ProblemService {
 		};
 	}
 
-	async update(id: number, updateProblemDto: UpdateProblemDto): Promise<Problem> {
+	async update(id: number, updateProblemRequest: UpdateProblemRequest): Promise<Problem> {
 		await this.findOne(id);
-		await this.problemsRepository.update(id, updateProblemDto);
+		await this.problemsRepository.update(id, updateProblemRequest);
 		return this.findOne(id);
 	}
 

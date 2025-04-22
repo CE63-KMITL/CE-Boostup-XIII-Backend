@@ -12,14 +12,6 @@ export class ModifyScoreDto {
 
 	@Expose()
 	@ApiProperty({
-		example: "f789f66d-8e8e-4df0-9d12-c6aeaf930ce6",
-		description: "ModifiedBy uuid",
-		type: String,
-	})
-	modifiedById: string;
-
-	@Expose()
-	@ApiProperty({
 		example: 10,
 		description: "Amount of score to add or subtract",
 		type: Number,

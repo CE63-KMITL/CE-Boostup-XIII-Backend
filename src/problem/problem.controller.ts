@@ -3,7 +3,7 @@ import { ApiCreatedResponse, ApiOkResponse, ApiQuery, ApiTags } from "@nestjs/sw
 import { Request } from "express";
 import { AllowRole } from "src/auth/decorators/auth.decorator";
 import { Role } from "src/shared/enum/role.enum";
-import { CreateProblemDto, ProblemSearchDto, UpdateProblemDto } from "./dto/problem.dto";
+import { CreateProblemRequest, ProblemSearchRequest, UpdateProblemRequest } from "./dto/problem-request.dto";
 import { Problem } from "./problem.entity";
 import { ProblemService } from "./problem.service";
 
@@ -15,9 +15,9 @@ export class ProblemController {
 	@ApiCreatedResponse({ type: Problem })
 	@AllowRole(Role.STAFF)
 	@Post()
-	async create(@Body() createProblemDto: CreateProblemDto, @Req() req: Request) {
+	async create(@Body() createProblemRequest: CreateProblemRequest, @Req() req: Request) {
 		const userId = (req.user as { userId: string }).userId;
-		return this.problemService.create(createProblemDto, userId);
+		return this.problemService.create(createProblemRequest, userId);
 	}
 
 	@ApiOkResponse({ type: Problem, isArray: true })
@@ -62,8 +62,8 @@ export class ProblemController {
 	})
 	@ApiQuery({ name: "page", required: false, type: "number", description: "Page number (starts from 1)" })
 	@Get("search")
-	async search(@Query() query: ProblemSearchDto) {
-		return this.problemService.search(query);
+	async search(@Query() query: ProblemSearchRequest, @Req() req) {
+		return this.problemService.search(query, req.user);
 	}
 
 	@ApiOkResponse({ type: Problem })
@@ -83,8 +83,8 @@ export class ProblemController {
 	@ApiOkResponse({ type: Problem })
 	@AllowRole(Role.STAFF)
 	@Patch(":id")
-	async update(@Param("id") id: string, @Body() updateProblemDto: UpdateProblemDto) {
-		return this.problemService.update(+id, updateProblemDto);
+	async update(@Param("id") id: string, @Body() updateProblemRequest: UpdateProblemRequest) {
+		return this.problemService.update(+id, updateProblemRequest);
 	}
 
 	@ApiOkResponse({ type: Problem })
