@@ -43,6 +43,9 @@ export class User {
 	@Column({ nullable: true, type: 'char', length: 8 })
 	studentId?: string;
 
+	@Column({ nullable: true, type: 'text' })
+	icon?: string;
+
 	@CreateDateColumn({ type: 'timestamp', nullable: false })
 	createdAt: Date;
 
