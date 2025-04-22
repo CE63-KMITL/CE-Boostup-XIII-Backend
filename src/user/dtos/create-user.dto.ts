@@ -62,4 +62,13 @@ export class CreateUserDto {
     default: Role.MEMBER,
   })
   role: Role;
+
+  @IsOptional()
+  @Matches(/^\d{8}$/, { message: "student id should be 8-digit number " })
+  @ApiPropertyOptional({
+    example: "67011501",
+    description: "student id",
+    type: String,
+  })
+  studentId?: string;
 }
