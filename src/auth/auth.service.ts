@@ -11,12 +11,14 @@ import { GLOBAL_CONFIG } from '../shared/constants/global-config.constant';
 import { User } from '../user/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { loginResponseDto } from './dto/login-response.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
 	constructor(
 		@InjectRepository(User)
 		private readonly userRepository: Repository<User>,
+		private readonly configService: ConfigService,
 	) {}
 
 	async openAccount(data: { email: string; house: string; key: string }) {
@@ -60,12 +62,17 @@ export class AuthService {
 		if (!user) {
 			throw new UnauthorizedException('Wrong email or password');
 		}
+		const expiresIn = this.configService.get<string>(
+			GLOBAL_CONFIG.JWT_ACCESS_EXPIRATION,
+		) as `${number}${'s' | 'm' | 'h' | 'd'}`;
 
 		// create token
 		const token = jwt.sign(
 			{ userId: user.id, email, role: user.role },
-			GLOBAL_CONFIG.TOKEN_KEY,
-			{ expiresIn: '1d' },
+			this.configService.get<string>(GLOBAL_CONFIG.TOKEN_KEY),
+			{
+				expiresIn,
+			},
 		);
 
 		// return token + user info
