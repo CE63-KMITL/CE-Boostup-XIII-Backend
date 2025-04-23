@@ -10,18 +10,18 @@ import {
 	Patch,
 	Post,
 	Request,
-} from "@nestjs/common";
-import { ApiResponse, ApiTags } from "@nestjs/swagger";
-import { AllowRole } from "../auth/decorators/auth.decorator";
-import { Role } from "../shared/enum/role.enum";
-import { UpdateUserDto } from "./dtos/update-user.dto";
-import { UserResponseDto } from "./dtos/user-response.dto";
-import { ModifyScoreDto } from "./score/dtos/modify-score.dto";
-import { UserScoreResponseDto } from "./score/dtos/score-response.dto";
-import { UserService } from "./user.service";
+} from '@nestjs/common';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { AllowRole } from '../auth/decorators/auth.decorator';
+import { Role } from '../shared/enum/role.enum';
+import { UpdateUserDto } from './dtos/update-user.dto';
+import { UserResponseDto } from './dtos/user-response.dto';
+import { ModifyScoreDto } from './score/dtos/modify-score.dto';
+import { UserScoreResponseDto } from './score/dtos/score-response.dto';
+import { UserService } from './user.service';
 
-@Controller("user")
-@ApiTags("User")
+@Controller('user')
+@ApiTags('User')
 export class UserController {
 	constructor(private readonly userService: UserService) {}
 
@@ -34,7 +34,7 @@ export class UserController {
 	@HttpCode(HttpStatus.OK)
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "Get all users",
+		description: 'Get all users',
 		type: UserResponseDto,
 		isArray: true,
 	})
@@ -61,44 +61,44 @@ export class UserController {
 	// 	return reponseUser;
 	// }
 
-	@Get(":id")
+	@Get(':id')
 	@HttpCode(HttpStatus.OK)
 	@AllowRole(Role.MEMBER)
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "Get a user by id",
+		description: 'Get a user by id',
 		type: UserResponseDto,
 	})
 	async findOne(
 		@Param(
-			"id",
+			'id',
 			new ParseUUIDPipe({
-				version: "4",
+				version: '4',
 				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-			})
+			}),
 		)
-		id: string
+		id: string,
 	): Promise<UserResponseDto> {
 		const user = await this.userService.findOne(id);
-		return user;
+		return new UserResponseDto(user);
 	}
 
-	@Get("score/:id")
+	@Get('score/:id')
 	@HttpCode(HttpStatus.OK)
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "Get user score by id",
+		description: 'Get user score by id',
 		type: UserScoreResponseDto,
 	})
 	async getScore(
 		@Param(
-			"id",
+			'id',
 			new ParseUUIDPipe({
-				version: "4",
+				version: '4',
 				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-			})
+			}),
 		)
-		id: string
+		id: string,
 	): Promise<UserScoreResponseDto> {
 		const user = await this.userService.findOne(id);
 		const scoreLogs = await this.userService.getUserScoreLogs(id);
@@ -106,74 +106,88 @@ export class UserController {
 		return json;
 	}
 
-	@Post("score/add")
+	@Post('score/add')
 	@HttpCode(HttpStatus.OK)
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "Get user score by id",
+		description: 'Get user score by id',
 		type: UserResponseDto,
 	})
 	@AllowRole(Role.STAFF)
-	async addScore(@Request() req, @Body() modifyScoreDto: ModifyScoreDto): Promise<UserResponseDto> {
+	async addScore(
+		@Request() req,
+		@Body() modifyScoreDto: ModifyScoreDto,
+	): Promise<UserResponseDto> {
 		console.log(req);
-		return this.userService.modifyScore(modifyScoreDto.userId, Math.abs(modifyScoreDto.amount), req.user.userId);
+		return this.userService.modifyScore(
+			modifyScoreDto.userId,
+			Math.abs(modifyScoreDto.amount),
+			req.user.userId,
+		);
 	}
 
-	@Post("score/subtract")
+	@Post('score/subtract')
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "Get user score by id",
+		description: 'Get user score by id',
 		type: UserResponseDto,
 	})
 	@AllowRole(Role.STAFF)
-	async subtractScore(@Request() req, @Body() modifyScoreDto: ModifyScoreDto): Promise<UserResponseDto> {
-		return this.userService.modifyScore(modifyScoreDto.userId, -Math.abs(modifyScoreDto.amount), req.user.userId);
+	async subtractScore(
+		@Request() req,
+		@Body() modifyScoreDto: ModifyScoreDto,
+	): Promise<UserResponseDto> {
+		return this.userService.modifyScore(
+			modifyScoreDto.userId,
+			-Math.abs(modifyScoreDto.amount),
+			req.user.userId,
+		);
 	}
 
-	@Patch(":id")
+	@Patch(':id')
 	@HttpCode(HttpStatus.OK)
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "Update a user by id",
+		description: 'Update a user by id',
 		type: UserResponseDto,
 	})
 	async update(
 		@Param(
-			"id",
+			'id',
 			new ParseUUIDPipe({
-				version: "4",
+				version: '4',
 				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-			})
+			}),
 		)
 		id: string,
-		@Body() user: UpdateUserDto
+		@Body() user: UpdateUserDto,
 	): Promise<UserResponseDto> {
 		const responseUser = await this.userService.update(id, user);
 		return responseUser;
 	}
 
-	@Delete(":id")
+	@Delete(':id')
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@ApiResponse({
 		status: HttpStatus.NO_CONTENT,
-		description: "Delete a user by id",
+		description: 'Delete a user by id',
 	})
 	async delete(
 		@Param(
-			"id",
+			'id',
 			new ParseUUIDPipe({
-				version: "4",
+				version: '4',
 				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-			})
+			}),
 		)
-		id: string
+		id: string,
 	): Promise<void> {
 		await this.userService.delete(id);
 	}
 
 	@AllowRole(Role.MEMBER)
-	@Post("setProblemStatus/:id")
-	async tryProblem(@Request() req, @Param("id") id: number) {
+	@Post('setProblemStatus/:id')
+	async tryProblem(@Request() req, @Param('id') id: number) {
 		return this.userService.setProblemStatus(id, req.user.userId);
 	}
 }

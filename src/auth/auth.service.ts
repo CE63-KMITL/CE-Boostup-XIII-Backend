@@ -12,6 +12,7 @@ import { User } from '../user/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { loginResponseDto } from './dto/login-response.dto';
 import { ConfigService } from '@nestjs/config';
+import { UserResponseDto } from 'src/user/dtos/user-response.dto';
 
 @Injectable()
 export class AuthService {
@@ -43,7 +44,7 @@ export class AuthService {
 			password,
 			checkEmail.password,
 		);
-		return passwordCompare ? checkEmail : null;
+		return passwordCompare ? new UserResponseDto(checkEmail) : null;
 	}
 
 	async login(loginData: LoginDto): Promise<loginResponseDto> {
