@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
+import { plainToInstance } from 'class-transformer';
+
 import { House } from 'src/shared/enum/house.enum';
 import { Repository } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
@@ -111,6 +113,15 @@ export class UserService {
 			await this.userRepository.delete(id);
 		} catch (error) {
 			throw new NotFoundException('User not found');
+		}
+	}
+
+	async uploadIcon(id: string, iconBase64: string) {
+		try {
+			await this.userRepository.update(id, { icon: iconBase64 });
+		} catch (error) {
+			throw new InternalServerErrorException('Error uploading icon');
+
 		}
 	}
 

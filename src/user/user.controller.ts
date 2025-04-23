@@ -6,12 +6,17 @@ import {
 	HttpCode,
 	HttpStatus,
 	Param,
+	ParseFilePipeBuilder,
 	ParseUUIDPipe,
 	Patch,
 	Post,
 	Request,
+
+	UploadedFile,
+	UseInterceptors,
 } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
+
 import { AllowRole } from '../auth/decorators/auth.decorator';
 import { Role } from '../shared/enum/role.enum';
 import { UpdateUserDto } from './dtos/update-user.dto';
@@ -19,6 +24,9 @@ import { UserResponseDto } from './dtos/user-response.dto';
 import { ModifyScoreDto } from './score/dtos/modify-score.dto';
 import { UserScoreResponseDto } from './score/dtos/score-response.dto';
 import { UserService } from './user.service';
+
+import { FileInterceptor } from '@nestjs/platform-express';
+
 
 @Controller('user')
 @ApiTags('User')
@@ -189,5 +197,46 @@ export class UserController {
 	@Post('setProblemStatus/:id')
 	async tryProblem(@Request() req, @Param('id') id: number) {
 		return this.userService.setProblemStatus(id, req.user.userId);
+	}
+
+	@Post('upload-icon')
+	@AllowRole(Role.MEMBER, Role.DEV)
+	@UseInterceptors(FileInterceptor('file'))
+	@HttpCode(HttpStatus.NO_CONTENT)
+	@ApiResponse({
+		status: HttpStatus.NO_CONTENT,
+		description: 'successfully upload file',
+	})
+	@ApiBody({
+		schema: {
+			type: 'object',
+			properties: {
+				file: {
+					type: 'string',
+					format: 'binary',
+				},
+			},
+		},
+	})
+	@ApiConsumes('multipart/form-data')
+	async uploadIcon(
+		@Request() req,
+		@UploadedFile(
+			new ParseFilePipeBuilder()
+				.addFileTypeValidator({
+					fileType: 'image/*',
+				})
+				.addMaxSizeValidator({
+					maxSize: 100 * 1024, // limite file size = 100kb
+				})
+				.build({
+					fileIsRequired: true,
+					errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+				}),
+		)
+		file: Express.Multer.File,
+	): Promise<void> {
+		const iconBase64 = file.buffer.toString('base64');
+		this.userService.uploadIcon(req.user.userId, iconBase64);
 	}
 }
