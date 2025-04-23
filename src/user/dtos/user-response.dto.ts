@@ -1,10 +1,10 @@
+
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Exclude, Expose } from 'class-transformer';
 import { House } from 'src/shared/enum/house.enum';
 import { Role } from '../../shared/enum/role.enum';
 
 export class UserResponseDto {
-	@Expose()
 	@ApiProperty({
 		example: 'f789f66d-8e8e-4df0-9d12-c6aeaf930ce6',
 		description: 'User uuid',
@@ -12,7 +12,6 @@ export class UserResponseDto {
 	})
 	id: string;
 
-	@Expose()
 	@ApiProperty({
 		example: 'john_doe',
 		description: 'name',
@@ -20,10 +19,6 @@ export class UserResponseDto {
 	})
 	name: string;
 
-	@Exclude()
-	password: string;
-
-	@Expose()
 	@ApiProperty({
 		example: 'example@gmail.com',
 		description: 'Email',
@@ -31,7 +26,6 @@ export class UserResponseDto {
 	})
 	email: string;
 
-	@Expose()
 	@ApiProperty({
 		example: House.BARBARIAN,
 		description: 'User house',
@@ -39,7 +33,6 @@ export class UserResponseDto {
 	})
 	house: House;
 
-	@Expose()
 	@ApiProperty({
 		example: Role.MEMBER,
 		description: 'User role',
@@ -47,13 +40,14 @@ export class UserResponseDto {
 	})
 	role: Role;
 
-	@Expose()
 	@ApiProperty({
 		example: 0,
 		description: 'User score',
 		type: Number,
 	})
 	score: number;
+
+
 
 	@Expose()
 	@ApiPropertyOptional({
@@ -71,6 +65,7 @@ export class UserResponseDto {
 	})
 	icon?: string;
 	@Expose()
+
 	@ApiProperty({
 		example: '2021-09-29T13:43:18.000Z',
 		description: 'User creation date',
@@ -78,11 +73,21 @@ export class UserResponseDto {
 	})
 	createdAt: Date;
 
-	@Expose()
 	@ApiProperty({
 		example: '2021-09-29T13:43:18.000Z',
 		description: 'User update date',
 		type: Date,
 	})
 	updatedAt: Date;
+
+	constructor(user: User) {
+		this.id = user.id;
+		this.name = user.name;
+		this.email = user.email;
+		this.house = user.house;
+		this.role = user.role;
+		this.score = user.score;
+		this.createdAt = user.createdAt;
+		this.updatedAt = user.updatedAt;
+	}
 }

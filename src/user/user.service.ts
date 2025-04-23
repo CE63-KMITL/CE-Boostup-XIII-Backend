@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { plainToInstance } from 'class-transformer';
+
 import { House } from 'src/shared/enum/house.enum';
 import { Repository } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
@@ -37,7 +38,7 @@ export class UserService {
 	*/
 	async findAll(): Promise<UserResponseDto[]> {
 		const users = await this.userRepository.find();
-		return users.map((user) => plainToInstance(UserResponseDto, user));
+		return users.map((user) => new UserResponseDto(user));
 	}
 
 	async findOne(id: string): Promise<User> {
@@ -64,7 +65,8 @@ export class UserService {
 			user.password = hashedPassword;
 
 			const responseUser = await this.userRepository.save(user);
-			return plainToInstance(UserResponseDto, responseUser);
+			return responseUser;
+			// return plainToInstance(UserResponseDto, responseUser);
 		} catch (error) {
 			throw new BadRequestException('User already exists');
 		}
@@ -99,7 +101,8 @@ export class UserService {
 			});
 			if (!responseUser) throw new NotFoundException('User not found');
 
-			return plainToInstance(UserResponseDto, responseUser);
+			// return plainToInstance(UserResponseDto, responseUser);
+			return responseUser;
 		} catch (error) {
 			throw new InternalServerErrorException('Error updating user');
 		}
@@ -118,6 +121,7 @@ export class UserService {
 			await this.userRepository.update(id, { icon: iconBase64 });
 		} catch (error) {
 			throw new InternalServerErrorException('Error uploading icon');
+
 		}
 	}
 

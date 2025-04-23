@@ -11,10 +11,12 @@ import {
 	Patch,
 	Post,
 	Request,
+
 	UploadedFile,
 	UseInterceptors,
 } from '@nestjs/common';
 import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
+
 import { AllowRole } from '../auth/decorators/auth.decorator';
 import { Role } from '../shared/enum/role.enum';
 import { UpdateUserDto } from './dtos/update-user.dto';
@@ -22,7 +24,9 @@ import { UserResponseDto } from './dtos/user-response.dto';
 import { ModifyScoreDto } from './score/dtos/modify-score.dto';
 import { UserScoreResponseDto } from './score/dtos/score-response.dto';
 import { UserService } from './user.service';
+
 import { FileInterceptor } from '@nestjs/platform-express';
+
 
 @Controller('user')
 @ApiTags('User')
@@ -84,7 +88,7 @@ export class UserController {
 		id: string,
 	): Promise<UserResponseDto> {
 		const user = await this.userService.findOne(id);
-		return user;
+		return new UserResponseDto(user);
 	}
 
 	@Get('score/:id')
