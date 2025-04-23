@@ -1,22 +1,21 @@
-import { IsEmail, IsNumber, IsOptional } from "class-validator";
-import { House } from "src/shared/enum/house.enum";
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { Role } from "../shared/enum/role.enum";
-import { ProblemStatus } from "./score/problem-status.entity";
-import { ScoreLog } from "./score/score-log.entity";
+import { IsEmail, IsNumber, IsOptional } from 'class-validator';
+import { House } from 'src/shared/enum/house.enum';
+import {
+	Column,
+	CreateDateColumn,
+	Entity,
+	OneToMany,
+	PrimaryGeneratedColumn,
+	UpdateDateColumn,
+} from 'typeorm';
+import { Role } from '../shared/enum/role.enum';
+import { ProblemStatus } from './score/problem-status.entity';
+import { ScoreLog } from './score/score-log.entity';
 
 @Entity()
 export class User {
-	@PrimaryGeneratedColumn("uuid")
+	@PrimaryGeneratedColumn('uuid')
 	id: string;
-
-	@Column({ nullable: true })
-	@IsOptional()
-	studentId: string;
-
-	@Column({ nullable: true })
-	@IsOptional()
-	icon: string;
 
 	@Column({ nullable: false, unique: true })
 	name: string;
@@ -28,10 +27,10 @@ export class User {
 	@IsEmail()
 	email: string;
 
-	@Column({ nullable: true, enum: House, type: "enum" })
+	@Column({ nullable: true, enum: House, type: 'enum' })
 	house: House;
 
-	@Column({ nullable: false, enum: Role, type: "enum" })
+	@Column({ nullable: false, enum: Role, type: 'enum' })
 	role: Role;
 
 	@OneToMany(() => ProblemStatus, (problemStatus) => problemStatus.user)
@@ -41,10 +40,16 @@ export class User {
 	@IsNumber()
 	score: number;
 
-	@CreateDateColumn({ type: "timestamp", nullable: false })
+	@Column({ nullable: true, type: 'char', length: 8 })
+	studentId?: string;
+
+	@Column({ nullable: true, type: 'text' })
+	icon?: string;
+
+	@CreateDateColumn({ type: 'timestamp', nullable: false })
 	createdAt: Date;
 
-	@UpdateDateColumn({ type: "timestamp", nullable: false })
+	@UpdateDateColumn({ type: 'timestamp', nullable: false })
 	updatedAt: Date;
 
 	@OneToMany(() => ScoreLog, (scoreLog) => scoreLog.user)

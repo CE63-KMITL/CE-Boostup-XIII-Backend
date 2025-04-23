@@ -1,5 +1,11 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { IsString, IsEmail, IsOptional, IsNumber } from "class-validator";
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsNumber,
+  Matches,
+} from "class-validator";
 
 export class UpdateUserDto {
   @IsString()
@@ -37,4 +43,13 @@ export class UpdateUserDto {
     type: String,
   })
   password?: string;
+
+  @IsOptional()
+  @Matches(/^\d{8}$/, { message: "student id should be 8-digit number " })
+  @ApiPropertyOptional({
+    example: "67011501",
+    description: "student id",
+    type: String,
+  })
+  studentId?: string;
 }
