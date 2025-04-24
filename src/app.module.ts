@@ -9,7 +9,7 @@ import { AuthModule } from "./auth/auth.module";
 import { HouseModule } from "./house/house.module";
 import { MailModule } from "./mail/mail.module";
 import { ProblemModule } from "./problem/problem.module";
-import { RunCodeModule } from "./run_code/run_code.module";
+import { RunCodeModule } from "./runCode/runCode.module";
 import { databaseConfig } from "./shared/configs/databaseconfig";
 import { dotenvConfig } from "./shared/configs/dotenv.config";
 import { GLOBAL_CONFIG } from "./shared/constants/global-config.constant";
