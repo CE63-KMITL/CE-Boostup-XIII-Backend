@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Exclude, Expose } from 'class-transformer';
 import { House } from 'src/shared/enum/house.enum';
 import { Role } from '../../shared/enum/role.enum';
 import { User } from '../user.entity';
@@ -47,7 +46,6 @@ export class UserResponseDto {
 	})
 	score: number;
 
-	@Expose()
 	@ApiPropertyOptional({
 		example: '67011501',
 		description: 'student id',
@@ -55,14 +53,13 @@ export class UserResponseDto {
 	})
 	studentId?: string;
 
-	@Expose()
 	@ApiPropertyOptional({
 		example: '/9j/4AAQSkZJRgABAQEASABIAA',
 		description: 'icon as base64',
 		type: String,
 	})
 	icon?: string;
-	@Expose()
+  
 	@ApiProperty({
 		example: '2021-09-29T13:43:18.000Z',
 		description: 'User creation date',
