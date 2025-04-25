@@ -59,7 +59,7 @@ export class UserResponseDto {
 		type: String,
 	})
 	icon?: string;
-
+  
 	@ApiProperty({
 		example: '2021-09-29T13:43:18.000Z',
 		description: 'User creation date',

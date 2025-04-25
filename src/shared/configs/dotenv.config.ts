@@ -16,4 +16,5 @@ export const dotenvConfig = Joi.object({
 	JWT_ACCESS_EXPIRATION: Joi.string()
 		.required()
 		.pattern(/^\d+[smhd]$/),
+	REDIS_HOST: Joi.string().required(),
 });
