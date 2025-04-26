@@ -1,4 +1,4 @@
-import { IsEmail, IsNumber, IsOptional } from 'class-validator';
+import { IsEmail, IsNumber } from 'class-validator';
 import { House } from 'src/shared/enum/house.enum';
 import {
 	Column,
@@ -45,6 +45,12 @@ export class User {
 
 	@Column({ nullable: true, type: 'text' })
 	icon?: string;
+
+	@Column({ nullable: true, type: 'char', length: 6 })
+	otp?: string;
+
+	@Column({ nullable: true, type: 'timestamp' })
+	otpExpires?: Date;
 
 	@CreateDateColumn({ type: 'timestamp', nullable: false })
 	createdAt: Date;
