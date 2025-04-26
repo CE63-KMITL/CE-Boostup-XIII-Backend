@@ -55,6 +55,7 @@ export class AuthController {
 		description:
 			'Bad Request - Invalid input data or email already exists',
 	})
+	@HttpCode(HttpStatus.NO_CONTENT)
 	async openAccount(@Body() body: OpenAccountDto): Promise<void> {
 		await this.authService.openAccount(body);
 	}
@@ -72,6 +73,7 @@ export class AuthController {
 		status: HttpStatus.NO_CONTENT,
 		description: 'mail send',
 	})
+	@HttpCode(HttpStatus.NO_CONTENT)
 	async requestOpenAccount(@Body() body: { email: string }): Promise<void> {
 		await this.authService.requestOpenAccount(body.email);
 	}
@@ -87,11 +89,12 @@ export class AuthController {
 	@ApiOperation({ summary: 'Register a new user' })
 	@ApiResponse({
 		status: HttpStatus.CREATED,
-		description: 'Create a new user',
+		description: 'Registeration successfull',
 	})
 	@ApiResponse({ status: 400, description: 'Bad Request.' })
-	async create(@Body() user: RegisterUserDto): Promise<void> {
+	async create(@Body() user: RegisterUserDto): Promise<{ message: string }> {
 		await this.authService.register(user);
+		return { message: 'Registeration successfull' };
 	}
 
 	/*
@@ -113,7 +116,8 @@ export class AuthController {
 		status: HttpStatus.UNAUTHORIZED,
 		description: 'Wrong email or password',
 	})
-	async login(@Body() logindata: LoginDto) {
+	@HttpCode(HttpStatus.OK)
+	async login(@Body() logindata: LoginDto): Promise<loginResponseDto> {
 		return this.authService.login(logindata);
 	}
 
