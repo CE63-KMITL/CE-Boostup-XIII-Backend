@@ -4,6 +4,7 @@ import {
 	Get,
 	HttpCode,
 	HttpStatus,
+	Patch,
 	Post,
 	Request,
 	UseGuards,
@@ -41,7 +42,7 @@ export class AuthController {
 	-------------------------------------------------------
 	*/
 
-	@Post('open-account')
+	@Patch('open-account')
 	@ApiOperation({
 		summary: 'Create an account',
 	})
