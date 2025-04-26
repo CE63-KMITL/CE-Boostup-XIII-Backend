@@ -17,10 +17,10 @@ export class User {
 	@PrimaryGeneratedColumn('uuid')
 	id: string;
 
-	@Column({ nullable: false, unique: true })
+	@Column({ nullable: true })
 	name: string;
 
-	@Column({ nullable: false })
+	@Column({ nullable: true })
 	password: string;
 
 	@Column({ nullable: false, unique: true })
@@ -30,7 +30,12 @@ export class User {
 	@Column({ nullable: true, enum: House, type: 'enum' })
 	house: House;
 
-	@Column({ nullable: false, enum: Role, type: 'enum' })
+	@Column({
+		nullable: false,
+		enum: Role,
+		type: 'enum',
+		default: Role.MEMBER,
+	})
 	role: Role;
 
 	@OneToMany(() => ProblemStatus, (problemStatus) => problemStatus.user)
@@ -46,7 +51,7 @@ export class User {
 	@Column({ nullable: true, type: 'text' })
 	icon?: string;
 
-	@Column({ nullable: true, type: 'char', length: 6 })
+	@Column({ nullable: true })
 	otp?: string;
 
 	@Column({ nullable: true, type: 'timestamp' })

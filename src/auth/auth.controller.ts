@@ -5,20 +5,18 @@ import {
 	HttpCode,
 	HttpStatus,
 	Post,
-	Query,
 	Request,
 	UseGuards,
 } from '@nestjs/common';
 import {
 	ApiBearerAuth,
+	ApiBody,
 	ApiOperation,
 	ApiResponse,
 	ApiTags,
 } from '@nestjs/swagger';
 import { UserService } from 'src/user/user.service';
 import { Role } from '../shared/enum/role.enum';
-import { CreateUserDto } from '../user/dtos/create-user.dto';
-import { UserResponseDto } from '../user/dtos/user-response.dto';
 import { AuthService } from './auth.service';
 import { AllowRole } from './decorators/auth.decorator';
 import { LoginDto } from './dto/login.dto';
@@ -27,6 +25,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './roles/roles.guard';
 import { authenticatedRequest } from './interfaces/authenticated-request.interface';
 import { loginResponseDto } from './dto/login-response.dto';
+import { RegisterUserDto } from './dto/register-user.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -42,31 +41,38 @@ export class AuthController {
 	-------------------------------------------------------
 	*/
 
-	@Post('openaccount')
+	@Post('open-account')
 	@ApiOperation({
 		summary: 'Create an account',
 	})
 	@ApiResponse({
-		status: 201,
+		status: HttpStatus.NO_CONTENT,
 		description: 'Account opened successfully.',
-		schema: {
-			example: {
-				message: 'Account opened successfully',
-				user: {
-					email: 'example@gmail.com',
-					house: 'House1',
-					key: 'secret123',
-				},
-			},
-		},
 	})
 	@ApiResponse({
 		status: 400,
 		description:
 			'Bad Request - Invalid input data or email already exists',
 	})
-	async openAccount(@Query() query: OpenAccountDto) {
-		return this.authService.openAccount(query);
+	async openAccount(@Body() body: OpenAccountDto): Promise<void> {
+		await this.authService.openAccount(body);
+	}
+
+	@Post('request-open-account')
+	@ApiBody({
+		description: 'email',
+		schema: {
+			example: {
+				email: 'example@gmail.com',
+			},
+		},
+	})
+	@ApiResponse({
+		status: HttpStatus.NO_CONTENT,
+		description: 'mail send',
+	})
+	async requestOpenAccount(@Body() body: { email: string }): Promise<void> {
+		await this.authService.requestOpenAccount(body.email);
 	}
 
 	/*
@@ -81,12 +87,10 @@ export class AuthController {
 	@ApiResponse({
 		status: HttpStatus.CREATED,
 		description: 'Create a new user',
-		type: UserResponseDto,
 	})
 	@ApiResponse({ status: 400, description: 'Bad Request.' })
-	async create(@Body() user: CreateUserDto): Promise<UserResponseDto> {
-		const reponseUser = await this.userService.create(user);
-		return reponseUser;
+	async create(@Body() user: RegisterUserDto): Promise<void> {
+		await this.authService.register(user);
 	}
 
 	/*

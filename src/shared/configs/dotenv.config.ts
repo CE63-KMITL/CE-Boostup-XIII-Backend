@@ -17,4 +17,6 @@ export const dotenvConfig = Joi.object({
 		.required()
 		.pattern(/^\d+[smhd]$/),
 	REDIS_HOST: Joi.string().required(),
+	OTP_EXPIRY_MINUTE: Joi.number().required(),
+	OTP_LENGTH: Joi.number().required(),
 });

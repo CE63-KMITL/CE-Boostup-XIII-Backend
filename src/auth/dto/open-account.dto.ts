@@ -1,29 +1,36 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsEmail, IsOptional, IsString } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class OpenAccountDto {
 	@ApiProperty({
-		description: "Email address of the user",
-		example: "example@gmail.com",
+		description: 'Email address of the user',
+		example: 'example@gmail.com',
 	})
 	@IsEmail()
+	@IsNotEmpty()
 	email: string;
 
 	@ApiProperty({
-		description: "House name",
-		example: "Gryffindor",
-		required: false,
+		description: 'Secret key for account activation',
+		example: 'secret123',
 	})
-	@IsOptional()
+	@IsNotEmpty()
 	@IsString()
-	house: string;
+	otp: string;
 
 	@ApiProperty({
-		description: "Secret key for account creation",
-		example: "secret123",
-		required: false,
+		description: 'password',
+		example: 'P@ssw0rd!',
 	})
-	@IsOptional()
 	@IsString()
-	key: string;
+	@IsNotEmpty()
+	password: string;
+
+	@ApiProperty({
+		description: 'name',
+		example: 'john_doe',
+	})
+	@IsString()
+	@IsNotEmpty()
+	name: string;
 }
