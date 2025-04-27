@@ -11,7 +11,6 @@ import {
 	Patch,
 	Post,
 	Request,
-
 	UploadedFile,
 	UseInterceptors,
 } from '@nestjs/common';
@@ -26,7 +25,7 @@ import { UserScoreResponseDto } from './score/dtos/score-response.dto';
 import { UserService } from './user.service';
 
 import { FileInterceptor } from '@nestjs/platform-express';
-
+import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 
 @Controller('user')
 @ApiTags('User')
@@ -56,18 +55,6 @@ export class UserController {
 	Protected Endpoints
 	-------------------------------------------------------
 	*/
-
-	// @Post()
-	// @HttpCode(HttpStatus.CREATED)
-	// @ApiResponse({
-	// 	status: HttpStatus.CREATED,
-	// 	description: "Create a new user",
-	// 	type: UserResponseDto,
-	// })
-	// async create(@Body() user: CreateUserDto): Promise<UserResponseDto> {
-	// 	const reponseUser = await this.userService.create(user);
-	// 	return reponseUser;
-	// }
 
 	@Get(':id')
 	@HttpCode(HttpStatus.OK)
@@ -123,7 +110,7 @@ export class UserController {
 	})
 	@AllowRole(Role.STAFF)
 	async addScore(
-		@Request() req,
+		@Request() req: authenticatedRequest,
 		@Body() modifyScoreDto: ModifyScoreDto,
 	): Promise<UserResponseDto> {
 		console.log(req);
@@ -142,7 +129,7 @@ export class UserController {
 	})
 	@AllowRole(Role.STAFF)
 	async subtractScore(
-		@Request() req,
+		@Request() req: authenticatedRequest,
 		@Body() modifyScoreDto: ModifyScoreDto,
 	): Promise<UserResponseDto> {
 		return this.userService.modifyScore(
@@ -195,7 +182,10 @@ export class UserController {
 
 	@AllowRole(Role.MEMBER)
 	@Post('setProblemStatus/:id')
-	async tryProblem(@Request() req, @Param('id') id: number) {
+	async tryProblem(
+		@Request() req: authenticatedRequest,
+		@Param('id') id: number,
+	) {
 		return this.userService.setProblemStatus(id, req.user.userId);
 	}
 
@@ -220,7 +210,7 @@ export class UserController {
 	})
 	@ApiConsumes('multipart/form-data')
 	async uploadIcon(
-		@Request() req,
+		@Request() req: authenticatedRequest,
 		@UploadedFile(
 			new ParseFilePipeBuilder()
 				.addFileTypeValidator({

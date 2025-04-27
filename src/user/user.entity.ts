@@ -1,4 +1,4 @@
-import { IsEmail, IsNumber, IsOptional } from 'class-validator';
+import { IsEmail, IsNumber } from 'class-validator';
 import { House } from 'src/shared/enum/house.enum';
 import {
 	Column,
@@ -17,10 +17,10 @@ export class User {
 	@PrimaryGeneratedColumn('uuid')
 	id: string;
 
-	@Column({ nullable: false, unique: true })
+	@Column({ nullable: true })
 	name: string;
 
-	@Column({ nullable: false })
+	@Column({ nullable: true })
 	password: string;
 
 	@Column({ nullable: false, unique: true })
@@ -30,7 +30,12 @@ export class User {
 	@Column({ nullable: true, enum: House, type: 'enum' })
 	house: House;
 
-	@Column({ nullable: false, enum: Role, type: 'enum' })
+	@Column({
+		nullable: false,
+		enum: Role,
+		type: 'enum',
+		default: Role.MEMBER,
+	})
 	role: Role;
 
 	@OneToMany(() => ProblemStatus, (problemStatus) => problemStatus.user)
@@ -45,6 +50,12 @@ export class User {
 
 	@Column({ nullable: true, type: 'text' })
 	icon?: string;
+
+	@Column({ nullable: true })
+	otp?: string;
+
+	@Column({ nullable: true, type: 'timestamp' })
+	otpExpires?: Date;
 
 	@CreateDateColumn({ type: 'timestamp', nullable: false })
 	createdAt: Date;

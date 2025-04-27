@@ -52,12 +52,6 @@ export class UserService {
 		return responseUser;
 	}
 
-	async findEntityById(id: string): Promise<User> {
-		const user = await this.userRepository.findOne({ where: { id } });
-		if (!user) throw new NotFoundException('User not found');
-		return user;
-	}
-
 	async create(user: CreateUserDto): Promise<UserResponseDto> {
 		try {
 			const salt = await bcrypt.genSalt(10);
@@ -65,8 +59,7 @@ export class UserService {
 			user.password = hashedPassword;
 
 			const responseUser = await this.userRepository.save(user);
-			return responseUser;
-			// return plainToInstance(UserResponseDto, responseUser);
+			return new UserResponseDto(responseUser);
 		} catch (error) {
 			throw new BadRequestException('User already exists');
 		}
@@ -101,8 +94,7 @@ export class UserService {
 			});
 			if (!responseUser) throw new NotFoundException('User not found');
 
-			// return plainToInstance(UserResponseDto, responseUser);
-			return responseUser;
+			return new UserResponseDto(responseUser);
 		} catch (error) {
 			throw new InternalServerErrorException('Error updating user');
 		}
@@ -121,7 +113,6 @@ export class UserService {
 			await this.userRepository.update(id, { icon: iconBase64 });
 		} catch (error) {
 			throw new InternalServerErrorException('Error uploading icon');
-
 		}
 	}
 
@@ -136,8 +127,9 @@ export class UserService {
 		return user.house;
 	}
 
-	async findUsersByHouse(house: House): Promise<User[]> {
-		return this.userRepository.find({ where: { house } });
+	async findUsersByHouse(house: House): Promise<UserResponseDto[]> {
+		const response = await this.userRepository.find({ where: { house } });
+		return response.map((user) => new UserResponseDto(user));
 	}
 
 	/*
@@ -149,7 +141,7 @@ export class UserService {
 		userId: string,
 		amount: number,
 		modifiedById: string,
-	): Promise<User> {
+	): Promise<UserResponseDto> {
 		const user = await this.userRepository.findOneOrFail({
 			where: { id: userId },
 		});
@@ -164,7 +156,8 @@ export class UserService {
 		scoreLog.modifiedBy = modifiedBy;
 
 		await this.scoreLogRepository.save(scoreLog);
-		return this.userRepository.save(user);
+		const response = await this.userRepository.save(user);
+		return new UserResponseDto(response);
 	}
 
 	async getUserScoreLogs(id: string): Promise<ScoreLog[]> {
