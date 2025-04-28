@@ -1,18 +1,25 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { UserService } from "src/user/user.service";
-import { Repository } from "typeorm";
-import { GLOBAL_CONFIG } from "../shared/constants/global-config.constant";
-import { CreateProblemRequest, ProblemSearchRequest, UpdateProblemRequest } from "./dto/problem-request.dto";
-import { ProblemSearchRespond, ProblemWithUserStatus } from "./dto/problem-respond.dto";
-import { Problem } from "./problem.entity";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UserService } from 'src/user/user.service';
+import { Repository } from 'typeorm';
+import { GLOBAL_CONFIG } from '../shared/constants/global-config.constant';
+import {
+	CreateProblemRequest,
+	ProblemSearchRequest,
+	UpdateProblemRequest,
+} from './dto/problem-request.dto';
+import {
+	ProblemSearchRespond,
+	ProblemWithUserStatus,
+} from './dto/problem-respond.dto';
+import { Problem } from './problem.entity';
 
 @Injectable()
 export class ProblemService {
 	constructor(
 		@InjectRepository(Problem)
 		private readonly problemsRepository: Repository<Problem>,
-		private readonly userService: UserService
+		private readonly userService: UserService,
 	) {}
 
 	/*
@@ -20,7 +27,10 @@ export class ProblemService {
 	Create Problem
 	-------------------------------------------------------
 	*/
-	async create(createProblemRequest: CreateProblemRequest, userId: string): Promise<Problem> {
+	async create(
+		createProblemRequest: CreateProblemRequest,
+		userId: string,
+	): Promise<Problem> {
 		const author = await this.userService.findOne(userId);
 		const problem = this.problemsRepository.create({
 			...createProblemRequest,
@@ -45,12 +55,15 @@ export class ProblemService {
 
 	async getDetail(id: number): Promise<string> {
 		const problem = await this.findOne(id);
-		return problem.description || "No detail available";
+		return problem.description || 'No detail available';
 	}
 
-	async search(query: ProblemSearchRequest, user): Promise<ProblemSearchRespond> {
+	async search(
+		query: ProblemSearchRequest,
+		user,
+	): Promise<ProblemSearchRespond> {
 		let searchText = query.searchText;
-		let idReverse = query.idReverse == "true";
+		let idReverse = query.idReverse == 'true';
 		let tags = query.tags ? JSON.parse(query.tags) : [];
 		let minDifficulty = Number(query.minDifficulty);
 		let maxDifficulty = Number(query.maxDifficulty);
@@ -60,69 +73,89 @@ export class ProblemService {
 
 		const pageNumber = Number(page);
 		const take = GLOBAL_CONFIG.DEFAULT_PROBLEM_PAGE_SIZE;
-		const skip = (isNaN(pageNumber) || pageNumber < 1 ? 0 : pageNumber - 1) * take;
+		const skip =
+			(isNaN(pageNumber) || pageNumber < 1 ? 0 : pageNumber - 1) *
+			take;
 		const searchProblems = this.problemsRepository
-			.createQueryBuilder("problem")
-			.leftJoin("problem.author", "author")
+			.createQueryBuilder('problem')
+			.leftJoin('problem.author', 'author')
 			.select([
-				"problem.id",
-				"problem.title",
-				"problem.difficulty",
-				"problem.devStatus",
-				"problem.tags",
-				"author.name",
-				"author.icon",
+				'problem.id',
+				'problem.title',
+				'problem.difficulty',
+				'problem.devStatus',
+				'problem.tags',
+				'author.name',
+				'author.icon',
 			]);
 
-		if (searchText && searchText != "") {
+		if (searchText && searchText != '') {
 			searchProblems.andWhere(
-				"(LOWER(author.name) LIKE LOWER(:term) OR LOWER(problem.title) LIKE LOWER(:term))",
+				'(LOWER(author.name) LIKE LOWER(:term) OR LOWER(problem.title) LIKE LOWER(:term))',
 				{
 					term: `%${searchText}%`,
-				}
+				},
 			);
 		}
 
 		if (tags && tags.length > 0) {
-			searchProblems.andWhere("problem.tags && ARRAY[:...tags]", { tags });
+			searchProblems.andWhere('problem.tags && ARRAY[:...tags]', {
+				tags,
+			});
 		}
 
 		if (minDifficulty || maxDifficulty) {
 			if (minDifficulty && maxDifficulty) {
-				searchProblems.andWhere("problem.difficulty BETWEEN :minDifficulty AND :maxDifficulty", {
-					minDifficulty: Number(minDifficulty),
-					maxDifficulty: Number(maxDifficulty),
-				});
+				searchProblems.andWhere(
+					'problem.difficulty BETWEEN :minDifficulty AND :maxDifficulty',
+					{
+						minDifficulty: Number(minDifficulty),
+						maxDifficulty: Number(maxDifficulty),
+					},
+				);
 			} else if (minDifficulty) {
-				searchProblems.andWhere("problem.difficulty >= :minDifficulty", {
-					minDifficulty: Number(minDifficulty),
-				});
+				searchProblems.andWhere(
+					'problem.difficulty >= :minDifficulty',
+					{
+						minDifficulty: Number(minDifficulty),
+					},
+				);
 			} else if (maxDifficulty) {
-				searchProblems.andWhere("problem.difficulty <= :maxDifficulty", {
-					maxDifficulty: Number(maxDifficulty),
-				});
+				searchProblems.andWhere(
+					'problem.difficulty <= :maxDifficulty',
+					{
+						maxDifficulty: Number(maxDifficulty),
+					},
+				);
 			}
 		}
-		searchProblems.orderBy("problem.id", idReverse ? "DESC" : "ASC");
+		searchProblems.orderBy('problem.id', idReverse ? 'DESC' : 'ASC');
 
 		if (difficultySortBy) {
-			searchProblems.addOrderBy("problem.difficulty", difficultySortBy);
+			searchProblems.addOrderBy(
+				'problem.difficulty',
+				difficultySortBy,
+			);
 		}
 
 		searchProblems.skip(skip).take(take);
 		let items: ProblemWithUserStatus[] = [];
 		let total = 0;
 
-		const [allItems, totalBeforeStatus] = await searchProblems.getManyAndCount();
+		const [allItems, totalBeforeStatus] =
+			await searchProblems.getManyAndCount();
 
 		const itemsWithStatus = await Promise.all(
 			allItems.map(async (item: ProblemWithUserStatus) => {
-				item.status = await this.userService.getProblemStatus(user.userId, item.id);
+				item.status = await this.userService.getProblemStatus(
+					user.userId,
+					item.id,
+				);
 				return item;
-			})
+			}),
 		);
 
-		if (status && (status as string) !== "") {
+		if (status && (status as string) !== '') {
 			items = itemsWithStatus.filter((item) => item.status === status);
 			total = items.length;
 			items = items.slice(skip, skip + take);
@@ -137,7 +170,10 @@ export class ProblemService {
 		};
 	}
 
-	async update(id: number, updateProblemRequest: UpdateProblemRequest): Promise<Problem> {
+	async update(
+		id: number,
+		updateProblemRequest: UpdateProblemRequest,
+	): Promise<Problem> {
 		await this.findOne(id);
 		await this.problemsRepository.update(id, updateProblemRequest);
 		return this.findOne(id);
