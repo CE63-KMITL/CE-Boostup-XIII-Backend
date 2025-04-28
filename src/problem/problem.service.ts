@@ -31,7 +31,9 @@ export class ProblemService {
 		createProblemRequest: CreateProblemRequest,
 		userId: string,
 	): Promise<Problem> {
-		const author = await this.userService.findOne(userId);
+		const author = await this.userService.findOne({
+			where: { id: userId },
+		});
 		const problem = this.problemsRepository.create({
 			...createProblemRequest,
 			author: author,

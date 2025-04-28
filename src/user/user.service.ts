@@ -9,7 +9,7 @@ import * as bcrypt from 'bcryptjs';
 import { plainToInstance } from 'class-transformer';
 
 import { House } from 'src/shared/enum/house.enum';
-import { Repository } from 'typeorm';
+import { FindOneOptions, Repository } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UserResponseDto } from './dtos/user-response.dto';
@@ -41,12 +41,8 @@ export class UserService {
 		return users.map((user) => new UserResponseDto(user));
 	}
 
-	async findOne(id: string): Promise<User> {
-		if (!id) throw new BadRequestException('ID is required');
-
-		const responseUser = await this.userRepository.findOne({
-			where: { id },
-		});
+	async findOne(option: FindOneOptions<User>): Promise<User> {
+		const responseUser = await this.userRepository.findOne(option);
 		if (!responseUser) throw new NotFoundException('User not found');
 
 		return responseUser;
@@ -145,7 +141,9 @@ export class UserService {
 		const user = await this.userRepository.findOneOrFail({
 			where: { id: userId },
 		});
-		const modifiedBy = await this.findOne(modifiedById);
+		const modifiedBy = await this.findOne({
+			where: { id: modifiedById },
+		});
 
 		user.score += amount;
 		if (user.score < 0) user.score = 0;

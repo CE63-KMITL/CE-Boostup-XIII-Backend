@@ -12,43 +12,43 @@ import { Role } from 'src/shared/enum/role.enum';
 
 export class CreateUserDto {
 	@IsString()
-	@IsNotEmpty()
-	@ApiProperty({
+	@IsOptional()
+	@ApiPropertyOptional({
 		example: 'john_doe',
 		description: 'name',
 		type: String,
 	})
-	name: string;
+	name?: string;
 
 	@IsEmail()
 	@IsNotEmpty()
-	@ApiProperty({
+	@ApiPropertyOptional({
 		example: 'example@gmail.com',
 		description: 'Email',
 		type: String,
 	})
 	email: string;
 
-	@IsNotEmpty()
+	@IsOptional()
 	@IsString()
-	@ApiProperty({
+	@ApiPropertyOptional({
 		example: 'P@ssword1234',
 		description: 'Password',
 		type: String,
 	})
-	password: string;
+	password?: string;
 
-	@IsNotEmpty()
+	@IsOptional()
 	@IsEnum(House, {
 		message: `House must be a valid enum value.`,
 	})
-	@ApiProperty({
+	@ApiPropertyOptional({
 		example: House.BARBARIAN,
 		description: 'User house',
 		enum: House,
 		type: String,
 	})
-	house: House;
+	house?: House;
 
 	@IsOptional()
 	@IsEnum(Role, {
@@ -61,7 +61,7 @@ export class CreateUserDto {
 		type: String,
 		default: Role.MEMBER,
 	})
-	role: Role;
+	role?: Role;
 
 	@IsOptional()
 	@Matches(/^\d{8}$/, { message: 'student id should be 8-digit number ' })

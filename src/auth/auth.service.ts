@@ -6,12 +6,9 @@ import {
 	Injectable,
 	UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
-import { Repository } from 'typeorm';
 import { GLOBAL_CONFIG } from '../shared/constants/global-config.constant';
-import { User } from '../user/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { loginResponseDto } from './dto/login-response.dto';
 import { ConfigService } from '@nestjs/config';
@@ -24,15 +21,13 @@ import { OpenAccountDto } from './dto/open-account.dto';
 @Injectable()
 export class AuthService {
 	constructor(
-		@InjectRepository(User)
-		private readonly userRepository: Repository<User>,
 		private readonly configService: ConfigService,
 		private readonly userService: UserService,
 		private readonly mailservice: MailService,
 	) {}
 
 	async requestOpenAccount(email: string): Promise<void> {
-		const user = await this.userRepository.findOne({ where: { email } });
+		const user = await this.userService.findOne({ where: { email } });
 		if (!user) throw new BadRequestException('user not fonund');
 		if (!!user.password)
 			throw new BadRequestException('account already opened');
@@ -63,7 +58,7 @@ export class AuthService {
 
 	async openAccount(data: OpenAccountDto) {
 		const { email, password, name, otp } = data;
-		const user = await this.userRepository.findOne({ where: { email } });
+		const user = await this.userService.findOne({ where: { email } });
 		if (!user) throw new UnauthorizedException('user not found');
 		if (!!user.password)
 			throw new ConflictException('Email already confirm');
@@ -83,7 +78,7 @@ export class AuthService {
 
 	async register(user: RegisterUserDto): Promise<void> {
 		try {
-			await this.userRepository.save(user);
+			await this.userService.create(user);
 		} catch (error) {
 			throw new BadRequestException('User already exists');
 		}
@@ -104,7 +99,7 @@ export class AuthService {
 		email: string,
 		password: string,
 	): Promise<UserResponseDto> {
-		const user = await this.userRepository.findOne({
+		const user = await this.userService.findOne({
 			where: { email },
 		});
 		if (!!user && !user.password)

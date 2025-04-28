@@ -130,11 +130,14 @@ export class AuthController {
 	@UseGuards(JwtAuthGuard, RolesGuard)
 	@ApiBearerAuth('access-token')
 	@ApiOperation({ summary: 'Get user role from token' })
-	@ApiResponse({ status: 200, description: 'Success' })
-	@ApiResponse({ status: 401, description: 'Unauthorized' })
+	@ApiResponse({ status: HttpStatus.OK, description: 'Success' })
+	@ApiResponse({
+		status: HttpStatus.UNAUTHORIZED,
+		description: 'Unauthorized',
+	})
 	async getRole(@Request() req: authenticatedRequest) {
 		return {
-			role: (await this.userService.findOne(req.user.userId)).role,
+			role: req.user.role,
 		};
 	}
 
