@@ -19,4 +19,6 @@ export const dotenvConfig = Joi.object({
 	REDIS_HOST: Joi.string().required(),
 	OTP_EXPIRY_MINUTE: Joi.number().required(),
 	OTP_LENGTH: Joi.number().required(),
+	ADMIN_EMAIL: Joi.string().required(),
+	ADMIN_PASS: Joi.string().required(),
 });

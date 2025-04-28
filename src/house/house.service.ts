@@ -1,6 +1,6 @@
-import { Injectable } from "@nestjs/common";
-import { House } from "src/shared/enum/house.enum";
-import { UserService } from "src/user/user.service";
+import { Injectable } from '@nestjs/common';
+import { House } from 'src/shared/enum/house.enum';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class HouseService {

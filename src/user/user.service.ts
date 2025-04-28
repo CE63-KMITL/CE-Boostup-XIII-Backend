@@ -3,13 +3,13 @@ import {
 	Injectable,
 	InternalServerErrorException,
 	NotFoundException,
+	OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
-import { plainToInstance } from 'class-transformer';
 
 import { House } from 'src/shared/enum/house.enum';
-import { Repository } from 'typeorm';
+import { FindOneOptions, Repository } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UserResponseDto } from './dtos/user-response.dto';
@@ -19,9 +19,12 @@ import {
 } from './score/problem-status.entity';
 import { ScoreLog } from './score/score-log.entity';
 import { User } from './user.entity';
+import { ConfigService } from '@nestjs/config';
+import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
+import { Role } from 'src/shared/enum/role.enum';
 
 @Injectable()
-export class UserService {
+export class UserService implements OnModuleInit {
 	constructor(
 		@InjectRepository(User)
 		public readonly userRepository: Repository<User>,
@@ -29,7 +32,30 @@ export class UserService {
 		private readonly scoreLogRepository: Repository<ScoreLog>,
 		@InjectRepository(ProblemStatus)
 		private readonly problemStatusRepository: Repository<ProblemStatus>,
+		private readonly configService: ConfigService,
 	) {}
+
+	async onModuleInit() {
+		const adminEmail = this.configService.getOrThrow<string>(
+			GLOBAL_CONFIG.ADMIN_EMAIL,
+		);
+		const salt = await bcrypt.genSalt(10);
+		const adminPass = await bcrypt.hash(
+			this.configService.getOrThrow<string>(GLOBAL_CONFIG.ADMIN_PASS),
+			salt,
+		);
+		const admin = await this.userRepository.findOne({
+			where: { email: adminEmail },
+		});
+		if (!admin) {
+			this.userRepository.save({
+				email: adminEmail,
+				password: adminPass,
+				name: 'admin',
+				role: Role.DEV,
+			});
+		}
+	}
 
 	/*
 	-------------------------------------------------------
@@ -41,12 +67,8 @@ export class UserService {
 		return users.map((user) => new UserResponseDto(user));
 	}
 
-	async findOne(id: string): Promise<User> {
-		if (!id) throw new BadRequestException('ID is required');
-
-		const responseUser = await this.userRepository.findOne({
-			where: { id },
-		});
+	async findOne(option: FindOneOptions<User>): Promise<User> {
+		const responseUser = await this.userRepository.findOne(option);
 		if (!responseUser) throw new NotFoundException('User not found');
 
 		return responseUser;
@@ -145,7 +167,9 @@ export class UserService {
 		const user = await this.userRepository.findOneOrFail({
 			where: { id: userId },
 		});
-		const modifiedBy = await this.findOne(modifiedById);
+		const modifiedBy = await this.findOne({
+			where: { id: modifiedById },
+		});
 
 		user.score += amount;
 		if (user.score < 0) user.score = 0;
