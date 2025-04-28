@@ -25,7 +25,7 @@ import { OpenAccountDto } from './dto/open-account.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './roles/roles.guard';
 import { authenticatedRequest } from './interfaces/authenticated-request.interface';
-import { loginResponseDto } from './dto/login-response.dto';
+import { AuthResponseDto } from './dto/auth-response.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
 
 @ApiTags('Auth')
@@ -47,17 +47,18 @@ export class AuthController {
 		summary: 'Create an account',
 	})
 	@ApiResponse({
-		status: HttpStatus.NO_CONTENT,
+		status: HttpStatus.CREATED,
 		description: 'Account opened successfully.',
+		type: AuthResponseDto,
 	})
 	@ApiResponse({
 		status: 400,
 		description:
 			'Bad Request - Invalid input data or email already exists',
 	})
-	@HttpCode(HttpStatus.NO_CONTENT)
-	async openAccount(@Body() body: OpenAccountDto): Promise<void> {
-		await this.authService.openAccount(body);
+	@HttpCode(HttpStatus.CREATED)
+	async openAccount(@Body() body: OpenAccountDto): Promise<AuthResponseDto> {
+		return await this.authService.openAccount(body);
 	}
 
 	@Post('request-open-account')
@@ -110,14 +111,14 @@ export class AuthController {
 	@ApiResponse({
 		status: HttpStatus.OK,
 		description: 'login success',
-		type: loginResponseDto,
+		type: AuthResponseDto,
 	})
 	@ApiResponse({
 		status: HttpStatus.UNAUTHORIZED,
 		description: 'Wrong email or password',
 	})
 	@HttpCode(HttpStatus.OK)
-	async login(@Body() logindata: LoginDto): Promise<loginResponseDto> {
+	async login(@Body() logindata: LoginDto): Promise<AuthResponseDto> {
 		return this.authService.login(logindata);
 	}
 
