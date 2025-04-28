@@ -8,7 +8,7 @@ import {
 	Matches,
 } from 'class-validator';
 import { House } from 'src/shared/enum/house.enum';
-import { Role } from 'src/shared/enum/role.enum';
+import { AvailableRole, Role } from 'src/shared/enum/role.enum';
 
 export class CreateUserDto {
 	@IsString()
@@ -51,13 +51,13 @@ export class CreateUserDto {
 	house?: House;
 
 	@IsOptional()
-	@IsEnum(Role, {
-		message: `Role must be a valid enum value: ${Role.DEV} or ${Role.MEMBER}`,
+	@IsEnum(AvailableRole, {
+		message: `Role must be a valid enum value: ${Role.STAFF} or ${Role.MEMBER}`,
 	})
 	@ApiPropertyOptional({
 		example: Role.MEMBER,
 		description: 'User role',
-		enum: Role,
+		enum: AvailableRole,
 		type: String,
 		default: Role.MEMBER,
 	})
