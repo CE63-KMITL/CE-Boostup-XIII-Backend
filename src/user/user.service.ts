@@ -13,10 +13,8 @@ import { FindOneOptions, Repository } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UserResponseDto } from './dtos/user-response.dto';
-import {
-	ProblemStatus,
-	ProblemStatusEnum,
-} from './score/problem-status.entity';
+import { ProblemStatus } from './score/problem-status.entity';
+import { ProblemStatusEnum } from 'src/problem/enum/problem-staff-status.enum';
 import { ScoreLog } from './score/score-log.entity';
 import { User } from './user.entity';
 import { ConfigService } from '@nestjs/config';
@@ -214,7 +212,7 @@ export class UserService implements OnModuleInit {
 	*/
 	async getProblemStatus(
 		userId: string,
-		problemId: number,
+		problemId: string,
 	): Promise<ProblemStatusEnum> {
 		try {
 			const userProblem = await this.getUserProblem(userId, problemId);
@@ -228,7 +226,7 @@ export class UserService implements OnModuleInit {
 
 	async getUserProblem(
 		userId: string,
-		problemId: number,
+		problemId: string,
 	): Promise<ProblemStatus> {
 		const userProblem = await this.userRepository
 			.createQueryBuilder('user')
@@ -244,7 +242,7 @@ export class UserService implements OnModuleInit {
 	}
 
 	async setProblemStatus(
-		problemId: number,
+		problemId: string,
 		userId: string,
 	): Promise<ProblemStatus> {
 		const userProblem = await this.getUserProblem(userId, problemId);

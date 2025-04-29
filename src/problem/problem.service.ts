@@ -4,15 +4,16 @@ import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
 import { GLOBAL_CONFIG } from '../shared/constants/global-config.constant';
 import {
-	CreateProblemRequest,
+	CreateProblemDto,
 	ProblemSearchRequest,
-	UpdateProblemRequest,
-} from './dto/problem-request.dto';
+} from './dto/problem-create.dto';
 import {
+	ProblemResponseDto,
 	ProblemSearchRespond,
 	ProblemWithUserStatus,
 } from './dto/problem-respond.dto';
 import { Problem } from './problem.entity';
+import { UpdateProblemDto } from './dto/problem-update.dto';
 
 @Injectable()
 export class ProblemService {
@@ -28,7 +29,7 @@ export class ProblemService {
 	-------------------------------------------------------
 	*/
 	async create(
-		createProblemRequest: CreateProblemRequest,
+		createProblemRequest: CreateProblemDto,
 		userId: string,
 	): Promise<Problem> {
 		const author = await this.userService.findOne({
@@ -41,13 +42,12 @@ export class ProblemService {
 		return this.problemsRepository.save(problem);
 	}
 
-	async findAll(): Promise<Problem[]> {
-		return this.problemsRepository.find();
+	async findAll(): Promise<ProblemResponseDto[]> {
+		return (await this.problemsRepository.find()).map(
+			(problem) => new ProblemResponseDto(problem),
+		);
 	}
-	async findOne(id: number): Promise<Problem> {
-		if (isNaN(id)) {
-			throw new NotFoundException(`Invalid problem ID`);
-		}
+	async findOne(id: string): Promise<Problem> {
 		const problem = await this.problemsRepository.findOneBy({ id });
 		if (!problem) {
 			throw new NotFoundException(`Problem with ID ${id} not found`);
@@ -55,7 +55,7 @@ export class ProblemService {
 		return problem;
 	}
 
-	async getDetail(id: number): Promise<string> {
+	async getDetail(id: string): Promise<string> {
 		const problem = await this.findOne(id);
 		return problem.description || 'No detail available';
 	}
@@ -173,15 +173,15 @@ export class ProblemService {
 	}
 
 	async update(
-		id: number,
-		updateProblemRequest: UpdateProblemRequest,
+		id: string,
+		updateProblemRequest: UpdateProblemDto,
 	): Promise<Problem> {
 		await this.findOne(id);
 		await this.problemsRepository.update(id, updateProblemRequest);
 		return this.findOne(id);
 	}
 
-	async remove(id: number): Promise<Problem> {
+	async remove(id: string): Promise<Problem> {
 		const problem = await this.findOne(id);
 		await this.problemsRepository.delete(id);
 		return problem;

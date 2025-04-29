@@ -184,7 +184,7 @@ export class UserController {
 	@Post('setProblemStatus/:id')
 	async tryProblem(
 		@Request() req: authenticatedRequest,
-		@Param('id') id: number,
+		@Param('id') id: string,
 	) {
 		return this.userService.setProblemStatus(id, req.user.userId);
 	}
