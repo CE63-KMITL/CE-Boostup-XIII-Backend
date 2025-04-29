@@ -20,7 +20,7 @@ export class ProblemService {
 		@InjectRepository(Problem)
 		private readonly problemsRepository: Repository<Problem>,
 		private readonly userService: UserService,
-	) {}
+	) { }
 
 	/*
 	-------------------------------------------------------
@@ -186,4 +186,6 @@ export class ProblemService {
 		await this.problemsRepository.delete(id);
 		return problem;
 	}
+
+
 }

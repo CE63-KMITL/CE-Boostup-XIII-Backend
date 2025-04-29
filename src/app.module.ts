@@ -16,6 +16,7 @@ import { GLOBAL_CONFIG } from './shared/constants/global-config.constant';
 import { CustomThrottlerGuard } from './shared/guards/throttler.guard';
 import { UserModule } from './user/user.module';
 import { BullModule } from '@nestjs/bullmq';
+import { TestCaseModule } from './test-case/test-case.module';
 
 @Module({
 	imports: [
@@ -58,6 +59,7 @@ import { BullModule } from '@nestjs/bullmq';
 			}),
 			inject: [ConfigService],
 		}),
+		TestCaseModule,
 	],
 	controllers: [AppController],
 	providers: [
@@ -68,4 +70,4 @@ import { BullModule } from '@nestjs/bullmq';
 		},
 	],
 })
-export class AppModule {}
+export class AppModule { }
