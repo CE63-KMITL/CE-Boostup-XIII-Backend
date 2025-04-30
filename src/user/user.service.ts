@@ -12,7 +12,7 @@ import { House } from 'src/shared/enum/house.enum';
 import { FindOneOptions, Repository } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { CreateUserDto } from './dtos/create-user.dto';
-import { UserResponseDto } from './dtos/user-response.dto';
+import { UserPaginatedDto, UserResponseDto } from './dtos/user-response.dto';
 import { ProblemStatus } from './score/problem-status.entity';
 import { ProblemStatusEnum } from 'src/problem/enum/problem-staff-status.enum';
 import { ScoreLog } from './score/score-log.entity';
@@ -20,6 +20,8 @@ import { User } from './user.entity';
 import { ConfigService } from '@nestjs/config';
 import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
 import { Role } from 'src/shared/enum/role.enum';
+import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
+import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -60,9 +62,13 @@ export class UserService implements OnModuleInit {
 	User Management
 	-------------------------------------------------------
 	*/
-	async findAll(): Promise<UserResponseDto[]> {
-		const users = await this.userRepository.find();
-		return users.map((user) => new UserResponseDto(user));
+	async findAll(query: PaginationMetaDto<User>): Promise<UserPaginatedDto> {
+		const users = await createPaginationQuery({
+			repository: this.userRepository,
+			dto: query,
+		});
+		const [data, totalItem] = await users.getManyAndCount();
+		return new UserPaginatedDto(data, totalItem, query.page, query.limit);
 	}
 
 	async findOne(option: FindOneOptions<User>): Promise<User> {
