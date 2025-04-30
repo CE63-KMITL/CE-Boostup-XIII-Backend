@@ -105,7 +105,8 @@
 		"onlyBuiltDependencies": [
 			"@nestjs/core",
 			"@scarf/scarf",
-			"bcrypt"
+			"bcrypt",
+			"msgpackr-extract"
 		]
 	}
 }

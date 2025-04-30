@@ -54,7 +54,6 @@ export class ProblemController {
 	Search Problems
 	-------------------------------------------------------
 	*/
-	@AllowRole(Role.MEMBER)
 	@ApiOkResponse({
 		schema: {
 			properties: {
@@ -98,6 +97,12 @@ export class ProblemController {
 		type: 'number',
 		description: 'Page number (starts from 1)',
 	})
+	@ApiQuery({
+		name: 'staff',
+		required: false,
+		type: 'boolean',
+		description: 'For staff',
+	})
 	@Get('search')
 	async search(@Query() query: ProblemSearchRequest, @Req() req) {
 		return this.problemService.search(query, req.user);
@@ -111,7 +116,6 @@ export class ProblemController {
 	}
 
 	@ApiOkResponse({ type: String })
-	@AllowRole(Role.MEMBER)
 	@Get('detail/:id')
 	async getDetail(@Param('id') id: string) {
 		return this.problemService.getDetail(+id);

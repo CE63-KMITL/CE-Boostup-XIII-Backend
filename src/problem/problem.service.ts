@@ -149,10 +149,15 @@ export class ProblemService {
 
 		const itemsWithStatus = await Promise.all(
 			allItems.map(async (item: ProblemWithUserStatus) => {
-				item.status = await this.userService.getProblemStatus(
-					user.userId,
-					item.id,
-				);
+				if (user) {
+					item.status = await this.userService.getProblemStatus(
+						user.userId,
+						item.id,
+					);
+				} else {
+					item.status = 'unknown' as any;
+				}
+
 				return item;
 			}),
 		);

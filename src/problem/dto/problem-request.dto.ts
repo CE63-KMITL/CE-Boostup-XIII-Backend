@@ -67,6 +67,10 @@ export class ProblemSearchRequest {
 
 	@IsOptional()
 	@IsString()
+	staff: string;
+
+	@IsOptional()
+	@IsString()
 	tags: string;
 
 	@IsOptional()
