@@ -218,7 +218,7 @@ export class UserService implements OnModuleInit {
 	*/
 	async getProblemStatus(
 		userId: string,
-		problemId: string,
+		problemId: number,
 	): Promise<ProblemStatusEnum> {
 		try {
 			const userProblem = await this.getUserProblem(userId, problemId);
@@ -232,7 +232,7 @@ export class UserService implements OnModuleInit {
 
 	async getUserProblem(
 		userId: string,
-		problemId: string,
+		problemId: number,
 	): Promise<ProblemStatus> {
 		const userProblem = await this.userRepository
 			.createQueryBuilder('user')
@@ -248,7 +248,7 @@ export class UserService implements OnModuleInit {
 	}
 
 	async setProblemStatus(
-		problemId: string,
+		problemId: number,
 		userId: string,
 	): Promise<ProblemStatus> {
 		const userProblem = await this.getUserProblem(userId, problemId);

@@ -118,14 +118,14 @@ export class ProblemController {
 	@ApiOkResponse({ type: ProblemResponseDto })
 	@AllowRole(Role.MEMBER)
 	@Get(':id')
-	async findOne(@Param('id') id: string): Promise<ProblemResponseDto> {
+	async findOne(@Param('id') id: number): Promise<ProblemResponseDto> {
 		return new ProblemResponseDto(await this.problemService.findOne(id));
 	}
 
 	@ApiOkResponse({ type: String })
 	@AllowRole(Role.MEMBER)
 	@Get('detail/:id')
-	async getDetail(@Param('id') id: string) {
+	async getDetail(@Param('id') id: number) {
 		return this.problemService.getDetail(id);
 	}
 
@@ -133,7 +133,7 @@ export class ProblemController {
 	@AllowRole(Role.STAFF)
 	@Patch(':id')
 	async update(
-		@Param('id') id: string,
+		@Param('id') id: number,
 		@Body() updateProblemRequest: UpdateProblemDto,
 	): Promise<ProblemResponseDto> {
 		return new ProblemResponseDto(
@@ -146,7 +146,7 @@ export class ProblemController {
 	})
 	@AllowRole(Role.DEV)
 	@Delete(':id')
-	async remove(@Param('id') id: string) {
+	async remove(@Param('id') id: number) {
 		this.problemService.remove(id);
 	}
 }
