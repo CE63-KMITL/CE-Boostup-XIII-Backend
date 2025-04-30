@@ -30,7 +30,6 @@ import {
 	ProblemResponseDto,
 } from './dto/problem-respond.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
-import { PaginatedResponseDto } from 'src/shared/pagination/dto/paginated-response.dto';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 
 @Controller('problem')

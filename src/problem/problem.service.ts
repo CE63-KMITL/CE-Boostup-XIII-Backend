@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserService } from 'src/user/user.service';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository } from 'typeorm';
 import { GLOBAL_CONFIG } from '../shared/constants/global-config.constant';
 import {
 	CreateProblemDto,
@@ -9,14 +9,12 @@ import {
 } from './dto/problem-create.dto';
 import {
 	ProblemPaginatedDto,
-	ProblemResponseDto,
 	ProblemSearchRespond,
 	ProblemWithUserStatus,
 } from './dto/problem-respond.dto';
 import { Problem } from './problem.entity';
 import { UpdateProblemDto } from './dto/problem-update.dto';
 import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
-import { PaginatedResponseDto } from 'src/shared/pagination/dto/paginated-response.dto';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 
 @Injectable()
