@@ -1,7 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString } from 'class-validator';
-import { ProblemStatusEnum } from 'src/user/score/problem-status.entity';
-import { ProblemStaffStatus } from '../problem.entity';
+import {
+	ProblemStaffStatusEnum,
+	ProblemStatusEnum,
+} from '../enum/problem-staff-status.enum';
 
 export class CreateProblemRequest {
 	@ApiProperty({ example: 'Sample Problem Title' })
@@ -83,7 +85,7 @@ export class ProblemSearchRequest {
 
 	@IsOptional()
 	@IsString()
-	status: ProblemStatusEnum | ProblemStaffStatus;
+	status: ProblemStatusEnum | ProblemStaffStatusEnum;
 
 	@IsOptional()
 	@IsString()
