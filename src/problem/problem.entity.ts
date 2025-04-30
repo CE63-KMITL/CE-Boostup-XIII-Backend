@@ -7,20 +7,13 @@ import {
 	ManyToOne,
 	PrimaryGeneratedColumn,
 } from 'typeorm';
-
-export type ScoreValue = 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5;
-export enum ProblemStaffStatus {
-	IN_PROGRESS = 'In Progress',
-	NEED_REVIEW = 'Need Review',
-	PUBLISHED = 'Published',
-	REJECTED = 'Rejected',
-	ARCHIVED = 'Archived',
-}
+import { ProblemStaffStatusEnum } from './enum/problem-staff-status.enum';
+import { ScoreValue } from './type/score-value.type';
 
 @Entity()
 export class Problem {
-	@PrimaryGeneratedColumn()
-	id: number;
+	@PrimaryGeneratedColumn('uuid')
+	id: string;
 
 	@Column()
 	title: string;
@@ -49,8 +42,8 @@ export class Problem {
 	@Column({
 		nullable: true,
 	})
-	@IsEnum(ProblemStaffStatus)
-	devStatus: ProblemStaffStatus;
+	@IsEnum(ProblemStaffStatusEnum)
+	devStatus: ProblemStaffStatusEnum;
 
 	@Column('text', { array: true, nullable: true, default: [] })
 	tags: string[];
