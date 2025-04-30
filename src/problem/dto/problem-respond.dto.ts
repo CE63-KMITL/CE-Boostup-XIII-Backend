@@ -4,9 +4,14 @@ import {
 	ProblemStatusEnum,
 } from '../enum/problem-staff-status.enum';
 import { Problem } from '../problem.entity';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+	ApiExtraModels,
+	ApiProperty,
+	ApiPropertyOptional,
+} from '@nestjs/swagger';
 import { ScoreValue } from '../type/score-value.type';
 import { UserResponseDto } from 'src/user/dtos/user-response.dto';
+import { PaginatedResponseDto } from 'src/shared/pagination/dto/paginated-response.dto';
 
 export class ProblemResponseDto {
 	@ApiProperty({
@@ -86,4 +91,21 @@ export class ProblemSearchRespond {
 
 	@IsNumber()
 	pageCount: number;
+}
+
+@ApiExtraModels(ProblemResponseDto)
+export class ProblemPaginatedDto extends PaginatedResponseDto(
+	ProblemResponseDto,
+) {
+	constructor(
+		problems: Problem[],
+		totalItem: number,
+		page: number,
+		limit: number,
+	) {
+		const problemsResponse = problems.map(
+			(problem) => new ProblemResponseDto(problem),
+		);
+		super(problemsResponse, totalItem, page, limit);
+	}
 }

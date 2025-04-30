@@ -1,19 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserService } from 'src/user/user.service';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { GLOBAL_CONFIG } from '../shared/constants/global-config.constant';
 import {
 	CreateProblemDto,
 	ProblemSearchRequest,
 } from './dto/problem-create.dto';
 import {
+	ProblemPaginatedDto,
 	ProblemResponseDto,
 	ProblemSearchRespond,
 	ProblemWithUserStatus,
 } from './dto/problem-respond.dto';
 import { Problem } from './problem.entity';
 import { UpdateProblemDto } from './dto/problem-update.dto';
+import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
+import { PaginatedResponseDto } from 'src/shared/pagination/dto/paginated-response.dto';
+import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 
 @Injectable()
 export class ProblemService {
@@ -42,11 +46,23 @@ export class ProblemService {
 		return this.problemsRepository.save(problem);
 	}
 
-	async findAll(): Promise<ProblemResponseDto[]> {
-		return (await this.problemsRepository.find()).map(
-			(problem) => new ProblemResponseDto(problem),
+	async findAll(
+		query: PaginationMetaDto<Problem>,
+	): Promise<ProblemPaginatedDto> {
+		const qb = await createPaginationQuery<Problem>({
+			repository: this.problemsRepository,
+			dto: query,
+		});
+		qb.leftJoinAndSelect('entity.author', 'author');
+		const [data, totalItem] = await qb.getManyAndCount();
+		return new ProblemPaginatedDto(
+			data,
+			totalItem,
+			query.limit,
+			query.page,
 		);
 	}
+
 	async findOne(id: string): Promise<Problem> {
 		const problem = await this.problemsRepository.findOneBy({ id });
 		if (!problem) {

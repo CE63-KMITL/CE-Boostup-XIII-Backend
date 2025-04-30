@@ -25,8 +25,13 @@ import {
 import { Problem } from './problem.entity';
 import { ProblemService } from './problem.service';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
-import { ProblemResponseDto } from './dto/problem-respond.dto';
+import {
+	ProblemPaginatedDto,
+	ProblemResponseDto,
+} from './dto/problem-respond.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
+import { PaginatedResponseDto } from 'src/shared/pagination/dto/paginated-response.dto';
+import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 
 @Controller('problem')
 @ApiTags('Problem')
@@ -46,11 +51,15 @@ export class ProblemController {
 		);
 	}
 
-	@ApiOkResponse({ type: ProblemResponseDto, isArray: true })
+	@ApiOkResponse({
+		type: ProblemPaginatedDto,
+	})
 	@AllowRole(Role.DEV)
 	@Get()
-	async findAll(): Promise<ProblemResponseDto[]> {
-		return this.problemService.findAll();
+	async findAll(
+		@Query() query: PaginationMetaDto<Problem>,
+	): Promise<ProblemPaginatedDto> {
+		return this.problemService.findAll(query);
 	}
 
 	/*
