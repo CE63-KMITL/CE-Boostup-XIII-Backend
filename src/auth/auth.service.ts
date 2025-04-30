@@ -6,14 +6,11 @@ import {
 	Injectable,
 	UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
-import { Repository } from 'typeorm';
 import { GLOBAL_CONFIG } from '../shared/constants/global-config.constant';
-import { User } from '../user/user.entity';
 import { LoginDto } from './dto/login.dto';
-import { loginResponseDto } from './dto/login-response.dto';
+import { AuthResponseDto } from './dto/auth-response.dto';
 import { ConfigService } from '@nestjs/config';
 import { UserResponseDto } from 'src/user/dtos/user-response.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -24,15 +21,13 @@ import { OpenAccountDto } from './dto/open-account.dto';
 @Injectable()
 export class AuthService {
 	constructor(
-		@InjectRepository(User)
-		private readonly userRepository: Repository<User>,
 		private readonly configService: ConfigService,
 		private readonly userService: UserService,
 		private readonly mailservice: MailService,
 	) {}
 
 	async requestOpenAccount(email: string): Promise<void> {
-		const user = await this.userRepository.findOne({ where: { email } });
+		const user = await this.userService.findOne({ where: { email } });
 		if (!user) throw new BadRequestException('user not fonund');
 		if (!!user.password)
 			throw new BadRequestException('account already opened');
@@ -61,9 +56,9 @@ export class AuthService {
 		await this.userService.update(user.id, { otp, otpExpires });
 	}
 
-	async openAccount(data: OpenAccountDto) {
+	async openAccount(data: OpenAccountDto): Promise<AuthResponseDto> {
 		const { email, password, name, otp } = data;
-		const user = await this.userRepository.findOne({ where: { email } });
+		const user = await this.userService.findOne({ where: { email } });
 		if (!user) throw new UnauthorizedException('user not found');
 		if (!!user.password)
 			throw new ConflictException('Email already confirm');
@@ -73,23 +68,29 @@ export class AuthService {
 		if (user.otpExpires && user.otpExpires < new Date())
 			throw new GoneException('OTP code expired');
 
-		await this.userService.update(user.id, {
+		const userResponse = await this.userService.update(user.id, {
 			password,
 			name,
 			otp: null,
 			otpExpires: null,
 		});
+
+		const token = await this.generateToken(userResponse);
+		return {
+			token,
+			user: userResponse,
+		};
 	}
 
 	async register(user: RegisterUserDto): Promise<void> {
 		try {
-			await this.userRepository.save(user);
+			await this.userService.create(user);
 		} catch (error) {
 			throw new BadRequestException('User already exists');
 		}
 	}
 
-	async login(loginData: LoginDto): Promise<loginResponseDto> {
+	async login(loginData: LoginDto): Promise<AuthResponseDto> {
 		const { email, password } = loginData;
 
 		const user = await this.validateUser(email, password);
@@ -104,7 +105,7 @@ export class AuthService {
 		email: string,
 		password: string,
 	): Promise<UserResponseDto> {
-		const user = await this.userRepository.findOne({
+		const user = await this.userService.findOne({
 			where: { email },
 		});
 		if (!!user && !user.password)

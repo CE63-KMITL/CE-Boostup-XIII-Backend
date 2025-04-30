@@ -74,7 +74,7 @@ export class UserController {
 		)
 		id: string,
 	): Promise<UserResponseDto> {
-		const user = await this.userService.findOne(id);
+		const user = await this.userService.findOne({ where: { id } });
 		return new UserResponseDto(user);
 	}
 
@@ -95,7 +95,7 @@ export class UserController {
 		)
 		id: string,
 	): Promise<UserScoreResponseDto> {
-		const user = await this.userService.findOne(id);
+		const user = await this.userService.findOne({ where: { id } });
 		const scoreLogs = await this.userService.getUserScoreLogs(id);
 		const json = { score: user.score, scoreLogs: scoreLogs };
 		return json;
