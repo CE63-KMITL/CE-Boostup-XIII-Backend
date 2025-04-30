@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { House } from 'src/shared/enum/house.enum';
 import { Role } from '../../shared/enum/role.enum';
 import { User } from '../user.entity';
+import { PaginatedResponseDto } from 'src/shared/pagination/dto/paginated-response.dto';
 
 export class UserResponseDto {
 	@ApiProperty({
@@ -97,5 +98,17 @@ export class UserResponseDto {
 		this.score = user.score;
 		this.createdAt = user.createdAt;
 		this.updatedAt = user.updatedAt;
+	}
+}
+
+export class UserPaginatedDto extends PaginatedResponseDto(UserResponseDto) {
+	constructor(
+		users: User[],
+		totalItem: number,
+		page: number,
+		limit: number,
+	) {
+		const usersResponse = users.map((user) => new UserResponseDto(user));
+		super(usersResponse, totalItem, page, limit);
 	}
 }

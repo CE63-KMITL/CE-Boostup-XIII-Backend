@@ -10,6 +10,7 @@ import {
 	ParseUUIDPipe,
 	Patch,
 	Post,
+	Query,
 	Request,
 	UploadedFile,
 	UseInterceptors,
@@ -19,13 +20,15 @@ import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AllowRole } from '../auth/decorators/auth.decorator';
 import { Role } from '../shared/enum/role.enum';
 import { UpdateUserDto } from './dtos/update-user.dto';
-import { UserResponseDto } from './dtos/user-response.dto';
+import { UserPaginatedDto, UserResponseDto } from './dtos/user-response.dto';
 import { ModifyScoreDto } from './score/dtos/modify-score.dto';
 import { UserScoreResponseDto } from './score/dtos/score-response.dto';
 import { UserService } from './user.service';
 
 import { FileInterceptor } from '@nestjs/platform-express';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
+import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
+import { User } from './user.entity';
 
 @Controller('user')
 @ApiTags('User')
@@ -42,12 +45,14 @@ export class UserController {
 	@ApiResponse({
 		status: HttpStatus.OK,
 		description: 'Get all users',
-		type: UserResponseDto,
+		type: UserPaginatedDto,
 		isArray: true,
 	})
 	@AllowRole(Role.DEV)
-	async findAll(): Promise<UserResponseDto[]> {
-		return await this.userService.findAll();
+	async findAll(
+		@Query() query: PaginationMetaDto<User>,
+	): Promise<UserPaginatedDto> {
+		return await this.userService.findAll(query);
 	}
 
 	/*
@@ -184,7 +189,7 @@ export class UserController {
 	@Post('setProblemStatus/:id')
 	async tryProblem(
 		@Request() req: authenticatedRequest,
-		@Param('id') id: number,
+		@Param('id') id: string,
 	) {
 		return this.userService.setProblemStatus(id, req.user.userId);
 	}
