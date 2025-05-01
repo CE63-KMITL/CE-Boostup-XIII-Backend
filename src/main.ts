@@ -43,7 +43,7 @@ async function bootstrap() {
 	SwaggerModule.setup('docs', app, documentFactory);
 	app.useGlobalPipes(
 		new ValidationPipe({
-			disableErrorMessages: configService.getOrThrow<boolean>(
+			disableErrorMessages: !configService.getOrThrow<boolean>(
 				GLOBAL_CONFIG.IS_DEVELOPMENT,
 			),
 			transform: true,
