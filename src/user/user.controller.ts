@@ -28,7 +28,6 @@ import { UserService } from './user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
-import { User } from './user.entity';
 
 @Controller('user')
 @ApiTags('User')

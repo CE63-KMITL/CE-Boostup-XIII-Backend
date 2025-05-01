@@ -9,11 +9,13 @@ import {
 	Post,
 	Query,
 	Req,
+	Request,
 } from '@nestjs/common';
 import {
 	ApiCreatedResponse,
 	ApiNoContentResponse,
 	ApiOkResponse,
+	ApiResponse,
 	ApiTags,
 } from '@nestjs/swagger';
 import { AllowRole } from 'src/auth/decorators/auth.decorator';
@@ -27,7 +29,7 @@ import {
 } from './dto/problem-respond.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
-import { ProblemQueryDto } from './dto/problem-query.dto';
+import { ProblemQueryDto, ProblemUserQueryDto } from './dto/problem-query.dto';
 
 @Controller('problem')
 @ApiTags('Problem')
@@ -73,6 +75,22 @@ export class ProblemController {
 		@Req() req: authenticatedRequest,
 	): Promise<ProblemPaginatedDto> {
 		return this.problemService.search(query, req.user.userId);
+	}
+
+	@AllowRole(Role.MEMBER)
+	@ApiResponse({
+		type: ProblemPaginatedDto,
+		description: 'get problem by user id and search by status',
+	})
+	@Get('user')
+	async getProblemsByUserId(
+		@Request() req: authenticatedRequest,
+		@Query() query: ProblemUserQueryDto,
+	): Promise<ProblemPaginatedDto> {
+		return await this.problemService.getProblemsByUserId(
+			req.user.userId,
+			query,
+		);
 	}
 
 	@ApiOkResponse({ type: ProblemResponseDto })

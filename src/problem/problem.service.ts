@@ -8,7 +8,8 @@ import { Problem } from './problem.entity';
 import { UpdateProblemDto } from './dto/problem-update.dto';
 import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
-import { ProblemQueryDto } from './dto/problem-query.dto';
+import { ProblemQueryDto, ProblemUserQueryDto } from './dto/problem-query.dto';
+import { ProblemStatusEnum } from './enum/problem-staff-status.enum';
 
 @Injectable()
 export class ProblemService {
@@ -150,6 +151,42 @@ export class ProblemService {
 			query.limit,
 			query.page,
 		);
+	}
+
+	async getProblemsByUserId(id: string, query: ProblemUserQueryDto) {
+		const { limit, page, status } = query;
+		let problems = (
+			await this.userService.findOne({
+				where: { id },
+				relations: { problemStatus: true },
+			})
+		)?.problemStatus;
+
+		if (!problems) {
+			throw new NotFoundException('No problem status yet');
+		}
+
+		if (status) {
+			problems = problems.filter(
+				(problem) => ProblemStatusEnum[problem.status] === status,
+			);
+		}
+
+		const totalItem = problems.length;
+
+		problems = problems.slice((page - 1) * limit, page * limit);
+
+		const resProblems = await Promise.all(
+			problems.map(async (problem) => {
+				return await this.problemsRepository.findOne({
+					where: { id: problem.problemId },
+					relations: {
+						author: true,
+					},
+				});
+			}),
+		);
+		return new ProblemPaginatedDto(resProblems, totalItem, limit, page);
 	}
 
 	async update(
