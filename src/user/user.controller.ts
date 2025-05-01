@@ -28,6 +28,7 @@ import { UserService } from './user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
+import { UserQueryDto } from './dtos/user-query.dto';
 
 @Controller('user')
 @ApiTags('User')
@@ -45,13 +46,23 @@ export class UserController {
 		status: HttpStatus.OK,
 		description: 'Get all users',
 		type: UserPaginatedDto,
-		isArray: true,
 	})
 	@AllowRole(Role.DEV)
 	async findAll(
 		@Query() query: PaginationMetaDto,
 	): Promise<UserPaginatedDto> {
 		return await this.userService.findAll(query);
+	}
+
+	@Get('/search')
+	@HttpCode(HttpStatus.OK)
+	@ApiResponse({
+		status: HttpStatus.OK,
+		description: 'get user by query',
+	})
+	@AllowRole(Role.MEMBER)
+	async search(@Query() query: UserQueryDto) {
+		await this.userService.search(query);
 	}
 
 	/*

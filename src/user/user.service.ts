@@ -22,6 +22,7 @@ import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
 import { Role } from 'src/shared/enum/role.enum';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
+import { UserQueryDto } from './dtos/user-query.dto';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -76,6 +77,34 @@ export class UserService implements OnModuleInit {
 		if (!responseUser) throw new NotFoundException('User not found');
 
 		return responseUser;
+	}
+
+	async search(query: UserQueryDto) {
+		const { limit, page, email, name, orderByScore, house, role } = query;
+		const users = await createPaginationQuery({
+			repository: this.userRepository,
+			dto: { limit, page },
+		});
+		if (!!name)
+			users.where('LOWER(entity.name) LIKE LOWER(:name)', {
+				name: `%${name}%`,
+			});
+
+		if (!!email)
+			users.andWhere('LOWER(entity.email) LIKE LOWER(:email)', {
+				email: `%${email}%`,
+			});
+
+		if (orderByScore !== undefined) {
+			users.orderBy('entity.score', orderByScore ? 'DESC' : 'ASC');
+		}
+
+		if (!!house) users.andWhere('entity.house  = :house', { house });
+
+		users.andWhere('entity.role = :role', { role });
+
+		const [data, totalItem] = await users.getManyAndCount();
+		console.log(data);
 	}
 
 	async create(user: CreateUserDto): Promise<UserResponseDto> {
