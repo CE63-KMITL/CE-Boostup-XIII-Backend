@@ -1,15 +1,16 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsInt, IsOptional, Min } from 'class-validator';
 import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
 
-export class PaginationMetaDto<T> {
+export class PaginationMetaDto {
 	@ApiPropertyOptional({
 		type: Number,
 		example: 1,
 		default: 1,
 	})
 	@IsInt()
+	@IsOptional()
 	@Min(1)
 	@Type(() => Number)
 	page?: number = 1;
@@ -21,18 +22,7 @@ export class PaginationMetaDto<T> {
 	})
 	@IsInt()
 	@Min(1)
+	@IsOptional()
 	@Type(() => Number)
 	limit?: number = GLOBAL_CONFIG.DEFAULT_PROBLEM_PAGE_SIZE;
-
-	@ApiPropertyOptional({
-		type: String,
-	})
-	@IsString()
-	@IsOptional()
-	searchField?: keyof T;
-
-	@ApiPropertyOptional()
-	@IsString()
-	@IsOptional()
-	searchTerm?: string;
 }

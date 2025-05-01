@@ -50,7 +50,7 @@ export class UserController {
 	})
 	@AllowRole(Role.DEV)
 	async findAll(
-		@Query() query: PaginationMetaDto<User>,
+		@Query() query: PaginationMetaDto,
 	): Promise<UserPaginatedDto> {
 		return await this.userService.findAll(query);
 	}

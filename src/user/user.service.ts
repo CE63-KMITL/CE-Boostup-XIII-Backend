@@ -62,7 +62,7 @@ export class UserService implements OnModuleInit {
 	User Management
 	-------------------------------------------------------
 	*/
-	async findAll(query: PaginationMetaDto<User>): Promise<UserPaginatedDto> {
+	async findAll(query: PaginationMetaDto): Promise<UserPaginatedDto> {
 		const users = await createPaginationQuery({
 			repository: this.userRepository,
 			dto: query,

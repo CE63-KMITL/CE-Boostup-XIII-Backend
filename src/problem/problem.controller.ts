@@ -56,7 +56,7 @@ export class ProblemController {
 	@AllowRole(Role.DEV)
 	@Get()
 	async findAll(
-		@Query() query: PaginationMetaDto<Problem>,
+		@Query() query: PaginationMetaDto,
 	): Promise<ProblemPaginatedDto> {
 		return this.problemService.findAll(query);
 	}

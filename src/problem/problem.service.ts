@@ -44,9 +44,7 @@ export class ProblemService {
 		return this.problemsRepository.save(problem);
 	}
 
-	async findAll(
-		query: PaginationMetaDto<Problem>,
-	): Promise<ProblemPaginatedDto> {
+	async findAll(query: PaginationMetaDto): Promise<ProblemPaginatedDto> {
 		const qb = await createPaginationQuery<Problem>({
 			repository: this.problemsRepository,
 			dto: query,
