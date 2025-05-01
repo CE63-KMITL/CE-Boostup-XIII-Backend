@@ -189,7 +189,7 @@ export class UserController {
 	@Post('setProblemStatus/:id')
 	async tryProblem(
 		@Request() req: authenticatedRequest,
-		@Param('id') id: string,
+		@Param('id') id: number,
 	) {
 		return this.userService.setProblemStatus(id, req.user.userId);
 	}

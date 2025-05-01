@@ -61,7 +61,7 @@ export class ProblemService {
 		);
 	}
 
-	async findOne(id: string): Promise<Problem> {
+	async findOne(id: number): Promise<Problem> {
 		const problem = await this.problemsRepository.findOneBy({ id });
 		if (!problem) {
 			throw new NotFoundException(`Problem with ID ${id} not found`);
@@ -69,7 +69,7 @@ export class ProblemService {
 		return problem;
 	}
 
-	async getDetail(id: string): Promise<string> {
+	async getDetail(id: number): Promise<string> {
 		const problem = await this.findOne(id);
 		return problem.description || 'No detail available';
 	}
@@ -187,17 +187,15 @@ export class ProblemService {
 	}
 
 	async update(
-		id: string,
+		id: number,
 		updateProblemRequest: UpdateProblemDto,
 	): Promise<Problem> {
-		await this.findOne(id);
+		await this.problemsRepository.findOne({ where: { id } });
 		await this.problemsRepository.update(id, updateProblemRequest);
 		return this.findOne(id);
 	}
 
-	async remove(id: string): Promise<Problem> {
-		const problem = await this.findOne(id);
+	async remove(id: number): Promise<void> {
 		await this.problemsRepository.delete(id);
-		return problem;
 	}
 }
