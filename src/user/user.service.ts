@@ -104,7 +104,7 @@ export class UserService implements OnModuleInit {
 		users.andWhere('entity.role = :role', { role });
 
 		const [data, totalItem] = await users.getManyAndCount();
-		console.log(data);
+		return new UserPaginatedDto(data, totalItem, page, limit);
 	}
 
 	async create(user: CreateUserDto): Promise<UserResponseDto> {

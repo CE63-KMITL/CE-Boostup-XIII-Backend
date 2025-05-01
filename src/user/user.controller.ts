@@ -59,10 +59,11 @@ export class UserController {
 	@ApiResponse({
 		status: HttpStatus.OK,
 		description: 'get user by query',
+		type: UserPaginatedDto,
 	})
 	@AllowRole(Role.MEMBER)
 	async search(@Query() query: UserQueryDto) {
-		await this.userService.search(query);
+		return await this.userService.search(query);
 	}
 
 	/*
