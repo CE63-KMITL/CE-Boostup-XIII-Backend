@@ -4,6 +4,7 @@ import {
 	Delete,
 	Get,
 	Param,
+	ParseIntPipe,
 	Patch,
 	Post,
 	Query,
@@ -13,16 +14,11 @@ import {
 	ApiCreatedResponse,
 	ApiNoContentResponse,
 	ApiOkResponse,
-	ApiQuery,
 	ApiTags,
 } from '@nestjs/swagger';
 import { AllowRole } from 'src/auth/decorators/auth.decorator';
 import { Role } from 'src/shared/enum/role.enum';
-import {
-	CreateProblemDto,
-	ProblemSearchRequest,
-} from './dto/problem-create.dto';
-import { Problem } from './problem.entity';
+import { CreateProblemDto } from './dto/problem-create.dto';
 import { ProblemService } from './problem.service';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 import {
@@ -31,6 +27,7 @@ import {
 } from './dto/problem-respond.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
+import { ProblemQueryDto } from './dto/problem-query.dto';
 
 @Controller('problem')
 @ApiTags('Problem')
@@ -68,51 +65,14 @@ export class ProblemController {
 	*/
 	@AllowRole(Role.MEMBER)
 	@ApiOkResponse({
-		schema: {
-			properties: {
-				items: {
-					type: 'array',
-					items: { $ref: '#/components/schemas/Problem' },
-				},
-				pageCount: {
-					type: 'number',
-					description: 'Total number of pages',
-				},
-			},
-		},
-	})
-	@ApiQuery({
-		name: 'searchText',
-		required: false,
-		description: 'Search by ID or author name or problem name',
-	})
-	@ApiQuery({
-		name: 'idReverse',
-		required: false,
-		type: 'boolean',
-		description: 'Sort by ID in reverse order',
-	})
-	@ApiQuery({
-		name: 'tag',
-		required: false,
-		isArray: true,
-		description: 'Filter by tags',
-	})
-	@ApiQuery({
-		name: 'difficulty',
-		required: false,
-		type: 'number',
-		description: 'Filter by difficulty level (0.5-5)',
-	})
-	@ApiQuery({
-		name: 'page',
-		required: false,
-		type: 'number',
-		description: 'Page number (starts from 1)',
+		type: ProblemPaginatedDto,
 	})
 	@Get('search')
-	async search(@Query() query: ProblemSearchRequest, @Req() req) {
-		return this.problemService.search(query, req.user);
+	async search(
+		@Query() query: ProblemQueryDto,
+		@Req() req: authenticatedRequest,
+	): Promise<ProblemPaginatedDto> {
+		return this.problemService.search(query, req.user.userId);
 	}
 
 	@ApiOkResponse({ type: ProblemResponseDto })
@@ -133,7 +93,7 @@ export class ProblemController {
 	@AllowRole(Role.STAFF)
 	@Patch(':id')
 	async update(
-		@Param('id') id: number,
+		@Param('id', ParseIntPipe) id: number,
 		@Body() updateProblemRequest: UpdateProblemDto,
 	): Promise<ProblemResponseDto> {
 		return new ProblemResponseDto(
@@ -146,7 +106,7 @@ export class ProblemController {
 	})
 	@AllowRole(Role.DEV)
 	@Delete(':id')
-	async remove(@Param('id') id: number) {
+	async remove(@Param('id', ParseIntPipe) id: number) {
 		this.problemService.remove(id);
 	}
 }

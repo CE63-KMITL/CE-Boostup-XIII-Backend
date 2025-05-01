@@ -4,7 +4,7 @@ import { GLOBAL_CONFIG } from '../constants/global-config.constant';
 
 interface PaginationOptions<T> {
 	repository: Repository<T>;
-	dto: PaginationMetaDto<T>;
+	dto: PaginationMetaDto;
 }
 
 export async function createPaginationQuery<T>(option: PaginationOptions<T>) {

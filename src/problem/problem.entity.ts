@@ -43,6 +43,7 @@ export class Problem {
 	@Column({
 		nullable: false,
 		default: ProblemStaffStatusEnum.IN_PROGRESS,
+		enum: ProblemStaffStatusEnum,
 	})
 	@IsEnum(ProblemStaffStatusEnum)
 	devStatus: ProblemStaffStatusEnum;

@@ -28,6 +28,11 @@ export class ProblemStatus {
 
 	@IsEnum(ProblemStatusEnum)
 	@IsOptional()
+	@Column({
+		nullable: false,
+		enum: ProblemStatusEnum,
+		default: ProblemStatusEnum.NOT_STARTED,
+	})
 	status: ProblemStatusEnum;
 
 	@Column({ type: 'timestamp', nullable: true })
