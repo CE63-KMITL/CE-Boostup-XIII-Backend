@@ -1,14 +1,29 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+	HttpException,
+	HttpStatus,
+	Injectable,
+	OnModuleInit,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { HouseScore } from './house_score.entity';
+import { House } from 'src/shared/enum/house.enum';
 
 @Injectable()
-export class HouseScoreService {
+export class HouseScoreService implements OnModuleInit {
 	constructor(
 		@InjectRepository(HouseScore)
 		private readonly scoreRepository: Repository<HouseScore>,
 	) {}
+
+	async onModuleInit() {
+		const house = Object.values(House);
+		const res = await this.scoreRepository.count();
+		if (res !== 0) return;
+		for (let i = 0; i < house.length; i++) {
+			await this.scoreRepository.save({ name: house[i] });
+		}
+	}
 
 	// สร้างคะแนนใหม่
 	async create(name: string, value: number) {
