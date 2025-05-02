@@ -15,3 +15,15 @@ export class TestCase {
         Object.assign(this, TestCase);
     }
 }
+
+@Entity()
+export class TestCaseResult {
+    @Column()
+    status: "Pass" | "Not Pass" | "Error";
+
+    @Column()
+    message: string;
+
+    @Column()
+    exitCode: number;
+}
