@@ -88,6 +88,7 @@ export class ProblemService {
 			status,
 			devStatus,
 			tags,
+			staff,
 		} = query;
 
 		const { role, userId } = user;
