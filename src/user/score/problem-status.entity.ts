@@ -1,8 +1,8 @@
 import { IsEnum, IsOptional } from 'class-validator';
+import { ProblemStatusEnum } from 'src/problem/enum/problem-staff-status.enum';
 import { Problem } from 'src/problem/problem.entity';
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { User } from '../user.entity';
-import { ProblemStatusEnum } from 'src/problem/enum/problem-staff-status.enum';
 
 @Entity()
 export class ProblemStatus {

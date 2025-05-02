@@ -9,27 +9,25 @@ import {
 	Post,
 	Query,
 	Req,
-	Request,
 } from '@nestjs/common';
 import {
 	ApiCreatedResponse,
 	ApiNoContentResponse,
 	ApiOkResponse,
-	ApiResponse,
 	ApiTags,
 } from '@nestjs/swagger';
 import { AllowRole } from 'src/auth/decorators/auth.decorator';
-import { Role } from 'src/shared/enum/role.enum';
-import { CreateProblemDto } from './dto/problem-create.dto';
-import { ProblemService } from './problem.service';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
+import { Role } from 'src/shared/enum/role.enum';
+import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
+import { CreateProblemDto } from './dto/problem-create.dto';
+import { ProblemQueryDto } from './dto/problem-query.dto';
 import {
 	ProblemPaginatedDto,
 	ProblemResponseDto,
 } from './dto/problem-respond.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
-import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
-import { ProblemQueryDto, ProblemUserQueryDto } from './dto/problem-query.dto';
+import { ProblemService } from './problem.service';
 
 @Controller('problem')
 @ApiTags('Problem')
@@ -65,33 +63,33 @@ export class ProblemController {
 	Search Problems
 	-------------------------------------------------------
 	*/
-	@AllowRole(Role.MEMBER)
 	@ApiOkResponse({
 		type: ProblemPaginatedDto,
 	})
+	@AllowRole()
 	@Get('search')
 	async search(
 		@Query() query: ProblemQueryDto,
 		@Req() req: authenticatedRequest,
 	): Promise<ProblemPaginatedDto> {
-		return this.problemService.search(query, req.user.userId);
+		return this.problemService.search(query, req.user);
 	}
 
-	@AllowRole(Role.MEMBER)
-	@ApiResponse({
-		type: ProblemPaginatedDto,
-		description: 'get problem by user id and search by status',
-	})
-	@Get('user')
-	async getProblemsByUserId(
-		@Request() req: authenticatedRequest,
-		@Query() query: ProblemUserQueryDto,
-	): Promise<ProblemPaginatedDto> {
-		return await this.problemService.getProblemsByUserId(
-			req.user.userId,
-			query,
-		);
-	}
+	// @AllowRole(Role.MEMBER)
+	// @ApiResponse({
+	// 	type: ProblemPaginatedDto,
+	// 	description: 'get problem by user id and search by status',
+	// })
+	// @Get('user')
+	// async getProblemsByUserId(
+	// 	@Request() req: authenticatedRequest,
+	// 	@Query() query: ProblemUserQueryDto,
+	// ): Promise<ProblemPaginatedDto> {
+	// 	return await this.problemService.getProblemsByUserId(
+	// 		req.user.userId,
+	// 		query,
+	// 	);
+	// }
 
 	@ApiOkResponse({ type: ProblemResponseDto })
 	@AllowRole(Role.MEMBER)
@@ -101,7 +99,6 @@ export class ProblemController {
 	}
 
 	@ApiOkResponse({ type: String })
-	@AllowRole(Role.MEMBER)
 	@Get('detail/:id')
 	async getDetail(@Param('id') id: number) {
 		return this.problemService.getDetail(id);

@@ -1,15 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { jwtPayloadDto } from 'src/auth/dto/jwt-payload.dto';
+import { Role } from 'src/shared/enum/role.enum';
+import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
+import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
 import { CreateProblemDto } from './dto/problem-create.dto';
-import { ProblemPaginatedDto } from './dto/problem-respond.dto';
-import { Problem } from './problem.entity';
-import { UpdateProblemDto } from './dto/problem-update.dto';
-import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
-import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { ProblemQueryDto, ProblemUserQueryDto } from './dto/problem-query.dto';
-import { ProblemStatusEnum } from './enum/problem-staff-status.enum';
+import { ProblemPaginatedDto } from './dto/problem-respond.dto';
+import { UpdateProblemDto } from './dto/problem-update.dto';
+import {
+	ProblemStaffStatusEnum,
+	ProblemStatusEnum,
+} from './enum/problem-staff-status.enum';
+import { Problem } from './problem.entity';
 
 @Injectable()
 export class ProblemService {
@@ -73,7 +78,7 @@ export class ProblemService {
 
 	async search(
 		query: ProblemQueryDto,
-		userId: string,
+		user: jwtPayloadDto,
 	): Promise<ProblemPaginatedDto> {
 		const {
 			page,
@@ -85,12 +90,27 @@ export class ProblemService {
 			limit,
 			status,
 			tags,
+			staff,
 		} = query;
 
-		const searchProblems = await createPaginationQuery<Problem>({
-			repository: this.problemsRepository,
-			dto: { page, limit },
-		});
+		let searchProblems;
+
+		if (staff == 'true') {
+			if (user.role != Role.STAFF && user.role != Role.DEV) {
+				throw new NotFoundException('You do not have permission.');
+			}
+			searchProblems = await createPaginationQuery<Problem>({
+				repository: this.problemsRepository,
+				dto: { page, limit },
+			});
+		} else {
+			searchProblems.andWhere('entity.devStatus = :status', {
+				status: ProblemStaffStatusEnum.PUBLISHED,
+			});
+
+			if (!!status) {
+			}
+		}
 
 		if (searchText && searchText != '') {
 			searchProblems.andWhere(
@@ -132,17 +152,13 @@ export class ProblemService {
 				);
 			}
 		}
+
 		searchProblems.orderBy('entity.id', idReverse ? 'DESC' : 'ASC');
 
 		if (difficultySortBy) {
 			searchProblems.addOrderBy('entity.difficulty', difficultySortBy);
 		}
 
-		if (!!status) {
-			searchProblems.andWhere('entity.devStatus = :status', {
-				status,
-			});
-		}
 		searchProblems.leftJoinAndSelect('entity.author', 'author');
 		const [data, totalItem] = await searchProblems.getManyAndCount();
 		return new ProblemPaginatedDto(
