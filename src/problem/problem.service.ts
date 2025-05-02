@@ -10,7 +10,10 @@ import { CreateProblemDto } from './dto/problem-create.dto';
 import { ProblemQueryDto } from './dto/problem-query.dto';
 import { ProblemPaginatedDto } from './dto/problem-respond.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
-import { ProblemStatusEnum } from './enum/problem-staff-status.enum';
+import {
+	ProblemStaffStatusEnum,
+	ProblemStatusEnum,
+} from './enum/problem-staff-status.enum';
 import { Problem } from './problem.entity';
 
 @Injectable()
@@ -144,10 +147,13 @@ export class ProblemService {
 		if (difficultySortBy) {
 			searchProblems.addOrderBy('entity.difficulty', difficultySortBy);
 		}
-
-		if (role !== Role.MEMBER) {
+		if (role == Role.MEMBER) {
+			searchProblems.andWhere('entity.devStatus = :devStatus', {
+				devStatus: ProblemStaffStatusEnum.PUBLISHED,
+			});
+		} else {
 			if (!!devStatus) {
-				searchProblems.andWhere('entity.devStatus = :status', {
+				searchProblems.andWhere('entity.devStatus = :devStatus', {
 					devStatus,
 				});
 			}
