@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateTestCaseRequest, UpdateTestCaseRequest } from './dto/test-case-request.dto';
+import { CreateTestCaseRequest, UpdateTestCaseRequest } from './dto/test_case-request.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { TestCase } from './test-case.entity';
+import { TestCase } from './test_case.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -23,7 +23,7 @@ export class TestCaseService {
 
   async findOne(id: number): Promise<TestCase> {
     if (isNaN(id)) {
-      throw new NotFoundException(`Invalid problem ID`);
+      throw new NotFoundException(`Invalid test case ID`);
     }
     const testCase = await this.testCaseRepository.findOneBy({ id });
     if (!testCase) {
