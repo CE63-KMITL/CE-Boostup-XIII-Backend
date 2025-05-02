@@ -22,6 +22,7 @@ import { TestCaseModule } from './test_case/test_case.module';
 	imports: [
 		UserModule,
 		ProblemModule,
+		TestCaseModule,
 		MailModule,
 		RunCodeModule,
 		HouseModule,

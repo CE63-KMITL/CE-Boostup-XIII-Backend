@@ -29,7 +29,7 @@ import { ProblemService } from './problem.service';
 @Controller('problem')
 @ApiTags('Problem')
 export class ProblemController {
-	constructor(private readonly problemService: ProblemService) {}
+	constructor(private readonly problemService: ProblemService) { }
 
 	@ApiCreatedResponse({ type: Problem })
 	@AllowRole(Role.STAFF)
@@ -134,5 +134,5 @@ export class ProblemController {
 		return this.problemService.remove(+id);
 	}
 
-	
+
 }

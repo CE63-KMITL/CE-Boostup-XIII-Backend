@@ -1,11 +1,14 @@
 import { ApiProperty, PartialType } from "@nestjs/swagger";
+import { IsBoolean, IsString } from "class-validator";
 
 export class CreateTestCaseRequest {
     @ApiProperty()
-    expectOutput: string
+    @IsString()
+    expectOutput: string;
 
     @ApiProperty()
-    hiddenTestcase: boolean
+    @IsBoolean()
+    hiddenTestcase: boolean;
 
 }
 
