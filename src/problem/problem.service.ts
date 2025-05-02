@@ -164,6 +164,10 @@ export class ProblemService {
 			}
 			if (status === ProblemStatusEnum.NOT_STARTED) {
 				const ids = problems.map((problem) => problem.problemId);
+				if (ids.length === 0)
+					throw new NotFoundException(
+						`no problem with status ${status}`,
+					);
 				searchProblems.andWhere('entity.id NOT IN (:...ids)', {
 					ids,
 				});
