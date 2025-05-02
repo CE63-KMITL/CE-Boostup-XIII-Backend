@@ -1,22 +1,18 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsNumber } from 'class-validator';
+import { PaginatedResponseDto } from 'src/shared/pagination/dto/paginated-response.dto';
+import { UserResponseDto } from 'src/user/dtos/user-response.dto';
 import {
 	ProblemStaffStatusEnum,
 	ProblemStatusEnum,
 } from '../enum/problem-staff-status.enum';
 import { Problem } from '../problem.entity';
-import {
-	ApiExtraModels,
-	ApiProperty,
-	ApiPropertyOptional,
-} from '@nestjs/swagger';
 import { ScoreValue } from '../type/score-value.type';
-import { UserResponseDto } from 'src/user/dtos/user-response.dto';
-import { PaginatedResponseDto } from 'src/shared/pagination/dto/paginated-response.dto';
 
 export class ProblemResponseDto {
 	@ApiProperty({
-		example: 'f789f66d-8e8e-4df0-9d12-c6aeaf930ce6',
-		description: 'problem uuid',
+		example: '1',
+		description: 'problem id',
 		type: Number,
 	})
 	id: number;

@@ -1,17 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { jwtPayloadDto } from 'src/auth/dto/jwt-payload.dto';
+import { Role } from 'src/shared/enum/role.enum';
+import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
+import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
 import { CreateProblemDto } from './dto/problem-create.dto';
+import { ProblemQueryDto } from './dto/problem-query.dto';
 import { ProblemPaginatedDto } from './dto/problem-respond.dto';
-import { Problem } from './problem.entity';
 import { UpdateProblemDto } from './dto/problem-update.dto';
-import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
-import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
-import { ProblemQueryDto, ProblemUserQueryDto } from './dto/problem-query.dto';
 import { ProblemStatusEnum } from './enum/problem-staff-status.enum';
-import { jwtPayloadDto } from 'src/auth/dto/jwt-payload.dto';
-import { Role } from 'src/shared/enum/role.enum';
+import { Problem } from './problem.entity';
 
 @Injectable()
 export class ProblemService {
@@ -137,6 +137,7 @@ export class ProblemService {
 				);
 			}
 		}
+
 		searchProblems.orderBy('entity.id', idReverse ? 'DESC' : 'ASC');
 
 		if (difficultySortBy) {

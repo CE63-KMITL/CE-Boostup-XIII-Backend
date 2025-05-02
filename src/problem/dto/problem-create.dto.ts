@@ -1,14 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
 	IsArray,
-	IsEnum,
 	IsNotEmpty,
 	IsNumber,
 	IsOptional,
 	IsString,
 } from 'class-validator';
-import { ProblemStatusEnum } from '../enum/problem-staff-status.enum';
-import { ProblemStaffStatusEnum } from '../enum/problem-staff-status.enum';
 
 export class CreateProblemDto {
 	@ApiProperty({ example: 'Sample Problem Title' })
@@ -37,44 +34,4 @@ export class CreateProblemDto {
 	@IsOptional()
 	@IsArray()
 	tags?: string[];
-}
-
-enum ProblemSearchSortBy {
-	ASC = 'ASC',
-	DESC = 'DESC',
-}
-
-export class ProblemSearchRequest {
-	@IsOptional()
-	@IsString()
-	searchText: string;
-
-	@IsOptional()
-	@IsString()
-	idReverse: string;
-
-	@IsOptional()
-	@IsString()
-	tags: string;
-
-	@IsOptional()
-	@IsString()
-	minDifficulty: string = '0.5';
-
-	@IsOptional()
-	@IsString()
-	maxDifficulty: string = '5';
-
-	@IsOptional()
-	@IsString()
-	status: ProblemStatusEnum | ProblemStaffStatusEnum;
-
-	@IsOptional()
-	@IsString()
-	page: string = '1';
-
-	@IsOptional()
-	@IsString()
-	@IsEnum(ProblemSearchSortBy)
-	difficultySortBy: ProblemSearchSortBy = ProblemSearchSortBy.ASC;
 }
