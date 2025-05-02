@@ -1,12 +1,12 @@
-import { IsOptional, IsString, IsEnum, IsArray, IsIn } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
+import { IsArray, IsEnum, IsIn, IsOptional, IsString } from 'class-validator';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import {
-	ProblemStatusEnum,
 	ProblemStaffStatusEnum,
+	ProblemStatusEnum,
 } from '../enum/problem-staff-status.enum';
-import { ApiPropertyOptional } from '@nestjs/swagger';
 import { SCORE_VALUES, ScoreValue } from '../type/score-value.type';
-import { Transform, Type } from 'class-transformer';
 
 enum ProblemSearchSortBy {
 	ASC = 'ASC',
@@ -77,6 +77,14 @@ export class ProblemQueryDto extends PaginationMetaDto {
 		enum: ProblemSearchSortBy,
 	})
 	difficultySortBy: ProblemSearchSortBy = ProblemSearchSortBy.ASC;
+
+	@IsOptional()
+	@IsString()
+	@ApiPropertyOptional({
+		type: Boolean,
+		description: 'For Satff',
+	})
+	staff?: string;
 }
 export class ProblemUserQueryDto extends PaginationMetaDto {
 	@IsOptional()

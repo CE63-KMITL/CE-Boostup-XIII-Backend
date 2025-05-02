@@ -8,21 +8,23 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 
+import { ConfigService } from '@nestjs/config';
+import { ProblemQueryDto } from 'src/problem/dto/problem-query.dto';
+import { ProblemPaginatedDto } from 'src/problem/dto/problem-respond.dto';
+import { ProblemStatusEnum } from 'src/problem/enum/problem-staff-status.enum';
+import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
 import { House } from 'src/shared/enum/house.enum';
+import { Role } from 'src/shared/enum/role.enum';
+import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
+import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { FindOneOptions, Repository } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { CreateUserDto } from './dtos/create-user.dto';
+import { UserQueryDto } from './dtos/user-query.dto';
 import { UserPaginatedDto, UserResponseDto } from './dtos/user-response.dto';
 import { ProblemStatus } from './score/problem-status.entity';
-import { ProblemStatusEnum } from 'src/problem/enum/problem-staff-status.enum';
 import { ScoreLog } from './score/score-log.entity';
 import { User } from './user.entity';
-import { ConfigService } from '@nestjs/config';
-import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
-import { Role } from 'src/shared/enum/role.enum';
-import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
-import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
-import { UserQueryDto } from './dtos/user-query.dto';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -245,6 +247,55 @@ export class UserService implements OnModuleInit {
 	Problem Status Management
 	-------------------------------------------------------
 	*/
+
+	// async getProblemsByUserIdAndStatus(id: string, query: ProblemQueryDto) {
+	// 	const {
+	// 		page,
+	// 		searchText,
+	// 		difficultySortBy,
+	// 		maxDifficulty,
+	// 		minDifficulty,
+	// 		idReverse,
+	// 		limit,
+	// 		status,
+	// 		tags,
+	// 		staff,
+	// 	} = query;
+
+	// 	let problems = (
+	// 		await this.userService.findOne({
+	// 			where: { id },
+	// 			relations: { problemStatus: true },
+	// 		})
+	// 	)?.problemStatus;
+
+	// 	if (!problems) {
+	// 		throw new NotFoundException('No problem status yet');
+	// 	}
+
+	// 	if (status) {
+	// 		problems = problems.filter(
+	// 			(problem) => ProblemStatusEnum[problem.status] === status,
+	// 		);
+	// 	}
+
+	// 	const totalItem = problems.length;
+
+	// 	problems = problems.slice((page - 1) * limit, page * limit);
+
+	// 	const resProblems = await Promise.all(
+	// 		problems.map(async (problem) => {
+	// 			return await this.problemsRepository.findOne({
+	// 				where: { id: problem.problemId },
+	// 				relations: {
+	// 					author: true,
+	// 				},
+	// 			});
+	// 		}),
+	// 	);
+	// 	return new ProblemPaginatedDto(resProblems, totalItem, limit, page);
+	// }
+
 	async getProblemStatus(
 		userId: string,
 		problemId: number,
