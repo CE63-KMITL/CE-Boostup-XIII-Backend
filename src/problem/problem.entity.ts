@@ -7,22 +7,15 @@ import {
 	ManyToOne,
 	PrimaryGeneratedColumn,
 } from 'typeorm';
-
-export type ScoreValue = 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5;
-export enum ProblemStaffStatus {
-	IN_PROGRESS = 'In Progress',
-	NEED_REVIEW = 'Need Review',
-	PUBLISHED = 'Published',
-	REJECTED = 'Rejected',
-	ARCHIVED = 'Archived',
-}
+import { ProblemStaffStatusEnum } from './enum/problem-staff-status.enum';
+import { ScoreValue } from './type/score-value.type';
 
 @Entity()
 export class Problem {
-	@PrimaryGeneratedColumn()
+	@PrimaryGeneratedColumn('increment')
 	id: number;
 
-	@Column()
+	@Column({ unique: true, nullable: false })
 	title: string;
 
 	@ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
@@ -32,25 +25,28 @@ export class Problem {
 	@Column({
 		nullable: true,
 	})
-	description: string;
+	description?: string;
 
 	@Column({
 		nullable: true,
 	})
-	defaultCode: string;
+	defaultCode?: string;
 
 	@Column({
 		type: 'decimal',
 		enum: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5],
+		nullable: false,
 		default: 2,
 	})
 	difficulty: ScoreValue;
 
 	@Column({
-		nullable: true,
+		nullable: false,
+		default: ProblemStaffStatusEnum.IN_PROGRESS,
+		enum: ProblemStaffStatusEnum,
 	})
-	@IsEnum(ProblemStaffStatus)
-	devStatus: ProblemStaffStatus;
+	@IsEnum(ProblemStaffStatusEnum)
+	devStatus: ProblemStaffStatusEnum;
 
 	@Column('text', { array: true, nullable: true, default: [] })
 	tags: string[];

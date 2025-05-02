@@ -22,7 +22,7 @@ export class CreateUserDto {
 
 	@IsEmail()
 	@IsNotEmpty()
-	@ApiPropertyOptional({
+	@ApiProperty({
 		example: 'example@gmail.com',
 		description: 'Email',
 		type: String,

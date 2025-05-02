@@ -8,20 +8,23 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 
+import { ConfigService } from '@nestjs/config';
+import { ProblemQueryDto } from 'src/problem/dto/problem-query.dto';
+import { ProblemPaginatedDto } from 'src/problem/dto/problem-respond.dto';
+import { ProblemStatusEnum } from 'src/problem/enum/problem-staff-status.enum';
+import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
 import { House } from 'src/shared/enum/house.enum';
+import { Role } from 'src/shared/enum/role.enum';
+import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
+import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { FindOneOptions, Repository } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { CreateUserDto } from './dtos/create-user.dto';
-import { UserResponseDto } from './dtos/user-response.dto';
-import {
-	ProblemStatus,
-	ProblemStatusEnum,
-} from './score/problem-status.entity';
+import { UserQueryDto } from './dtos/user-query.dto';
+import { UserPaginatedDto, UserResponseDto } from './dtos/user-response.dto';
+import { ProblemStatus } from './score/problem-status.entity';
 import { ScoreLog } from './score/score-log.entity';
 import { User } from './user.entity';
-import { ConfigService } from '@nestjs/config';
-import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
-import { Role } from 'src/shared/enum/role.enum';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -62,9 +65,13 @@ export class UserService implements OnModuleInit {
 	User Management
 	-------------------------------------------------------
 	*/
-	async findAll(): Promise<UserResponseDto[]> {
-		const users = await this.userRepository.find();
-		return users.map((user) => new UserResponseDto(user));
+	async findAll(query: PaginationMetaDto): Promise<UserPaginatedDto> {
+		const users = await createPaginationQuery({
+			repository: this.userRepository,
+			dto: query,
+		});
+		const [data, totalItem] = await users.getManyAndCount();
+		return new UserPaginatedDto(data, totalItem, query.page, query.limit);
 	}
 
 	async findOne(option: FindOneOptions<User>): Promise<User> {
@@ -72,6 +79,34 @@ export class UserService implements OnModuleInit {
 		if (!responseUser) throw new NotFoundException('User not found');
 
 		return responseUser;
+	}
+
+	async search(query: UserQueryDto) {
+		const { limit, page, email, name, orderByScore, house, role } = query;
+		const users = await createPaginationQuery({
+			repository: this.userRepository,
+			dto: { limit, page },
+		});
+		if (!!name)
+			users.where('LOWER(entity.name) LIKE LOWER(:name)', {
+				name: `%${name}%`,
+			});
+
+		if (!!email)
+			users.andWhere('LOWER(entity.email) LIKE LOWER(:email)', {
+				email: `%${email}%`,
+			});
+
+		if (orderByScore !== undefined) {
+			users.orderBy('entity.score', orderByScore ? 'DESC' : 'ASC');
+		}
+
+		if (!!house) users.andWhere('entity.house  = :house', { house });
+
+		users.andWhere('entity.role = :role', { role });
+
+		const [data, totalItem] = await users.getManyAndCount();
+		return new UserPaginatedDto(data, totalItem, page, limit);
 	}
 
 	async create(user: CreateUserDto): Promise<UserResponseDto> {
@@ -212,6 +247,55 @@ export class UserService implements OnModuleInit {
 	Problem Status Management
 	-------------------------------------------------------
 	*/
+
+	// async getProblemsByUserIdAndStatus(id: string, query: ProblemQueryDto) {
+	// 	const {
+	// 		page,
+	// 		searchText,
+	// 		difficultySortBy,
+	// 		maxDifficulty,
+	// 		minDifficulty,
+	// 		idReverse,
+	// 		limit,
+	// 		status,
+	// 		tags,
+	// 		staff,
+	// 	} = query;
+
+	// 	let problems = (
+	// 		await this.userService.findOne({
+	// 			where: { id },
+	// 			relations: { problemStatus: true },
+	// 		})
+	// 	)?.problemStatus;
+
+	// 	if (!problems) {
+	// 		throw new NotFoundException('No problem status yet');
+	// 	}
+
+	// 	if (status) {
+	// 		problems = problems.filter(
+	// 			(problem) => ProblemStatusEnum[problem.status] === status,
+	// 		);
+	// 	}
+
+	// 	const totalItem = problems.length;
+
+	// 	problems = problems.slice((page - 1) * limit, page * limit);
+
+	// 	const resProblems = await Promise.all(
+	// 		problems.map(async (problem) => {
+	// 			return await this.problemsRepository.findOne({
+	// 				where: { id: problem.problemId },
+	// 				relations: {
+	// 					author: true,
+	// 				},
+	// 			});
+	// 		}),
+	// 	);
+	// 	return new ProblemPaginatedDto(resProblems, totalItem, limit, page);
+	// }
+
 	async getProblemStatus(
 		userId: string,
 		problemId: number,
