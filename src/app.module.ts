@@ -16,6 +16,7 @@ import { GLOBAL_CONFIG } from './shared/constants/global-config.constant';
 import { CustomThrottlerGuard } from './shared/guards/throttler.guard';
 import { UserModule } from './user/user.module';
 import { BullModule } from '@nestjs/bullmq';
+import { HouseScoreModule } from './house_score/house_score.module';
 
 @Module({
 	imports: [
@@ -24,6 +25,7 @@ import { BullModule } from '@nestjs/bullmq';
 		MailModule,
 		RunCodeModule,
 		HouseModule,
+		HouseScoreModule,
 		AuthModule,
 		ThrottlerModule.forRoot([
 			{

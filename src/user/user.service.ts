@@ -22,6 +22,7 @@ import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
 import { Role } from 'src/shared/enum/role.enum';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
+import { UserQueryDto } from './dtos/user-query.dto';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -62,7 +63,7 @@ export class UserService implements OnModuleInit {
 	User Management
 	-------------------------------------------------------
 	*/
-	async findAll(query: PaginationMetaDto<User>): Promise<UserPaginatedDto> {
+	async findAll(query: PaginationMetaDto): Promise<UserPaginatedDto> {
 		const users = await createPaginationQuery({
 			repository: this.userRepository,
 			dto: query,
@@ -76,6 +77,34 @@ export class UserService implements OnModuleInit {
 		if (!responseUser) throw new NotFoundException('User not found');
 
 		return responseUser;
+	}
+
+	async search(query: UserQueryDto) {
+		const { limit, page, email, name, orderByScore, house, role } = query;
+		const users = await createPaginationQuery({
+			repository: this.userRepository,
+			dto: { limit, page },
+		});
+		if (!!name)
+			users.where('LOWER(entity.name) LIKE LOWER(:name)', {
+				name: `%${name}%`,
+			});
+
+		if (!!email)
+			users.andWhere('LOWER(entity.email) LIKE LOWER(:email)', {
+				email: `%${email}%`,
+			});
+
+		if (orderByScore !== undefined) {
+			users.orderBy('entity.score', orderByScore ? 'DESC' : 'ASC');
+		}
+
+		if (!!house) users.andWhere('entity.house  = :house', { house });
+
+		users.andWhere('entity.role = :role', { role });
+
+		const [data, totalItem] = await users.getManyAndCount();
+		return new UserPaginatedDto(data, totalItem, page, limit);
 	}
 
 	async create(user: CreateUserDto): Promise<UserResponseDto> {
@@ -218,7 +247,7 @@ export class UserService implements OnModuleInit {
 	*/
 	async getProblemStatus(
 		userId: string,
-		problemId: string,
+		problemId: number,
 	): Promise<ProblemStatusEnum> {
 		try {
 			const userProblem = await this.getUserProblem(userId, problemId);
@@ -232,7 +261,7 @@ export class UserService implements OnModuleInit {
 
 	async getUserProblem(
 		userId: string,
-		problemId: string,
+		problemId: number,
 	): Promise<ProblemStatus> {
 		const userProblem = await this.userRepository
 			.createQueryBuilder('user')
@@ -248,7 +277,7 @@ export class UserService implements OnModuleInit {
 	}
 
 	async setProblemStatus(
-		problemId: string,
+		problemId: number,
 		userId: string,
 	): Promise<ProblemStatus> {
 		const userProblem = await this.getUserProblem(userId, problemId);

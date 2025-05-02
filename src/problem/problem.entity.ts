@@ -12,10 +12,10 @@ import { ScoreValue } from './type/score-value.type';
 
 @Entity()
 export class Problem {
-	@PrimaryGeneratedColumn('uuid')
-	id: string;
+	@PrimaryGeneratedColumn('increment')
+	id: number;
 
-	@Column()
+	@Column({ unique: true, nullable: false })
 	title: string;
 
 	@ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
@@ -25,22 +25,25 @@ export class Problem {
 	@Column({
 		nullable: true,
 	})
-	description: string;
+	description?: string;
 
 	@Column({
 		nullable: true,
 	})
-	defaultCode: string;
+	defaultCode?: string;
 
 	@Column({
 		type: 'decimal',
 		enum: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5],
+		nullable: false,
 		default: 2,
 	})
 	difficulty: ScoreValue;
 
 	@Column({
-		nullable: true,
+		nullable: false,
+		default: ProblemStaffStatusEnum.IN_PROGRESS,
+		enum: ProblemStaffStatusEnum,
 	})
 	@IsEnum(ProblemStaffStatusEnum)
 	devStatus: ProblemStaffStatusEnum;

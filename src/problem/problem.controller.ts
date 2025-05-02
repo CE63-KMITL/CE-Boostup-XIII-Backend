@@ -4,25 +4,23 @@ import {
 	Delete,
 	Get,
 	Param,
+	ParseIntPipe,
 	Patch,
 	Post,
 	Query,
 	Req,
+	Request,
 } from '@nestjs/common';
 import {
 	ApiCreatedResponse,
 	ApiNoContentResponse,
 	ApiOkResponse,
-	ApiQuery,
+	ApiResponse,
 	ApiTags,
 } from '@nestjs/swagger';
 import { AllowRole } from 'src/auth/decorators/auth.decorator';
 import { Role } from 'src/shared/enum/role.enum';
-import {
-	CreateProblemDto,
-	ProblemSearchRequest,
-} from './dto/problem-create.dto';
-import { Problem } from './problem.entity';
+import { CreateProblemDto } from './dto/problem-create.dto';
 import { ProblemService } from './problem.service';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 import {
@@ -31,6 +29,7 @@ import {
 } from './dto/problem-respond.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
+import { ProblemQueryDto, ProblemUserQueryDto } from './dto/problem-query.dto';
 
 @Controller('problem')
 @ApiTags('Problem')
@@ -56,7 +55,7 @@ export class ProblemController {
 	@AllowRole(Role.DEV)
 	@Get()
 	async findAll(
-		@Query() query: PaginationMetaDto<Problem>,
+		@Query() query: PaginationMetaDto,
 	): Promise<ProblemPaginatedDto> {
 		return this.problemService.findAll(query);
 	}
@@ -67,47 +66,7 @@ export class ProblemController {
 	-------------------------------------------------------
 	*/
 	@ApiOkResponse({
-		schema: {
-			properties: {
-				items: {
-					type: 'array',
-					items: { $ref: '#/components/schemas/Problem' },
-				},
-				pageCount: {
-					type: 'number',
-					description: 'Total number of pages',
-				},
-			},
-		},
-	})
-	@ApiQuery({
-		name: 'searchText',
-		required: false,
-		description: 'Search by ID or author name or problem name',
-	})
-	@ApiQuery({
-		name: 'idReverse',
-		required: false,
-		type: 'boolean',
-		description: 'Sort by ID in reverse order',
-	})
-	@ApiQuery({
-		name: 'tag',
-		required: false,
-		isArray: true,
-		description: 'Filter by tags',
-	})
-	@ApiQuery({
-		name: 'difficulty',
-		required: false,
-		type: 'number',
-		description: 'Filter by difficulty level (0.5-5)',
-	})
-	@ApiQuery({
-		name: 'page',
-		required: false,
-		type: 'number',
-		description: 'Page number (starts from 1)',
+		type: ProblemPaginatedDto,
 	})
 	@ApiQuery({
 		name: 'staff',
@@ -116,20 +75,39 @@ export class ProblemController {
 		description: 'For staff',
 	})
 	@Get('search')
-	async search(@Query() query: ProblemSearchRequest, @Req() req) {
-		return this.problemService.search(query, req.user);
+	async search(
+		@Query() query: ProblemQueryDto,
+		@Req() req: authenticatedRequest,
+	): Promise<ProblemPaginatedDto> {
+		return this.problemService.search(query, req.user.userId);
+	}
+
+	@AllowRole(Role.MEMBER)
+	@ApiResponse({
+		type: ProblemPaginatedDto,
+		description: 'get problem by user id and search by status',
+	})
+	@Get('user')
+	async getProblemsByUserId(
+		@Request() req: authenticatedRequest,
+		@Query() query: ProblemUserQueryDto,
+	): Promise<ProblemPaginatedDto> {
+		return await this.problemService.getProblemsByUserId(
+			req.user.userId,
+			query,
+		);
 	}
 
 	@ApiOkResponse({ type: ProblemResponseDto })
 	@AllowRole(Role.MEMBER)
 	@Get(':id')
-	async findOne(@Param('id') id: string): Promise<ProblemResponseDto> {
+	async findOne(@Param('id') id: number): Promise<ProblemResponseDto> {
 		return new ProblemResponseDto(await this.problemService.findOne(id));
 	}
 
 	@ApiOkResponse({ type: String })
 	@Get('detail/:id')
-	async getDetail(@Param('id') id: string) {
+	async getDetail(@Param('id') id: number) {
 		return this.problemService.getDetail(id);
 	}
 
@@ -137,7 +115,7 @@ export class ProblemController {
 	@AllowRole(Role.STAFF)
 	@Patch(':id')
 	async update(
-		@Param('id') id: string,
+		@Param('id', ParseIntPipe) id: number,
 		@Body() updateProblemRequest: UpdateProblemDto,
 	): Promise<ProblemResponseDto> {
 		return new ProblemResponseDto(
@@ -150,7 +128,7 @@ export class ProblemController {
 	})
 	@AllowRole(Role.DEV)
 	@Delete(':id')
-	async remove(@Param('id') id: string) {
+	async remove(@Param('id', ParseIntPipe) id: number) {
 		this.problemService.remove(id);
 	}
 }
