@@ -7,7 +7,7 @@ import { User } from '../user.entity';
 @Entity()
 export class ProblemStatus {
 	@PrimaryColumn()
-	userId: number;
+	userId: string;
 
 	@PrimaryColumn()
 	problemId: number;

@@ -159,27 +159,30 @@ export class ProblemService {
 					relations: { problemStatus: true },
 				})
 			).problemStatus;
-			if (problems.length === 0) {
-				throw new NotFoundException('No problem status yet');
-			}
+
 			if (status === ProblemStatusEnum.NOT_STARTED) {
-				const ids = problems.map((problem) => problem.problemId);
-				if (ids.length === 0)
-					throw new NotFoundException(
-						`no problem with status ${status}`,
+				if (problems.length != 0) {
+					const ids = problems.map(
+						(problem) => problem.problemId,
 					);
-				searchProblems.andWhere('entity.id NOT IN (:...ids)', {
-					ids,
-				});
+					searchProblems.andWhere('entity.id NOT IN (:...ids)', {
+						ids,
+					});
+				}
 			} else {
+				if (problems.length === 0)
+					throw new NotFoundException(`No problem status yet`);
+
 				problems = problems.filter(
 					(problem) =>
 						ProblemStatusEnum[problem.status] === status,
 				);
+
 				if (problems.length === 0)
 					throw new NotFoundException(
 						`no problem with status ${status}`,
 					);
+
 				problems.map((problem) =>
 					searchProblems.andWhere('entity.id = :id', {
 						id: problem.problemId,
