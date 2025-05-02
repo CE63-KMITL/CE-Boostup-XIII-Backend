@@ -67,7 +67,15 @@ export class ProblemQueryDto extends PaginationMetaDto {
 		example: ProblemStaffStatusEnum.IN_PROGRESS,
 		enum: ProblemStaffStatusEnum,
 	})
-	status?: ProblemStaffStatusEnum;
+	devStatus?: ProblemStaffStatusEnum;
+
+	@IsOptional()
+	@IsEnum(ProblemStatusEnum)
+	@ApiPropertyOptional({
+		example: ProblemStatusEnum.IN_PROGRESS,
+		enum: ProblemStatusEnum,
+	})
+	status?: ProblemStatusEnum;
 
 	@IsOptional()
 	@IsString()

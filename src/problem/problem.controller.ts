@@ -74,23 +74,7 @@ export class ProblemController {
 		@Query() query: ProblemQueryDto,
 		@Req() req: authenticatedRequest,
 	): Promise<ProblemPaginatedDto> {
-		return this.problemService.search(query, req.user.userId);
-	}
-
-	@AllowRole(Role.MEMBER)
-	@ApiResponse({
-		type: ProblemPaginatedDto,
-		description: 'get problem by user id and search by status',
-	})
-	@Get('user')
-	async getProblemsByUserId(
-		@Request() req: authenticatedRequest,
-		@Query() query: ProblemUserQueryDto,
-	): Promise<ProblemPaginatedDto> {
-		return await this.problemService.getProblemsByUserId(
-			req.user.userId,
-			query,
-		);
+		return this.problemService.search(query, req.user);
 	}
 
 	@ApiOkResponse({ type: ProblemResponseDto })

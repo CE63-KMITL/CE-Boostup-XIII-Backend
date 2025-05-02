@@ -10,6 +10,8 @@ import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { ProblemQueryDto, ProblemUserQueryDto } from './dto/problem-query.dto';
 import { ProblemStatusEnum } from './enum/problem-staff-status.enum';
+import { jwtPayloadDto } from 'src/auth/dto/jwt-payload.dto';
+import { Role } from 'src/shared/enum/role.enum';
 
 @Injectable()
 export class ProblemService {
@@ -73,7 +75,7 @@ export class ProblemService {
 
 	async search(
 		query: ProblemQueryDto,
-		userId: string,
+		user: jwtPayloadDto,
 	): Promise<ProblemPaginatedDto> {
 		const {
 			page,
@@ -84,8 +86,11 @@ export class ProblemService {
 			idReverse,
 			limit,
 			status,
+			devStatus,
 			tags,
 		} = query;
+
+		const { role, userId } = user;
 
 		const searchProblems = await createPaginationQuery<Problem>({
 			repository: this.problemsRepository,
@@ -138,11 +143,45 @@ export class ProblemService {
 			searchProblems.addOrderBy('entity.difficulty', difficultySortBy);
 		}
 
-		if (!!status) {
-			searchProblems.andWhere('entity.devStatus = :status', {
-				status,
-			});
+		if (role !== Role.MEMBER) {
+			if (!!devStatus) {
+				searchProblems.andWhere('entity.devStatus = :status', {
+					devStatus,
+				});
+			}
 		}
+		if (!!status) {
+			let problems = (
+				await this.userService.findOne({
+					where: { id: userId },
+					relations: { problemStatus: true },
+				})
+			).problemStatus;
+			if (problems.length === 0) {
+				throw new NotFoundException('No problem status yet');
+			}
+			if (status === ProblemStatusEnum.NOT_STARTED) {
+				const ids = problems.map((problem) => problem.problemId);
+				searchProblems.andWhere('entity.id NOT IN (:...ids)', {
+					ids,
+				});
+			} else {
+				problems = problems.filter(
+					(problem) =>
+						ProblemStatusEnum[problem.status] === status,
+				);
+				if (problems.length === 0)
+					throw new NotFoundException(
+						`no problem with status ${status}`,
+					);
+				problems.map((problem) =>
+					searchProblems.andWhere('entity.id = :id', {
+						id: problem.problemId,
+					}),
+				);
+			}
+		}
+
 		searchProblems.leftJoinAndSelect('entity.author', 'author');
 		const [data, totalItem] = await searchProblems.getManyAndCount();
 		return new ProblemPaginatedDto(
@@ -151,42 +190,6 @@ export class ProblemService {
 			query.limit,
 			query.page,
 		);
-	}
-
-	async getProblemsByUserId(id: string, query: ProblemUserQueryDto) {
-		const { limit, page, status } = query;
-		let problems = (
-			await this.userService.findOne({
-				where: { id },
-				relations: { problemStatus: true },
-			})
-		)?.problemStatus;
-
-		if (!problems) {
-			throw new NotFoundException('No problem status yet');
-		}
-
-		if (status) {
-			problems = problems.filter(
-				(problem) => ProblemStatusEnum[problem.status] === status,
-			);
-		}
-
-		const totalItem = problems.length;
-
-		problems = problems.slice((page - 1) * limit, page * limit);
-
-		const resProblems = await Promise.all(
-			problems.map(async (problem) => {
-				return await this.problemsRepository.findOne({
-					where: { id: problem.problemId },
-					relations: {
-						author: true,
-					},
-				});
-			}),
-		);
-		return new ProblemPaginatedDto(resProblems, totalItem, limit, page);
 	}
 
 	async update(
