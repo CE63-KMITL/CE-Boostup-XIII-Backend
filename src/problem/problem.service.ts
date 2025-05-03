@@ -15,6 +15,7 @@ import {
 	ProblemStatusEnum,
 } from './enum/problem-staff-status.enum';
 import { Problem } from './problem.entity';
+import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 
 @Injectable()
 export class ProblemService {
@@ -207,11 +208,13 @@ export class ProblemService {
 		);
 	}
 
-	async update(
+	async updateDraft(
 		id: number,
 		updateProblemRequest: UpdateProblemDto,
 	): Promise<Problem> {
 		try {
+			// TODO: Only owner can update
+
 			await this.problemsRepository.update(id, updateProblemRequest);
 			return this.findOne(id);
 		} catch (error) {
@@ -221,6 +224,13 @@ export class ProblemService {
 
 	async remove(id: number): Promise<void> {
 		await this.problemsRepository.delete(id);
+	}
+
+	async approveProblem(
+		id: number,
+		user: jwtPayloadDto
+	): Promise<void> {
+		await this.problemsRepository.update(id, { devStatus: ProblemStaffStatusEnum.PUBLISHED });
 	}
 
 
