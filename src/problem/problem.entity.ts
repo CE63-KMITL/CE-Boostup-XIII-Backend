@@ -33,6 +33,12 @@ export class Problem {
 	defaultCode?: string;
 
 	@Column({
+		nullable: true
+	})
+	solutionCode: string;
+
+
+	@Column({
 		type: 'decimal',
 		enum: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5],
 		nullable: false,

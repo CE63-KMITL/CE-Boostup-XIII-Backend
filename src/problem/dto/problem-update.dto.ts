@@ -26,6 +26,14 @@ export class UpdateProblemDto {
 	@IsOptional()
 	@IsString()
 	defaultCode?: string;
+	
+	@ApiProperty({
+		example: '#include <stdio.h>\n\nint main() {\n\tprintf("Hello, World!");\n\treturn 0;\n}',
+		required: false,
+	})
+	@IsOptional()
+	@IsString()
+	solutionCode?: string;
 
 	@ApiProperty({
 		example: 4,

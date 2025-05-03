@@ -25,6 +25,14 @@ export class CreateProblemDto {
 	@IsString()
 	defaultCode?: string;
 
+	@ApiProperty({
+		example: '#include <stdio.h>\n\nint main() {\n\tprintf("Hello, World!");\n\treturn 0;\n}',
+	})
+	@IsOptional()
+	@IsString()
+	solutionCode?: string;
+
+
 	@ApiProperty({ example: 3, description: 'Difficulty level (0.5 to 5)' })
 	@IsOptional()
 	@IsNumber()
