@@ -4,7 +4,7 @@ import { GLOBAL_CONFIG } from '../constants/global-config.constant';
 
 interface PaginationOptions<T> {
 	repository: Repository<T>;
-	dto: PaginationMetaDto<T>;
+	dto: PaginationMetaDto;
 }
 
 export async function createPaginationQuery<T>(option: PaginationOptions<T>) {
@@ -12,13 +12,6 @@ export async function createPaginationQuery<T>(option: PaginationOptions<T>) {
 	const qb = repository.createQueryBuilder('entity');
 	const page = dto.page || 1;
 	const limit = dto.limit || GLOBAL_CONFIG.DEFAULT_PROBLEM_PAGE_SIZE;
-	if (dto.searchTerm && dto.searchField) {
-		qb.where(`${qb.alias}.${String(dto.searchField)} ILIKE :search`, {
-			search: `%${dto.searchTerm}%`,
-		});
-	}
-	qb.skip((page - 1) * limit)
-		.take(limit)
-		.getManyAndCount();
+	qb.skip((page - 1) * limit).take(limit);
 	return qb;
 }

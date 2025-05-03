@@ -8,18 +8,18 @@ import {
 
 @Entity('houseScore')
 export class HouseScore {
-	@PrimaryGeneratedColumn()
-	id: number;
+	@PrimaryGeneratedColumn('uuid')
+	id: string;
 
-	@Column()
+	@Column({ unique: true, nullable: false })
 	name: String;
 
-	@Column('int')
+	@Column({ type: 'int', default: 0 })
 	value: number;
 
-	@CreateDateColumn()
+	@CreateDateColumn({ type: 'timestamp', nullable: false })
 	createdAt: Date;
 
-	@UpdateDateColumn()
+	@UpdateDateColumn({ type: 'timestamp', nullable: false })
 	updatedAt: Date;
 }

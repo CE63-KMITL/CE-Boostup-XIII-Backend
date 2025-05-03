@@ -1,19 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateTestCaseRequest, UpdateTestCaseRequest } from './dto/test-case-request.dto';
+import { CreateTestCaseRequest, UpdateTestCaseRequest } from './dto/test_case-request.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { TestCase } from './test-case.entity';
-import { Repository } from 'typeorm';
+import { TestCase } from './test_case.entity';
+import { EntityManager, Repository } from 'typeorm';
 
 @Injectable()
 export class TestCaseService {
   constructor(
     @InjectRepository(TestCase)
-    private readonly testCaseRepository: Repository<TestCase>
+    private readonly testCaseRepository: Repository<TestCase>,
+    private readonly entityManager: EntityManager
   ) { }
 
-  async create(createTestCaseRequest: CreateTestCaseRequest): Promise<TestCase> {
-    const testCase = await this.testCaseRepository.create(createTestCaseRequest)
-    return testCase;
+  async create(createTestCaseRequest: CreateTestCaseRequest) {
+    const testCase = await this.testCaseRepository.create(createTestCaseRequest);
+    return this.testCaseRepository.save(testCase);
   }
 
   async findAll(): Promise<TestCase[]> {
@@ -23,7 +24,7 @@ export class TestCaseService {
 
   async findOne(id: number): Promise<TestCase> {
     if (isNaN(id)) {
-      throw new NotFoundException(`Invalid problem ID`);
+      throw new NotFoundException(`Invalid test case ID`);
     }
     const testCase = await this.testCaseRepository.findOneBy({ id });
     if (!testCase) {

@@ -1,8 +1,8 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { TestCaseService } from './test-case.service';
-import { CreateTestCaseRequest, UpdateTestCaseRequest } from './dto/test-case-request.dto';
+import { TestCaseService } from './test_case.service';
+import { CreateTestCaseRequest, UpdateTestCaseRequest } from './dto/test_case-request.dto';
 
-@Controller('test-case')
+@Controller('test_case')
 export class TestCaseController {
   constructor(private readonly testCaseService: TestCaseService) { }
 

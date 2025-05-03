@@ -28,7 +28,7 @@ import { UserService } from './user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
-import { User } from './user.entity';
+import { UserQueryDto } from './dtos/user-query.dto';
 
 @Controller('user')
 @ApiTags('User')
@@ -46,13 +46,24 @@ export class UserController {
 		status: HttpStatus.OK,
 		description: 'Get all users',
 		type: UserPaginatedDto,
-		isArray: true,
 	})
 	@AllowRole(Role.DEV)
 	async findAll(
-		@Query() query: PaginationMetaDto<User>,
+		@Query() query: PaginationMetaDto,
 	): Promise<UserPaginatedDto> {
 		return await this.userService.findAll(query);
+	}
+
+	@Get('/search')
+	@HttpCode(HttpStatus.OK)
+	@ApiResponse({
+		status: HttpStatus.OK,
+		description: 'get user by query',
+		type: UserPaginatedDto,
+	})
+	@AllowRole(Role.MEMBER)
+	async search(@Query() query: UserQueryDto) {
+		return await this.userService.search(query);
 	}
 
 	/*
@@ -189,7 +200,7 @@ export class UserController {
 	@Post('setProblemStatus/:id')
 	async tryProblem(
 		@Request() req: authenticatedRequest,
-		@Param('id') id: string,
+		@Param('id') id: number,
 	) {
 		return this.userService.setProblemStatus(id, req.user.userId);
 	}

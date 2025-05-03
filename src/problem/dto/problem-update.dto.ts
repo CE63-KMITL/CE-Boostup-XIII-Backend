@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+	IsArray,
+	IsEnum,
+	IsNumber,
+	IsOptional,
+	IsString,
+} from 'class-validator';
+import { ProblemStaffStatusEnum } from '../enum/problem-staff-status.enum';
 
 export class UpdateProblemDto {
 	@ApiProperty({ example: 'Updated Problem Title', required: false })
@@ -19,6 +26,14 @@ export class UpdateProblemDto {
 	@IsOptional()
 	@IsString()
 	defaultCode?: string;
+	
+	@ApiProperty({
+		example: '#include <stdio.h>\n\nint main() {\n\tprintf("Hello, World!");\n\treturn 0;\n}',
+		required: false,
+	})
+	@IsOptional()
+	@IsString()
+	solutionCode?: string;
 
 	@ApiProperty({
 		example: 4,
@@ -28,6 +43,15 @@ export class UpdateProblemDto {
 	@IsOptional()
 	@IsNumber()
 	difficulty: 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5;
+
+	@ApiProperty({
+		example: ProblemStaffStatusEnum.IN_PROGRESS,
+		enum: ProblemStaffStatusEnum,
+		required: false,
+	})
+	@IsOptional()
+	@IsEnum(ProblemStaffStatusEnum)
+	devStatus?: ProblemStaffStatusEnum;
 
 	@ApiProperty({ example: ['meme', 'algorithm'], required: false })
 	@IsOptional()
