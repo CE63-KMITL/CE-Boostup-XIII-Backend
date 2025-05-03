@@ -62,20 +62,13 @@ export class ProblemQueryDto extends PaginationMetaDto {
 	maxDifficulty: ScoreValue = 5;
 
 	@IsOptional()
-	@IsEnum(ProblemStaffStatusEnum)
-	@ApiPropertyOptional({
-		example: ProblemStaffStatusEnum.IN_PROGRESS,
-		enum: ProblemStaffStatusEnum,
-	})
-	devStatus?: ProblemStaffStatusEnum;
-
-	@IsOptional()
 	@IsEnum(ProblemStatusEnum)
+	@IsEnum(ProblemStaffStatusEnum)
 	@ApiPropertyOptional({
 		example: ProblemStatusEnum.IN_PROGRESS,
 		enum: ProblemStatusEnum,
 	})
-	status?: ProblemStatusEnum;
+	status?: ProblemStatusEnum | ProblemStaffStatusEnum;
 
 	@IsOptional()
 	@IsString()
