@@ -5,10 +5,12 @@ import {
 	Entity,
 	JoinColumn,
 	ManyToOne,
+	OneToMany,
 	PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ProblemStaffStatusEnum } from './enum/problem-staff-status.enum';
 import { ScoreValue } from './type/score-value.type';
+import { TestCase } from 'src/test_case/test-case.entity';
 
 @Entity()
 export class Problem {
@@ -33,10 +35,9 @@ export class Problem {
 	defaultCode?: string;
 
 	@Column({
-		nullable: true
+		nullable: true,
 	})
 	solutionCode: string;
-
 
 	@Column({
 		type: 'decimal',
@@ -56,6 +57,9 @@ export class Problem {
 
 	@Column('text', { array: true, nullable: true, default: [] })
 	tags: string[];
+
+	@OneToMany(() => TestCase, (TestCase) => TestCase.problem)
+	testCases: TestCase[];
 
 	constructor(problem: Partial<Problem>) {
 		Object.assign(this, problem);

@@ -1,25 +1,24 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Problem } from 'src/problem/problem.entity';
+import {
+	Column,
+	Entity,
+	JoinColumn,
+	ManyToOne,
+	PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity()
 export class TestCase {
 	@PrimaryGeneratedColumn('uuid')
 	id: string;
 
-	@Column({ nullable: false, type: 'char' })
+	@Column({ nullable: false, type: 'varchar' })
 	expectOutput: string;
 
 	@Column({ nullable: false, type: 'bool' })
-	hiddenTestcase: boolean;
-}
+	isHiddenTestcase: boolean;
 
-@Entity()
-export class TestCaseResult {
-	@Column()
-	status: 'Pass' | 'Not Pass' | 'Error';
-
-	@Column()
-	message: string;
-
-	@Column()
-	exitCode: number;
+	@ManyToOne(() => Problem, { onDelete: 'CASCADE' })
+	@JoinColumn({ name: 'problem' })
+	problem: Problem;
 }

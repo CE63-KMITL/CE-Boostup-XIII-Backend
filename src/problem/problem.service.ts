@@ -19,7 +19,6 @@ import {
 	ProblemStatusEnum,
 } from './enum/problem-staff-status.enum';
 import { Problem } from './problem.entity';
-import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 
 @Injectable()
 export class ProblemService {
@@ -27,7 +26,7 @@ export class ProblemService {
 		@InjectRepository(Problem)
 		private readonly problemsRepository: Repository<Problem>,
 		private readonly userService: UserService,
-	) { }
+	) {}
 
 	/*
 	-------------------------------------------------------
@@ -68,6 +67,7 @@ export class ProblemService {
 			where: { id },
 			relations: {
 				author: true,
+				testCases: true,
 			},
 		});
 		if (!problem) {
@@ -237,12 +237,9 @@ export class ProblemService {
 		await this.problemsRepository.delete(id);
 	}
 
-	async approveProblem(
-		id: number,
-		user: jwtPayloadDto
-	): Promise<void> {
-		await this.problemsRepository.update(id, { devStatus: ProblemStaffStatusEnum.PUBLISHED });
+	async approveProblem(id: number, user: jwtPayloadDto): Promise<void> {
+		await this.problemsRepository.update(id, {
+			devStatus: ProblemStaffStatusEnum.PUBLISHED,
+		});
 	}
-
-
 }
