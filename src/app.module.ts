@@ -16,7 +16,7 @@ import { GLOBAL_CONFIG } from './shared/constants/global-config.constant';
 import { CustomThrottlerGuard } from './shared/guards/throttler.guard';
 import { UserModule } from './user/user.module';
 import { BullModule } from '@nestjs/bullmq';
-import { TestCaseModule } from './test_case/test_case.module';
+import { TestCaseModule } from './test_case/test-case.module';
 import { HouseScoreModule } from './house_score/house_score.module';
 
 @Module({
@@ -62,7 +62,6 @@ import { HouseScoreModule } from './house_score/house_score.module';
 			}),
 			inject: [ConfigService],
 		}),
-		TestCaseModule,
 	],
 	controllers: [AppController],
 	providers: [
@@ -73,4 +72,4 @@ import { HouseScoreModule } from './house_score/house_score.module';
 		},
 	],
 })
-export class AppModule { }
+export class AppModule {}
