@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+	ForbiddenException,
+	Injectable,
+	NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { jwtPayloadDto } from 'src/auth/dto/jwt-payload.dto';
 import { Role } from 'src/shared/enum/role.enum';
@@ -90,10 +94,16 @@ export class ProblemService {
 			idReverse,
 			limit,
 			status,
-			devStatus,
 			tags,
 			staff,
 		} = query;
+
+		const result = new ProblemPaginatedDto(
+			[],
+			0,
+			query.limit,
+			query.page,
+		);
 
 		const { role, userId } = user;
 
@@ -148,64 +158,65 @@ export class ProblemService {
 		if (difficultySortBy) {
 			searchProblems.addOrderBy('entity.difficulty', difficultySortBy);
 		}
-		if (role == Role.MEMBER) {
+		if (!!staff) {
+			if (role !== Role.STAFF && role !== Role.DEV) {
+				throw new ForbiddenException('You do not have permission.');
+			}
+
+			if (!!status) {
+				searchProblems.andWhere('entity.devStatus = :devStatus', {
+					devStatus: status,
+				});
+			}
+		} else {
 			searchProblems.andWhere('entity.devStatus = :devStatus', {
 				devStatus: ProblemStaffStatusEnum.PUBLISHED,
 			});
-		} else {
-			if (!!devStatus) {
-				searchProblems.andWhere('entity.devStatus = :devStatus', {
-					devStatus,
-				});
-			}
-		}
-		if (!!status) {
-			let problems = (
-				await this.userService.findOne({
-					where: { id: userId },
-					relations: { problemStatus: true },
-				})
-			).problemStatus;
 
-			if (status === ProblemStatusEnum.NOT_STARTED) {
-				if (problems.length != 0) {
-					const ids = problems.map(
-						(problem) => problem.problemId,
+			if (!!status) {
+				let problems = (
+					await this.userService.findOne({
+						where: { id: userId },
+						relations: { problemStatus: true },
+					})
+				).problemStatus;
+
+				if (status === ProblemStatusEnum.NOT_STARTED) {
+					if (problems.length != 0) {
+						const ids = problems.map(
+							(problem) => problem.problemId,
+						);
+						searchProblems.andWhere(
+							'entity.id NOT IN (:...ids)',
+							{
+								ids,
+							},
+						);
+					}
+				} else {
+					if (problems.length === 0) return result;
+
+					problems = problems.filter(
+						(problem) =>
+							ProblemStatusEnum[problem.status] === status,
 					);
-					searchProblems.andWhere('entity.id NOT IN (:...ids)', {
-						ids,
-					});
+
+					if (problems.length === 0) return result;
+
+					problems.map((problem) =>
+						searchProblems.andWhere('entity.id = :id', {
+							id: problem.problemId,
+						}),
+					);
 				}
-			} else {
-				if (problems.length === 0)
-					throw new NotFoundException(`No problem status yet`);
-
-				problems = problems.filter(
-					(problem) =>
-						ProblemStatusEnum[problem.status] === status,
-				);
-
-				if (problems.length === 0)
-					throw new NotFoundException(
-						`no problem with status ${status}`,
-					);
-
-				problems.map((problem) =>
-					searchProblems.andWhere('entity.id = :id', {
-						id: problem.problemId,
-					}),
-				);
 			}
 		}
 
 		searchProblems.leftJoinAndSelect('entity.author', 'author');
 		const [data, totalItem] = await searchProblems.getManyAndCount();
-		return new ProblemPaginatedDto(
-			data,
-			totalItem,
-			query.limit,
-			query.page,
-		);
+		result.data = data;
+		result.totalItem = totalItem;
+		return result;
 	}
 
 	async updateDraft(
