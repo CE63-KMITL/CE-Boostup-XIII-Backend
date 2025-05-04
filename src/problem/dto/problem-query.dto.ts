@@ -1,6 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsArray, IsEnum, IsIn, IsOptional, IsString } from 'class-validator';
+import {
+	IsArray,
+	IsBoolean,
+	IsEnum,
+	IsIn,
+	IsOptional,
+	IsString,
+} from 'class-validator';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import {
 	ProblemStaffStatusEnum,
@@ -84,12 +91,21 @@ export class ProblemQueryDto extends PaginationMetaDto {
 	difficultySortBy: ProblemSearchSortBy = ProblemSearchSortBy.ASC;
 
 	@IsOptional()
-	@IsString()
+	@IsBoolean()
+	@Transform((staff) => (staff.value === 'true' ? true : false))
 	@ApiPropertyOptional({
 		type: Boolean,
 		description: 'For Satff',
 	})
-	staff?: string;
+	staff?: boolean;
+
+	@IsOptional()
+	@IsString()
+	@ApiPropertyOptional({
+		type: String,
+		example: 'author',
+	})
+	author: string;
 }
 export class ProblemUserQueryDto extends PaginationMetaDto {
 	@IsOptional()
