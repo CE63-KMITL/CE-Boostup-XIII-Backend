@@ -18,51 +18,60 @@ import { UserModule } from './user/user.module';
 import { BullModule } from '@nestjs/bullmq';
 import { TestCaseModule } from './test_case/test-case.module';
 import { HouseScoreModule } from './house_score/house_score.module';
+import { DevUserModule } from './user/dev/user.module.dev';
+import { DevAuthModule } from './auth/dev/auth.module.dev';
+
+const imports = [
+	UserModule,
+	ProblemModule,
+	TestCaseModule,
+	MailModule,
+	RunCodeModule,
+	HouseModule,
+	HouseScoreModule,
+	AuthModule,
+	ThrottlerModule.forRoot([
+		{
+			ttl: 10000,
+			limit: 50,
+		},
+	]),
+	ConfigModule.forRoot({
+		isGlobal: true,
+		validationSchema: dotenvConfig,
+	}),
+	BullModule.forRootAsync({
+		imports: [ConfigModule],
+		useFactory: (configService: ConfigService) => ({
+			connection: {
+				host: configService.getOrThrow<string>(
+					GLOBAL_CONFIG.REDIS_HOST,
+				),
+				port: 6379,
+			},
+		}),
+		inject: [ConfigService],
+	}),
+	TypeOrmModule.forRootAsync({
+		imports: [ConfigModule],
+		useFactory: (configService: ConfigService) => ({
+			...databaseConfig,
+			autoLoadEntities: true,
+			synchronize: configService.get<boolean>(
+				GLOBAL_CONFIG.IS_DEVELOPMENT,
+			),
+		}),
+		inject: [ConfigService],
+	}),
+];
+
+if (process.env.IS_DEVELOPMENT === 'true') {
+	imports.push(DevUserModule);
+	imports.push(DevAuthModule);
+}
 
 @Module({
-	imports: [
-		UserModule,
-		ProblemModule,
-		TestCaseModule,
-		MailModule,
-		RunCodeModule,
-		HouseModule,
-		HouseScoreModule,
-		AuthModule.init(),
-		ThrottlerModule.forRoot([
-			{
-				ttl: 10000,
-				limit: 50,
-			},
-		]),
-		ConfigModule.forRoot({
-			isGlobal: true,
-			validationSchema: dotenvConfig,
-		}),
-		BullModule.forRootAsync({
-			imports: [ConfigModule],
-			useFactory: (configService: ConfigService) => ({
-				connection: {
-					host: configService.getOrThrow<string>(
-						GLOBAL_CONFIG.REDIS_HOST,
-					),
-					port: 6379,
-				},
-			}),
-			inject: [ConfigService],
-		}),
-		TypeOrmModule.forRootAsync({
-			imports: [ConfigModule],
-			useFactory: (configService: ConfigService) => ({
-				...databaseConfig,
-				autoLoadEntities: true,
-				synchronize: configService.get<boolean>(
-					GLOBAL_CONFIG.IS_DEVELOPMENT,
-				),
-			}),
-			inject: [ConfigService],
-		}),
-	],
+	imports,
 	controllers: [AppController],
 	providers: [
 		AppService,
