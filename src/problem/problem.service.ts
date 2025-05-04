@@ -217,9 +217,15 @@ export class ProblemService {
 		try {
 			const problem = await this.problemsRepository.findOneBy({ id: id });
 			const problemAuthorId = problem.author.id;
-
+			// Only owner of the problem can edit
 			if (problemAuthorId == user.userId) {
 				await this.problemsRepository.update(id, updateProblemRequest);
+				// Update problem status if there is an update to solution code
+				if ('solutionCode' in updateProblemRequest) {
+					problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
+					// TODO: RUN CODE
+					await this.problemsRepository.save(problem)
+				}
 				return this.findOne(id);
 			} else {
 				throw new UnauthorizedException('must be the owner of problem');
