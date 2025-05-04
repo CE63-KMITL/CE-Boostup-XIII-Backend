@@ -15,11 +15,14 @@ async function callApi(
 			headers['Authorization'] = `Bearer ${token}`;
 		}
 
-		const response = await fetch(`http://localhost:3000${route}`, {
-			method,
-			headers: headers,
-			body: JSON.stringify(data),
-		});
+		const response = await fetch(
+			`http://localhost:${process.env.PORT ?? 3000}${route}`,
+			{
+				method,
+				headers: headers,
+				body: JSON.stringify(data),
+			},
+		);
 
 		return await response.json();
 	} catch (error) {
