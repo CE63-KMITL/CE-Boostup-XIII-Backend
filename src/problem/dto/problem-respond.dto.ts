@@ -66,6 +66,12 @@ export class ProblemResponseDto {
 	})
 	author: UserResponseDto;
 
+	@ApiPropertyOptional({ example: ['#include<string.h>'] })
+	disallowHeaders?: string[];
+
+	@ApiPropertyOptional({ example: ['for'] })
+	disallowFunctions?: string[];
+
 	constructor(problem: Problem) {
 		this.id = problem.id;
 		this.title = problem.title;
@@ -74,6 +80,8 @@ export class ProblemResponseDto {
 		this.difficulty = problem.difficulty;
 		this.devStatus = problem.devStatus;
 		this.tag = problem.tags;
+		this.disallowFunctions = problem.disallowFunctions;
+		this.disallowHeaders = problem.disallowHeaders;
 		this.author = new UserResponseDto(problem.author);
 	}
 }

@@ -31,21 +31,18 @@ export class ProblemQueryDto extends PaginationMetaDto {
 	searchText?: string;
 
 	@IsOptional()
-	@IsString()
+	@IsBoolean()
 	@ApiPropertyOptional({
 		example: true,
 		type: Boolean,
 		description: 'Sort by ID in reverse order',
 	})
-	@Transform((idReverse) => (idReverse.value === 'true' ? true : false))
-	idReverse?: string;
+	@Transform(({ value }) => (value === 'true' ? true : false))
+	idReverse?: boolean;
 
 	@IsOptional()
 	@IsArray()
 	@IsString({ each: true })
-	@Transform(({ value }) =>
-		Array.isArray(value) ? value : JSON.parse(value),
-	)
 	@ApiPropertyOptional({
 		example: ['If - else'],
 		type: [String],
