@@ -157,7 +157,8 @@ export class ProblemService {
 		if (difficultySortBy) {
 			searchProblems.addOrderBy('entity.difficulty', difficultySortBy);
 		}
-		if (!!staff) {
+
+		if (staff == 'true') {
 			if (role !== Role.STAFF && role !== Role.DEV) {
 				throw new ForbiddenException('You do not have permission.');
 			}
