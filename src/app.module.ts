@@ -16,7 +16,6 @@ import { GLOBAL_CONFIG } from './shared/constants/global-config.constant';
 import { CustomThrottlerGuard } from './shared/guards/throttler.guard';
 import { UserModule } from './user/user.module';
 import { BullModule } from '@nestjs/bullmq';
-import { ProfileModule } from './profile/profile.module';
 
 @Module({
 	imports: [
@@ -59,7 +58,6 @@ import { ProfileModule } from './profile/profile.module';
 			}),
 			inject: [ConfigService],
 		}),
-		ProfileModule,
 	],
 	controllers: [AppController],
 	providers: [
