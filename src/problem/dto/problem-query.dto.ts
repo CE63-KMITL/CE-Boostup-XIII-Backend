@@ -31,7 +31,7 @@ export class ProblemQueryDto extends PaginationMetaDto {
 	searchText?: string;
 
 	@IsOptional()
-	@IsString()
+	@IsBoolean()
 	@ApiPropertyOptional({
 		example: true,
 		type: Boolean,
@@ -43,9 +43,7 @@ export class ProblemQueryDto extends PaginationMetaDto {
 	@IsOptional()
 	@IsArray()
 	@IsString({ each: true })
-	@Transform(({ value }) =>
-		Array.isArray(value) ? value : JSON.parse(value),
-	)
+	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
 	@ApiPropertyOptional({
 		example: ['If - else'],
 		type: [String],
