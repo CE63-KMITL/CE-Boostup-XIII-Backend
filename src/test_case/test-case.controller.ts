@@ -10,6 +10,7 @@ import {
 	HttpStatus,
 	ParseIntPipe,
 	Request,
+	HttpCode,
 } from '@nestjs/common';
 import { TestCaseService } from './test-case.service';
 import {
@@ -19,6 +20,8 @@ import {
 import { AllowRole } from 'src/auth/decorators/auth.decorator';
 import { Role } from 'src/shared/enum/role.enum';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
+import { TestCaseResponseDto } from './dto/test-case-response.dto';
+import { ApiResponse } from '@nestjs/swagger';
 
 @Controller('test-case')
 export class TestCaseController {
@@ -26,6 +29,10 @@ export class TestCaseController {
 
 	@Post(':problemId')
 	@AllowRole(Role.STAFF)
+	@ApiResponse({
+		type: TestCaseResponseDto,
+		status: HttpStatus.CREATED,
+	})
 	async create(
 		@Body() createTestCaseRequest: CreateTestCaseDto,
 		@Param(
@@ -35,21 +42,33 @@ export class TestCaseController {
 			}),
 		)
 		problemId: number,
-	) {
-		return await this.testCaseService.create(
-			createTestCaseRequest,
-			problemId,
+	): Promise<TestCaseResponseDto> {
+		return new TestCaseResponseDto(
+			await this.testCaseService.create(
+				createTestCaseRequest,
+				problemId,
+			),
 		);
 	}
 
 	@Get()
 	@AllowRole(Role.STAFF)
+	@ApiResponse({
+		status: HttpStatus.OK,
+		type: TestCaseResponseDto,
+		isArray: true,
+	})
 	async findAll() {
 		return this.testCaseService.findAll();
 	}
 
 	@Get('problem/:problemId')
 	@AllowRole(Role.MEMBER)
+	@ApiResponse({
+		status: HttpStatus.OK,
+		type: TestCaseResponseDto,
+		isArray: true,
+	})
 	async findTestCasesByProblemId(
 		@Request() req: authenticatedRequest,
 		@Param(
@@ -59,12 +78,16 @@ export class TestCaseController {
 			}),
 		)
 		problemId: number,
-	) {
+	): Promise<TestCaseResponseDto[]> {
 		return this.testCaseService.findTestCasesByProblemId(req, problemId);
 	}
 
 	@Get(':id')
 	@AllowRole(Role.MEMBER)
+	@ApiResponse({
+		status: HttpStatus.OK,
+		type: TestCaseResponseDto,
+	})
 	async findOne(
 		@Param(
 			'id',
@@ -74,12 +97,16 @@ export class TestCaseController {
 			}),
 		)
 		id: string,
-	) {
-		return this.testCaseService.findOne(id);
+	): Promise<TestCaseResponseDto> {
+		return this.testCaseService.findOne({ where: { id } });
 	}
 
 	@Patch(':id')
 	@AllowRole(Role.STAFF)
+	@ApiResponse({
+		status: HttpStatus.OK,
+		type: TestCaseResponseDto,
+	})
 	async update(
 		@Param(
 			'id',
@@ -90,13 +117,19 @@ export class TestCaseController {
 		)
 		id: string,
 		@Body() updateTestCaseDto: UpdateTestCaseDto,
-	) {
-		return this.testCaseService.update(id, updateTestCaseDto);
+	): Promise<TestCaseResponseDto> {
+		return new TestCaseResponseDto(
+			await this.testCaseService.update(id, updateTestCaseDto),
+		);
 	}
 
 	@Delete(':id')
 	@AllowRole(Role.STAFF)
-	asyncremove(
+	@HttpCode(HttpStatus.NO_CONTENT)
+	@ApiResponse({
+		status: HttpStatus.NO_CONTENT,
+	})
+	async remove(
 		@Param(
 			'id',
 			new ParseUUIDPipe({
@@ -105,7 +138,7 @@ export class TestCaseController {
 			}),
 		)
 		id: string,
-	) {
-		return this.testCaseService.remove(id);
+	): Promise<void> {
+		await this.testCaseService.remove(id);
 	}
 }

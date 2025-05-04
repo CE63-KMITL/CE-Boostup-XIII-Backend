@@ -9,11 +9,12 @@ import {
 } from './dto/create-test-case.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TestCase } from './test-case.entity';
-import { Repository } from 'typeorm';
+import { FindOneOptions, Repository } from 'typeorm';
 import { ProblemService } from 'src/problem/problem.service';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 import { Role } from 'src/shared/enum/role.enum';
 import { Problem } from 'src/problem/problem.entity';
+import { TestCaseResponseDto } from './dto/test-case-response.dto';
 
 @Injectable()
 export class TestCaseService {
@@ -24,39 +25,37 @@ export class TestCaseService {
 	) {}
 
 	async create(createTestCaseDto: CreateTestCaseDto, problemId: number) {
-		const { expectOutput, isHiddenTestcase } = createTestCaseDto;
+		const { expectOutput, isHiddenTestcase, input } = createTestCaseDto;
 		const problem = await this.problemService.findOne(problemId);
-		this.createProblemFilter(problem, expectOutput);
+		if (!!input) this.createProblemFilter(problem, input);
 		return await this.testCaseRepository.save({
+			input,
 			expectOutput,
 			isHiddenTestcase,
 			problem,
 		});
 	}
 
-	private createProblemFilter(problem: Problem, expectOutput: string): void {
+	private createProblemFilter(problem: Problem, input: string): void {
 		const testCaseOutput = problem.testCases.filter(
-			(testcase) => testcase.expectOutput === expectOutput,
+			(testcase) => testcase.input === input,
 		);
 		if (testCaseOutput.length !== 0) {
 			throw new BadRequestException(
-				`test case ${testCaseOutput[0].expectOutput} already exists`,
+				`test case ${testCaseOutput[0].input} already exists`,
 			);
 		}
 	}
 
-	async findAll(): Promise<TestCase[]> {
+	async findAll(): Promise<TestCaseResponseDto[]> {
 		const allTestCases = await this.testCaseRepository.find();
 		return allTestCases;
 	}
 
-	async findOne(id: string): Promise<TestCase> {
-		const testCase = await this.testCaseRepository.findOne({
-			where: { id },
-			relations: { problem: true },
-		});
+	async findOne(option: FindOneOptions): Promise<TestCase> {
+		const testCase = await this.testCaseRepository.findOne(option);
 		if (!testCase) {
-			throw new NotFoundException(`Test case with ID ${id} not found`);
+			throw new NotFoundException('Test case not found');
 		}
 		return testCase;
 	}
@@ -64,7 +63,7 @@ export class TestCaseService {
 	async findTestCasesByProblemId(
 		req: authenticatedRequest,
 		problemId: number,
-	) {
+	): Promise<TestCaseResponseDto[]> {
 		const { role } = req.user;
 		let testCases = await this.testCaseRepository.find({
 			where: {
@@ -77,30 +76,28 @@ export class TestCaseService {
 		testCases = testCases.filter(
 			(testCase) => testCase.problem.id === problemId,
 		);
-		return testCases;
+		return testCases.map((testCase) => new TestCaseResponseDto(testCase));
 	}
 
 	async update(
 		id: string,
 		updateTestCaseDto: UpdateTestCaseDto,
 	): Promise<TestCase> {
-		const { expectOutput } = updateTestCaseDto;
-		const testCase = await this.findOne(id);
+		const { input } = updateTestCaseDto;
+		const testCase = await this.findOne({ where: { id } });
 		if (!testCase)
 			throw new NotFoundException(`not found test case id ${id}`);
 		const problem = await this.problemService.findOne(
 			testCase.problem.id,
 		);
-		if (expectOutput) {
-			this.createProblemFilter(problem, expectOutput);
+		if (input) {
+			this.createProblemFilter(problem, input);
 		}
 		await this.testCaseRepository.update(id, updateTestCaseDto);
 		return testCase;
 	}
 
-	async remove(id: string): Promise<TestCase> {
-		const testCase = await this.findOne(id);
+	async remove(id: string): Promise<void> {
 		await this.testCaseRepository.delete(id);
-		return testCase;
 	}
 }

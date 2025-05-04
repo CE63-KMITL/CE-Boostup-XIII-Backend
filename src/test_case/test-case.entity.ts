@@ -12,6 +12,9 @@ export class TestCase {
 	@PrimaryGeneratedColumn('uuid')
 	id: string;
 
+	@Column({ nullable: true, type: 'varchar' })
+	input: string;
+
 	@Column({ nullable: false, type: 'varchar' })
 	expectOutput: string;
 

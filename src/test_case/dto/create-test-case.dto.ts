@@ -1,7 +1,16 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsBoolean, IsNotEmpty, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateTestCaseDto {
+	@ApiProperty({
+		example: 'abc',
+		type: String,
+		nullable: true,
+	})
+	@IsOptional()
+	@IsString()
+	input?: string;
+
 	@ApiProperty({
 		example: 'abc',
 		type: String,
