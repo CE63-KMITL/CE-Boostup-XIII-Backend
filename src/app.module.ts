@@ -28,7 +28,7 @@ import { HouseScoreModule } from './house_score/house_score.module';
 		RunCodeModule,
 		HouseModule,
 		HouseScoreModule,
-		AuthModule,
+		AuthModule.init(),
 		ThrottlerModule.forRoot([
 			{
 				ttl: 10000,

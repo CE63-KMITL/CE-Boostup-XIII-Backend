@@ -16,6 +16,12 @@ export function PaginatedResponseDto<T>(ItemType: Type<T>) {
 		page: number;
 
 		@ApiProperty({
+			example: 5,
+			description: 'total page',
+		})
+		totalPage: number;
+
+		@ApiProperty({
 			example: 15,
 			description: 'limit item per page',
 		})
@@ -34,6 +40,12 @@ export function PaginatedResponseDto<T>(ItemType: Type<T>) {
 			this.totalItem = totalItem;
 			this.page = page;
 			this.limit = limit;
+
+			this.updateTotalPage();
+		}
+
+		updateTotalPage() {
+			this.totalPage = Math.ceil(this.totalItem / this.limit);
 		}
 	}
 
