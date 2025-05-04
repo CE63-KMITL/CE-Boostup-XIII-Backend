@@ -95,9 +95,10 @@ export class ProblemController {
 	async updateDraft(
 		@Param('id', ParseIntPipe) id: number,
 		@Body() updateProblemRequest: UpdateProblemDto,
+		@Req() req: authenticatedRequest,
 	): Promise<ProblemResponseDto> {
 		return new ProblemResponseDto(
-			await this.problemService.updateDraft(id, updateProblemRequest),
+			await this.problemService.updateDraft(id, updateProblemRequest, req.user),
 		);
 	}
 

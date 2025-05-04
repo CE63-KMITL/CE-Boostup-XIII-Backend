@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { jwtPayloadDto } from 'src/auth/dto/jwt-payload.dto';
 import { Role } from 'src/shared/enum/role.enum';
@@ -212,12 +212,19 @@ export class ProblemService {
 	async updateDraft(
 		id: number,
 		updateProblemRequest: UpdateProblemDto,
+		user: jwtPayloadDto
 	): Promise<Problem> {
 		try {
-			// TODO: Only owner can update
+			const problem = await this.problemsRepository.findOneBy({ id: id });
+			const problemAuthorId = problem.author.id;
 
-			await this.problemsRepository.update(id, updateProblemRequest);
-			return this.findOne(id);
+			if (problemAuthorId == user.userId) {
+				await this.problemsRepository.update(id, updateProblemRequest);
+				return this.findOne(id);
+			} else {
+				throw new UnauthorizedException('must be the owner of problem');
+			}
+
 		} catch (error) {
 			throw new NotFoundException('problem not found');
 		}
