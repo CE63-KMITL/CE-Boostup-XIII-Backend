@@ -21,12 +21,7 @@ export class AuthModule {
 		const controllers = [];
 
 		if (process.env.IS_DEVELOPMENT === 'true') {
-			console.log(
-				'AuthModule Register: Development mode detected, adding DevAuthController.',
-			);
 			controllers.push(DevAuthController);
-		} else {
-			console.log('AuthModule Register: Production mode detected.');
 		}
 
 		return {
