@@ -61,20 +61,6 @@ export class UserResponseDto {
 	})
 	icon?: string;
 
-	@ApiPropertyOptional({
-		example: '123456',
-		description: 'otp to reset password or account activation',
-		type: String,
-	})
-	otp?: string;
-
-	@ApiPropertyOptional({
-		example: '2021-09-29T13:43:18.000Z',
-		description: 'otp expires date',
-		type: Date,
-	})
-	otpExpires?: Date;
-
 	@ApiProperty({
 		example: '2021-09-29T13:43:18.000Z',
 		description: 'User creation date',
@@ -96,6 +82,7 @@ export class UserResponseDto {
 		this.house = user.house;
 		this.role = user.role;
 		this.score = user.score;
+		this.icon = user.icon;
 		this.createdAt = user.createdAt;
 		this.updatedAt = user.updatedAt;
 	}

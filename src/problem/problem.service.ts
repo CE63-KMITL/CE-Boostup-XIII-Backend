@@ -13,7 +13,10 @@ import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
 import { CreateProblemDto } from './dto/problem-create.dto';
 import { ProblemQueryDto } from './dto/problem-query.dto';
-import { ProblemPaginatedDto } from './dto/problem-respond.dto';
+import {
+	ProblemPaginatedDto,
+	ProblemResponseDto,
+} from './dto/problem-respond.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
 import {
 	ProblemStaffStatusEnum,
@@ -106,6 +109,7 @@ export class ProblemService {
 			status,
 			tags,
 			staff,
+			author,
 		} = query;
 
 		const result = new ProblemPaginatedDto([], 0, page, limit);
@@ -116,6 +120,14 @@ export class ProblemService {
 			repository: this.problemsRepository,
 			dto: { page, limit },
 		});
+
+		searchProblems.leftJoinAndSelect('entity.author', 'author');
+
+		if (!!author) {
+			searchProblems.andWhere('author.name ILIKE :author', {
+				author: `%${author}%`,
+			});
+		}
 
 		if (searchText) {
 			searchProblems.andWhere(
@@ -219,9 +231,8 @@ export class ProblemService {
 			}
 		}
 
-		searchProblems.leftJoinAndSelect('entity.author', 'author');
 		const [data, totalItem] = await searchProblems.getManyAndCount();
-		result.data = data;
+		result.data = data.map((d) => new ProblemResponseDto(d));
 		result.totalItem = totalItem;
 		result.updateTotalPage();
 		return result;
