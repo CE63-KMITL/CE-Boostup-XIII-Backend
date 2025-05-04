@@ -32,7 +32,7 @@ import { ProblemService } from './problem.service';
 @Controller('problem')
 @ApiTags('Problem')
 export class ProblemController {
-	constructor(private readonly problemService: ProblemService) {}
+	constructor(private readonly problemService: ProblemService) { }
 
 	@ApiCreatedResponse({ type: ProblemResponseDto })
 	@AllowRole(Role.STAFF)
@@ -91,12 +91,12 @@ export class ProblemController {
 	@ApiOkResponse({ type: ProblemResponseDto })
 	@AllowRole(Role.STAFF)
 	@Patch(':id')
-	async update(
+	async updateDraft(
 		@Param('id', ParseIntPipe) id: number,
 		@Body() updateProblemRequest: UpdateProblemDto,
 	): Promise<ProblemResponseDto> {
 		return new ProblemResponseDto(
-			await this.problemService.update(id, updateProblemRequest),
+			await this.problemService.updateDraft(id, updateProblemRequest),
 		);
 	}
 
@@ -107,5 +107,15 @@ export class ProblemController {
 	@Delete(':id')
 	async remove(@Param('id', ParseIntPipe) id: number) {
 		this.problemService.remove(id);
+	}
+
+	@AllowRole(Role.STAFF)
+	@Post("approve/:id")
+	async approveProblem(
+		@Param('id', ParseIntPipe) id: number,
+		@Req() req: authenticatedRequest,
+
+	) {
+		this.problemService.approveProblem(id, req.user);
 	}
 }
