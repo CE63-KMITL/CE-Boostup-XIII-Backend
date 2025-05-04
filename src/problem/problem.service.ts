@@ -159,10 +159,10 @@ export class ProblemService {
 			}
 		}
 
-		searchProblems.orderBy('entity.id', idReverse ? 'DESC' : 'ASC');
-
 		if (difficultySortBy) {
 			searchProblems.addOrderBy('entity.difficulty', difficultySortBy);
+		} else if (idReverse) {
+			searchProblems.orderBy('entity.id', idReverse ? 'DESC' : 'ASC');
 		}
 
 		if (!!staff) {

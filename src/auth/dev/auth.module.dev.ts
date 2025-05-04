@@ -4,15 +4,15 @@ import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScoreLog } from 'src/user/score/score-log.entity';
 import { UserModule } from 'src/user/user.module';
-import { GLOBAL_CONFIG } from '../shared/constants/global-config.constant';
-import { User } from '../user/user.entity';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './jwt-auth.guard';
-import { JwtStrategy } from './jwt.strategy';
-import { RolesGuard } from './roles/roles.guard';
+import { GLOBAL_CONFIG } from '../../shared/constants/global-config.constant';
+import { User } from '../../user/user.entity';
+import { AuthService } from '../auth.service';
+import { JwtAuthGuard } from '../jwt-auth.guard';
+import { JwtStrategy } from '../jwt.strategy';
+import { RolesGuard } from '../roles/roles.guard';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from 'src/mail/mail.module';
+import { DevAuthController } from './auth.controller.dev';
 
 @Module({
 	imports: [
@@ -32,7 +32,7 @@ import { MailModule } from 'src/mail/mail.module';
 		MailModule,
 		TypeOrmModule.forFeature([User, ScoreLog]),
 	],
-	controllers: [AuthController],
+	controllers: [DevAuthController],
 	providers: [AuthService, JwtAuthGuard, RolesGuard, Reflector, JwtStrategy],
 })
-export class AuthModule {}
+export class DevAuthModule {}
