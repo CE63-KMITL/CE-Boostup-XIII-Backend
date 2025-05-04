@@ -240,5 +240,11 @@ export class ProblemService {
 		await this.problemsRepository.update(id, { devStatus: ProblemStaffStatusEnum.NEED_REVIEW });
 	}
 
+	async archiveProblem(
+		id: number,
+		user: jwtPayloadDto
+	): Promise<void> {
+		await this.problemsRepository.update(id, { devStatus: ProblemStaffStatusEnum.ARCHIVED });
+	}
 
 }

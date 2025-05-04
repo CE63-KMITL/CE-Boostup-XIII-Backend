@@ -129,5 +129,14 @@ export class ProblemController {
 		this.problemService.requestReviewProblem(id, req.user);
 	}
 
+	@AllowRole(Role.STAFF)
+	@Post("archive/:id")
+	async archiveProblem(
+		@Param('id', ParseIntPipe) id: number,
+		@Req() req: authenticatedRequest,
+
+	) {
+		this.problemService.archiveProblem(id, req.user);
+	}
 
 }
