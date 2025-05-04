@@ -117,7 +117,7 @@ export class ProblemService {
 			dto: { page, limit },
 		});
 
-		if (searchText && searchText != '') {
+		if (searchText) {
 			searchProblems.andWhere(
 				'(LOWER(author.name) LIKE LOWER(:term) OR LOWER(entity.title) LIKE LOWER(:term))',
 				{
@@ -159,16 +159,13 @@ export class ProblemService {
 			}
 		}
 
-		searchProblems.orderBy(
-			'entity.id',
-			idReverse == 'true' ? 'DESC' : 'ASC',
-		);
+		searchProblems.orderBy('entity.id', idReverse ? 'DESC' : 'ASC');
 
 		if (difficultySortBy) {
 			searchProblems.addOrderBy('entity.difficulty', difficultySortBy);
 		}
 
-		if (staff == 'true') {
+		if (!!staff) {
 			if (role !== Role.STAFF && role !== Role.DEV) {
 				throw new ForbiddenException('You do not have permission.');
 			}
