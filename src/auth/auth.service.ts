@@ -17,7 +17,6 @@ import { RegisterUserDto } from './dto/register-user.dto';
 import { UserService } from 'src/user/user.service';
 import { MailService } from 'src/mail/mail.service';
 import { OpenAccountDto } from './dto/open-account.dto';
-import { Role } from 'src/shared/enum/role.enum';
 
 @Injectable()
 export class AuthService {
@@ -70,7 +69,7 @@ export class AuthService {
 			throw new GoneException('OTP code expired');
 
 		const userResponse = await this.userService.update(user.id, {
-			password : await this.generateHashedPassword(password),
+			password: await this.generateHashedPassword(password),
 			name,
 			otp: null,
 			otpExpires: null,
@@ -91,15 +90,10 @@ export class AuthService {
 		}
 	}
 
-	async setPassword(email: string, password: string): Promise<void> {
-		const user = await this.userService.findOne({ where: { email } });
-		await this.userService.update(user.id, { password : await this.generateHashedPassword(password) });
-	}
-
-	async setRole(email: string, role: Role): Promise<void> {
-		const user = await this.userService.findOne({ where: { email } });
-		if (!user) throw new BadRequestException('User not found');
-		await this.userService.update(user.id, { role });
+	async setPassword(id: string, password: string): Promise<void> {
+		await this.userService.update(id, {
+			password: await this.generateHashedPassword(password),
+		});
 	}
 
 	async login(loginData: LoginDto): Promise<AuthResponseDto> {

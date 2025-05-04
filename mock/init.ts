@@ -41,29 +41,18 @@ async function callApi(
 		console.log('admin', adminLoginData);
 
 		let newUserEmail = `test1@example.com`;
-		let register = await callApi(
-			'/auth/register',
-			{ email: newUserEmail },
+		let createUser = await callApi(
+			'/dev/user/create',
+			{
+				email: newUserEmail,
+				password: 'password',
+				role: 'staff',
+				name: 'test1',
+			},
 			adminLoginData.token,
 		);
 
-		console.log('register', register);
-
-		let setPass = await callApi(
-			'/auth/set-password',
-			{ email: newUserEmail, password: 'password' },
-			adminLoginData.token,
-		);
-
-		console.log('setPass', setPass);
-
-		let setRole = await callApi(
-			'/auth/set-role',
-			{ email: newUserEmail, role: 'staff' },
-			adminLoginData.token,
-		);
-
-		console.log('setRole', setRole);
+		console.log('create-user', createUser);
 
 		let user = await callApi('/auth/login', {
 			email: newUserEmail,
@@ -71,6 +60,15 @@ async function callApi(
 		});
 
 		console.log('user', user);
+
+		let setData = await callApi(
+			`/dev/user/update/${user.user.id}`,
+			{},
+			adminLoginData.token,
+			'POST',
+		);
+
+		console.log('setData', setData);
 
 		const tags = ['Basic I/O', 'If - else', 'Loop', 'Array', 'Pattern'];
 		let problems = [];

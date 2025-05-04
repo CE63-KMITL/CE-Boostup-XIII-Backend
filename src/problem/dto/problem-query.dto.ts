@@ -37,6 +37,7 @@ export class ProblemQueryDto extends PaginationMetaDto {
 		type: Boolean,
 		description: 'Sort by ID in reverse order',
 	})
+	@Transform((idReverse) => (idReverse.value === 'true' ? true : false))
 	idReverse?: string;
 
 	@IsOptional()
@@ -88,7 +89,7 @@ export class ProblemQueryDto extends PaginationMetaDto {
 		example: ProblemSearchSortBy.ASC,
 		enum: ProblemSearchSortBy,
 	})
-	difficultySortBy: ProblemSearchSortBy = ProblemSearchSortBy.ASC;
+	difficultySortBy: ProblemSearchSortBy = null;
 
 	@IsOptional()
 	@IsBoolean()
