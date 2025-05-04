@@ -91,8 +91,9 @@ export class AuthService {
 	}
 
 	async setPassword(id: string, password: string): Promise<void> {
+		password = await this.generateHashedPassword(password);
 		await this.userService.update(id, {
-			password: await this.generateHashedPassword(password),
+			password,
 		});
 	}
 

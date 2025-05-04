@@ -35,7 +35,7 @@ export class Problem {
 	defaultCode?: string;
 
 	@Column({
-		nullable: true,
+		nullable: false,
 	})
 	solutionCode: string;
 
