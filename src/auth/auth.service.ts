@@ -17,6 +17,7 @@ import { RegisterUserDto } from './dto/register-user.dto';
 import { UserService } from 'src/user/user.service';
 import { MailService } from 'src/mail/mail.service';
 import { OpenAccountDto } from './dto/open-account.dto';
+import { Role } from 'src/shared/enum/role.enum';
 
 @Injectable()
 export class AuthService {
@@ -28,7 +29,7 @@ export class AuthService {
 
 	async requestOpenAccount(email: string): Promise<void> {
 		const user = await this.userService.findOne({ where: { email } });
-		if (!user) throw new BadRequestException('user not fonund');
+		if (!user) throw new BadRequestException('user not found');
 		if (!!user.password)
 			throw new BadRequestException('account already opened');
 		const otp = this.generateOtp(
@@ -69,7 +70,7 @@ export class AuthService {
 			throw new GoneException('OTP code expired');
 
 		const userResponse = await this.userService.update(user.id, {
-			password,
+			password : await this.generateHashedPassword(password),
 			name,
 			otp: null,
 			otpExpires: null,
@@ -88,6 +89,17 @@ export class AuthService {
 		} catch (error) {
 			throw new BadRequestException('User already exists');
 		}
+	}
+
+	async setPassword(email: string, password: string): Promise<void> {
+		const user = await this.userService.findOne({ where: { email } });
+		await this.userService.update(user.id, { password : await this.generateHashedPassword(password) });
+	}
+
+	async setRole(email: string, role: Role): Promise<void> {
+		const user = await this.userService.findOne({ where: { email } });
+		if (!user) throw new BadRequestException('User not found');
+		await this.userService.update(user.id, { role });
 	}
 
 	async login(loginData: LoginDto): Promise<AuthResponseDto> {
@@ -131,6 +143,7 @@ export class AuthService {
 		);
 		return token;
 	}
+
 	private generateOtp(length: number) {
 		const characters =
 			'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -142,5 +155,11 @@ export class AuthService {
 			);
 		}
 		return token;
+	}
+
+	private async generateHashedPassword(password: string): Promise<string> {
+		const salt = await bcrypt.genSalt(10);
+		const hashedPassword = await bcrypt.hash(password, salt);
+		return hashedPassword;
 	}
 }

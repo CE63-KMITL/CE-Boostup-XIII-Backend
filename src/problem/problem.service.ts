@@ -1,4 +1,5 @@
 import {
+	BadRequestException,
 	ForbiddenException,
 	Injectable,
 	NotFoundException,
@@ -37,6 +38,16 @@ export class ProblemService {
 		createProblemRequest: CreateProblemDto,
 		userId: string,
 	): Promise<Problem> {
+		const existProblem = await this.problemsRepository.findOneBy({
+			title: createProblemRequest.title,
+		});
+
+		if (existProblem) {
+			throw new BadRequestException(
+				'Title must be unique. A problem with this title already exists.',
+			);
+		}
+
 		const author = await this.userService.findOne({
 			where: { id: userId },
 		});
@@ -97,12 +108,7 @@ export class ProblemService {
 			staff,
 		} = query;
 
-		const result = new ProblemPaginatedDto(
-			[],
-			0,
-			query.limit,
-			query.page,
-		);
+		const result = new ProblemPaginatedDto([], 0, page, limit);
 
 		const { role, userId } = user;
 
@@ -121,6 +127,7 @@ export class ProblemService {
 		}
 
 		if (tags && tags.length > 0) {
+			console.log(tags);
 			searchProblems.andWhere('entity.tags && ARRAY[:...tags]', {
 				tags,
 			});
@@ -152,7 +159,10 @@ export class ProblemService {
 			}
 		}
 
-		searchProblems.orderBy('entity.id', idReverse ? 'DESC' : 'ASC');
+		searchProblems.orderBy(
+			'entity.id',
+			idReverse == 'true' ? 'DESC' : 'ASC',
+		);
 
 		if (difficultySortBy) {
 			searchProblems.addOrderBy('entity.difficulty', difficultySortBy);
@@ -216,6 +226,7 @@ export class ProblemService {
 		const [data, totalItem] = await searchProblems.getManyAndCount();
 		result.data = data;
 		result.totalItem = totalItem;
+		result.updateTotalPage();
 		return result;
 	}
 

@@ -9,8 +9,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 
 import { ConfigService } from '@nestjs/config';
-import { ProblemQueryDto } from 'src/problem/dto/problem-query.dto';
-import { ProblemPaginatedDto } from 'src/problem/dto/problem-respond.dto';
 import { ProblemStatusEnum } from 'src/problem/enum/problem-staff-status.enum';
 import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
 import { House } from 'src/shared/enum/house.enum';
@@ -74,9 +72,13 @@ export class UserService implements OnModuleInit {
 		return new UserPaginatedDto(data, totalItem, query.page, query.limit);
 	}
 
-	async findOne(option: FindOneOptions<User>): Promise<User> {
+	async findOne(
+		option: FindOneOptions<User>,
+		throwError = false,
+	): Promise<User> {
 		const responseUser = await this.userRepository.findOne(option);
-		if (!responseUser) throw new NotFoundException('User not found');
+		if (!responseUser && throwError)
+			throw new NotFoundException('User not found');
 
 		return responseUser;
 	}
@@ -110,15 +112,25 @@ export class UserService implements OnModuleInit {
 	}
 
 	async create(user: CreateUserDto): Promise<UserResponseDto> {
-		try {
-			const salt = await bcrypt.genSalt(10);
-			const hashedPassword = await bcrypt.hash(user.password, salt);
-			user.password = hashedPassword;
+		const existUser = await this.findOne(
+			{
+				where: { email: user.email },
+			},
+			false,
+		);
 
-			const responseUser = await this.userRepository.save(user);
-			return new UserResponseDto(responseUser);
-		} catch (error) {
+		if (existUser) {
 			throw new BadRequestException('User already exists');
+		}
+
+		if (user.password) {
+		}
+
+		try {
+			return await this.userRepository.save(user);
+		} catch (error) {
+			console.log(error);
+			throw new InternalServerErrorException('Error creating user');
 		}
 	}
 
@@ -133,15 +145,6 @@ export class UserService implements OnModuleInit {
 					'Score must be a valid number >= 0',
 				);
 			}
-		}
-
-		if (partialEntity.password !== undefined) {
-			const salt = await bcrypt.genSalt(10);
-			const hashedPassword = await bcrypt.hash(
-				partialEntity.password as string,
-				salt,
-			);
-			partialEntity.password = hashedPassword;
 		}
 
 		try {
