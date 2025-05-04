@@ -58,7 +58,7 @@ export class ProblemResponseDto {
 		type: String,
 		isArray: true,
 	})
-	tag?: string[];
+	tags?: string[];
 
 	@ApiProperty({
 		description: 'author of problem',
@@ -79,7 +79,7 @@ export class ProblemResponseDto {
 		this.defaultCode = problem.defaultCode;
 		this.difficulty = problem.difficulty;
 		this.devStatus = problem.devStatus;
-		this.tag = problem.tags;
+		this.tags = problem.tags;
 		this.disallowFunctions = problem.disallowFunctions;
 		this.disallowHeaders = problem.disallowHeaders;
 		this.author = new UserResponseDto(problem.author);

@@ -43,6 +43,7 @@ export class ProblemQueryDto extends PaginationMetaDto {
 	@IsOptional()
 	@IsArray()
 	@IsString({ each: true })
+	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
 	@ApiPropertyOptional({
 		example: ['If - else'],
 		type: [String],
