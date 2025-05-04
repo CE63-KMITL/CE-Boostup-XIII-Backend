@@ -233,7 +233,7 @@ export class ProblemService {
 		await this.problemsRepository.update(id, { devStatus: ProblemStaffStatusEnum.PUBLISHED });
 	}
 
-	async requestReview(
+	async requestReviewProblem(
 		id: number,
 		user: jwtPayloadDto
 	): Promise<void> {

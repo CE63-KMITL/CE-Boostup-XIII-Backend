@@ -118,15 +118,15 @@ export class ProblemController {
 	) {
 		this.problemService.approveProblem(id, req.user);
 	}
-	
+
 	@AllowRole(Role.STAFF)
 	@Post("review/:id")
-	async requestReview(
+	async requestReviewProblem(
 		@Param('id', ParseIntPipe) id: number,
 		@Req() req: authenticatedRequest,
 
 	) {
-		this.problemService.requestReview(id, req.user);
+		this.problemService.requestReviewProblem(id, req.user);
 	}
 
 
