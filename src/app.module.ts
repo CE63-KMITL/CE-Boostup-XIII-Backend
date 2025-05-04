@@ -16,6 +16,7 @@ import { GLOBAL_CONFIG } from './shared/constants/global-config.constant';
 import { CustomThrottlerGuard } from './shared/guards/throttler.guard';
 import { UserModule } from './user/user.module';
 import { BullModule } from '@nestjs/bullmq';
+import { TestCaseModule } from './test_case/test-case.module';
 import { HouseScoreModule } from './house_score/house_score.module';
 import { DevUserModule } from './user/dev/user.module.dev';
 import { DevAuthModule } from './auth/dev/auth.module.dev';
@@ -23,6 +24,7 @@ import { DevAuthModule } from './auth/dev/auth.module.dev';
 const imports = [
 	UserModule,
 	ProblemModule,
+	TestCaseModule,
 	MailModule,
 	RunCodeModule,
 	HouseModule,
