@@ -28,6 +28,7 @@ import {
 } from './dto/problem-respond.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
 import { ProblemService } from './problem.service';
+import { RejectProblemDTO } from './dto/problem-reject.dto';
 
 @Controller('problem')
 @ApiTags('Problem')
@@ -138,5 +139,17 @@ export class ProblemController {
 	) {
 		this.problemService.archiveProblem(id, req.user);
 	}
+
+	@AllowRole(Role.STAFF)
+	@Post("archive/:id")
+	async rejectProblem(
+		@Param('id', ParseIntPipe) id: number,
+		message: RejectProblemDTO,
+		@Req() req: authenticatedRequest,
+
+	) {
+		this.problemService.rejectProblem(id, message, req.user);
+	}
+
 
 }

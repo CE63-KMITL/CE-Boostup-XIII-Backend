@@ -16,6 +16,7 @@ import {
 } from './enum/problem-staff-status.enum';
 import { Problem } from './problem.entity';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
+import { RejectProblemDTO } from './dto/problem-reject.dto';
 
 @Injectable()
 export class ProblemService {
@@ -242,6 +243,14 @@ export class ProblemService {
 
 	async archiveProblem(
 		id: number,
+		user: jwtPayloadDto
+	): Promise<void> {
+		await this.problemsRepository.update(id, { devStatus: ProblemStaffStatusEnum.ARCHIVED });
+	}
+
+	async rejectProblem(
+		id: number,
+		message: RejectProblemDTO,
 		user: jwtPayloadDto
 	): Promise<void> {
 		await this.problemsRepository.update(id, { devStatus: ProblemStaffStatusEnum.ARCHIVED });
