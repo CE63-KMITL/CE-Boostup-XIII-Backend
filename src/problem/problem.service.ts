@@ -173,7 +173,7 @@ export class ProblemService {
 
 		if (difficultySortBy) {
 			searchProblems.addOrderBy('entity.difficulty', difficultySortBy);
-		} else if (idReverse) {
+		} else {
 			searchProblems.orderBy('entity.id', idReverse ? 'DESC' : 'ASC');
 		}
 
