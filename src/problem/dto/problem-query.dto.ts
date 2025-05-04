@@ -35,7 +35,9 @@ export class ProblemQueryDto extends PaginationMetaDto {
 	@IsOptional()
 	@IsArray()
 	@IsString({ each: true })
-	@Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+	@Transform(({ value }) =>
+		Array.isArray(value) ? value : JSON.parse(value),
+	)
 	@ApiPropertyOptional({
 		example: ['If - else'],
 		type: [String],
@@ -62,8 +64,10 @@ export class ProblemQueryDto extends PaginationMetaDto {
 	maxDifficulty: ScoreValue = 5;
 
 	@IsOptional()
-	@IsEnum(ProblemStatusEnum)
-	@IsEnum(ProblemStaffStatusEnum)
+	@IsIn([
+		...Object.values(ProblemStatusEnum),
+		...Object.values(ProblemStaffStatusEnum),
+	])
 	@ApiPropertyOptional({
 		example: ProblemStatusEnum.IN_PROGRESS,
 		enum: ProblemStatusEnum,

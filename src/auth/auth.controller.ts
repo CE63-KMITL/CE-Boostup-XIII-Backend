@@ -16,7 +16,6 @@ import {
 	ApiResponse,
 	ApiTags,
 } from '@nestjs/swagger';
-import { UserService } from 'src/user/user.service';
 import { Role } from '../shared/enum/role.enum';
 import { AuthService } from './auth.service';
 import { AllowRole } from './decorators/auth.decorator';
@@ -31,36 +30,13 @@ import { RegisterUserDto } from './dto/register-user.dto';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-	constructor(
-		private readonly authService: AuthService,
-		private readonly userService: UserService,
-	) {}
+	constructor(private readonly authService: AuthService) {}
 
 	/*
 	-------------------------------------------------------
 	Open Account Endpoint
 	-------------------------------------------------------
 	*/
-
-	@Patch('open-account')
-	@ApiOperation({
-		summary: 'Create an account',
-	})
-	@ApiResponse({
-		status: HttpStatus.CREATED,
-		description: 'Account opened successfully.',
-		type: AuthResponseDto,
-	})
-	@ApiResponse({
-		status: 400,
-		description:
-			'Bad Request - Invalid input data or email already exists',
-	})
-	@HttpCode(HttpStatus.CREATED)
-	async openAccount(@Body() body: OpenAccountDto): Promise<AuthResponseDto> {
-		return await this.authService.openAccount(body);
-	}
-
 	@Post('request-open-account')
 	@ApiBody({
 		description: 'email',
@@ -79,6 +55,25 @@ export class AuthController {
 		await this.authService.requestOpenAccount(body.email);
 	}
 
+	@Patch('open-account')
+	@ApiOperation({
+		summary: 'Activate an account',
+	})
+	@ApiResponse({
+		status: HttpStatus.CREATED,
+		description: 'Account opened successfully.',
+		type: AuthResponseDto,
+	})
+	@ApiResponse({
+		status: 400,
+		description:
+			'Bad Request - Invalid input data or email already exists',
+	})
+	@HttpCode(HttpStatus.CREATED)
+	async openAccount(@Body() body: OpenAccountDto): Promise<AuthResponseDto> {
+		return await this.authService.openAccount(body);
+	}
+
 	/*
 	-------------------------------------------------------
 	Register Endpoint
@@ -93,7 +88,10 @@ export class AuthController {
 		description: 'Registeration successfull',
 	})
 	@ApiResponse({ status: 400, description: 'Bad Request.' })
-	async create(@Body() user: RegisterUserDto): Promise<{ message: string }> {
+	@AllowRole(Role.DEV)
+	async register(
+		@Body() user: RegisterUserDto,
+	): Promise<{ message: string }> {
 		await this.authService.register(user);
 		return { message: 'Registeration successfull' };
 	}
@@ -140,43 +138,5 @@ export class AuthController {
 		return {
 			role: req.user.role,
 		};
-	}
-
-	/*
-	-------------------------------------------------------
-	Test Endpoints (Protected)
-	-------------------------------------------------------
-	*/
-	@Get('dev')
-	@AllowRole(Role.DEV)
-	@ApiResponse({ status: 200, description: 'Success (DEV only)' })
-	@ApiResponse({ status: 401, description: 'Unauthorized' })
-	@ApiResponse({ status: 403, description: 'Forbidden (Requires DEV role)' })
-	getstaffOnly() {
-		return 'You are dev!';
-	}
-
-	@Get('member')
-	@AllowRole(Role.MEMBER)
-	@ApiResponse({ status: 200, description: 'Success (MEMBER only)' })
-	@ApiResponse({ status: 401, description: 'Unauthorized' })
-	@ApiResponse({
-		status: 403,
-		description: 'Forbidden (Requires MEMBER role)',
-	})
-	getMenberOnly() {
-		return 'You are member!';
-	}
-
-	@Get('all')
-	@AllowRole(Role.MEMBER, Role.DEV)
-	@ApiResponse({ status: 200, description: 'Success (MEMBER or DEV)' })
-	@ApiResponse({ status: 401, description: 'Unauthorized' })
-	@ApiResponse({
-		status: 403,
-		description: 'Forbidden (Requires MEMBER or DEV role)',
-	})
-	getall() {
-		return 'everyone can see this (MEMBER or DEV)';
 	}
 }
