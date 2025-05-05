@@ -237,16 +237,22 @@ export class ProblemService {
 		}
 
 		const [data, totalItem] = await searchProblems.getManyAndCount();
-		result.data = data.map((d) =>
-			ProblemSearchedDto(d, {
-				staff,
-				status: userProblemStatus
-					.filter(
-						(userProblem) => userProblem.problemId === d.id,
-					)
-					.map((userProblem) => userProblem.status)[0],
-			}),
-		);
+		result.data = data.map((d) => {
+			let status;
+
+			if (staff) {
+				status = d.devStatus;
+			} else {
+				const getUserProblem = userProblemStatus.find(
+					(userProblem) => userProblem.problemId === d.id,
+				);
+				status =
+					getUserProblem?.status ??
+					ProblemStatusEnum.NOT_STARTED;
+			}
+
+			return new ProblemSearchedDto(d, status);
+		});
 		result.totalItem = totalItem;
 		result.updateTotalPage();
 		return result;

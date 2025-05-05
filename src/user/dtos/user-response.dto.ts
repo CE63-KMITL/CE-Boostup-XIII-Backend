@@ -1,8 +1,9 @@
-import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { House } from 'src/shared/enum/house.enum';
 import { Role } from '../../shared/enum/role.enum';
 import { User } from '../user.entity';
 import { PaginatedResponseDto } from 'src/shared/pagination/dto/paginated-response.dto';
+import { Filter } from 'src/shared/dto.extension';
 
 export class UserResponseDto {
 	@ApiProperty({
@@ -100,12 +101,7 @@ export class UserPaginatedDto extends PaginatedResponseDto(UserResponseDto) {
 	}
 }
 
-export class UserSmallResponseDto extends PickType(UserResponseDto, [
+export class UserSmallResponseDto extends Filter(UserResponseDto, [
 	'name',
 	'icon',
 ]) {}
-
-// export const UserSmallResponseDto = (data: User) => {
-// 	console.log(data);
-// 	return Filter(data, ['name', 'icon']);
-// };

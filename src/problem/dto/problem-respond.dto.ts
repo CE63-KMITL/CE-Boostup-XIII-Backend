@@ -1,12 +1,16 @@
-import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from 'src/shared/pagination/dto/paginated-response.dto';
-import { UserResponseDto } from 'src/user/dtos/user-response.dto';
+import {
+	UserResponseDto,
+	UserSmallResponseDto,
+} from 'src/user/dtos/user-response.dto';
 import {
 	ProblemStaffStatusEnum,
 	ProblemStatusEnum,
 } from '../enum/problem-staff-status.enum';
 import { Problem } from '../problem.entity';
 import { ScoreValue } from '../type/score-value.type';
+import { Filter } from 'src/shared/dto.extension';
 
 export class ProblemResponseDto {
 	@ApiProperty({
@@ -90,62 +94,38 @@ export class ProblemPaginatedDto extends PaginatedResponseDto(
 	}
 }
 
-export class ProblemSearchedDto extends PickType(ProblemResponseDto, [
+export class ProblemSearchedDto extends Filter(ProblemResponseDto, [
 	'id',
 	'title',
 	'difficulty',
 	'tags',
-	'author',
-] as const) {
+]) {
+	@ApiProperty({
+		example: ProblemStaffStatusEnum.PUBLISHED,
+		description: 'current status of problem',
+		enum: {
+			...ProblemStaffStatusEnum,
+			...ProblemStatusEnum,
+		},
+	})
+	status: ProblemStatusEnum | ProblemStaffStatusEnum;
 
-	constructor(problem: Problem) {
+	@ApiProperty({
+		description: 'author of problem',
+		type: UserSmallResponseDto,
+	})
+	author: UserSmallResponseDto;
+
+	constructor(
+		problem: Problem,
+		status?: ProblemStatusEnum | ProblemStaffStatusEnum,
+	) {
 		super(problem);
+
+		this.status = status;
+		this.author = new UserSmallResponseDto(problem.author);
 	}
 }
-
-// export const ProblemSearchedDto = (
-// 	data: Problem,
-// 	status?: ProblemStatusEnum | ProblemStaffStatusEnum,
-// ) => {
-// 	return Filter(data, ['id', 'title', 'difficulty', 'tags', 'author'], {
-// 		author: UserSmallResponseDto(data.author),
-// 		status,
-// 	});
-// };
-
-// export class ProblemSearchedDto {
-// 	id: typeof ProblemResponseDto.prototype.id;
-// 	title: typeof ProblemResponseDto.prototype.title;
-// 	description?: typeof ProblemResponseDto.prototype.description;
-// 	difficulty: typeof ProblemResponseDto.prototype.difficulty;
-// 	status: ProblemStatusEnum | ProblemStaffStatusEnum;
-// 	tags?: typeof ProblemResponseDto.prototype.tags;
-// 	author: ReturnType<typeof UserSmallResponseDto>;
-
-// 	constructor(
-// 		problem: Problem,
-// 		config: {
-// 			staff: boolean;
-// 			status?: ProblemStatusEnum | ProblemStaffStatusEnum;
-// 		} = {
-// 			staff: false,
-// 		},
-// 	) {
-// 		this.id = problem.id;
-// 		this.title = problem.title;
-// 		this.description = problem.description;
-// 		this.difficulty = problem.difficulty;
-
-// 		if (config.staff) {
-// 			this.status = problem.devStatus;
-// 		} else {
-// 			this.status = config.status ?? ProblemStatusEnum.NOT_STARTED;
-// 		}
-
-// 		this.tags = problem.tags;
-// 		this.author = UserSmallResponseDto(problem.author);
-// 	}
-// }
 
 export class ProblemSearchedPaginatedDto extends PaginatedResponseDto(
 	ProblemSearchedDto,
