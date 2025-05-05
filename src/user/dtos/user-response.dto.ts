@@ -3,6 +3,7 @@ import { House } from 'src/shared/enum/house.enum';
 import { Role } from '../../shared/enum/role.enum';
 import { User } from '../user.entity';
 import { PaginatedResponseDto } from 'src/shared/pagination/dto/paginated-response.dto';
+import { Filter } from 'src/shared/dto.extension';
 
 export class UserResponseDto {
 	@ApiProperty({
@@ -99,3 +100,8 @@ export class UserPaginatedDto extends PaginatedResponseDto(UserResponseDto) {
 		super(usersResponse, totalItem, page, limit);
 	}
 }
+
+export class UserSmallResponseDto extends Filter(UserResponseDto, [
+	'name',
+	'icon',
+]) {}

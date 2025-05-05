@@ -1,13 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNumber } from 'class-validator';
 import { PaginatedResponseDto } from 'src/shared/pagination/dto/paginated-response.dto';
-import { UserResponseDto } from 'src/user/dtos/user-response.dto';
+import {
+	UserResponseDto,
+	UserSmallResponseDto,
+} from 'src/user/dtos/user-response.dto';
 import {
 	ProblemStaffStatusEnum,
 	ProblemStatusEnum,
 } from '../enum/problem-staff-status.enum';
 import { Problem } from '../problem.entity';
 import { ScoreValue } from '../type/score-value.type';
+import { Filter } from 'src/shared/dto.extension';
 
 export class ProblemResponseDto {
 	@ApiProperty({
@@ -73,6 +76,7 @@ export class ProblemResponseDto {
 	disallowFunctions?: string[];
 
 	constructor(problem: Problem) {
+		Object.assign(this, problem);
 		this.id = problem.id;
 		this.title = problem.title;
 		this.description = problem.description;
@@ -86,17 +90,6 @@ export class ProblemResponseDto {
 	}
 }
 
-export class ProblemWithUserStatus extends Problem {
-	status: ProblemStatusEnum;
-}
-
-export class ProblemSearchRespond {
-	items: ProblemWithUserStatus[];
-
-	@IsNumber()
-	pageCount: number;
-}
-
 export class ProblemPaginatedDto extends PaginatedResponseDto(
 	ProblemResponseDto,
 ) {
@@ -108,6 +101,55 @@ export class ProblemPaginatedDto extends PaginatedResponseDto(
 	) {
 		const problemsResponse = problems.map(
 			(problem) => new ProblemResponseDto(problem),
+		);
+		super(problemsResponse, totalItem, page, limit);
+	}
+}
+
+export class ProblemSearchedDto extends Filter(ProblemResponseDto, [
+	'id',
+	'title',
+	'difficulty',
+	'tags',
+]) {
+	@ApiProperty({
+		example: ProblemStaffStatusEnum.PUBLISHED,
+		description: 'current status of problem',
+		enum: {
+			...ProblemStaffStatusEnum,
+			...ProblemStatusEnum,
+		},
+	})
+	status: ProblemStatusEnum | ProblemStaffStatusEnum;
+
+	@ApiProperty({
+		description: 'author of problem',
+		type: UserSmallResponseDto,
+	})
+	author: UserSmallResponseDto;
+
+	constructor(
+		problem: Problem,
+		status?: ProblemStatusEnum | ProblemStaffStatusEnum,
+	) {
+		super(problem);
+
+		this.status = status;
+		this.author = new UserSmallResponseDto(problem.author);
+	}
+}
+
+export class ProblemSearchedPaginatedDto extends PaginatedResponseDto(
+	ProblemSearchedDto,
+) {
+	constructor(
+		problems: Problem[],
+		totalItem: number,
+		page: number,
+		limit: number,
+	) {
+		const problemsResponse = problems.map(
+			(problem) => new ProblemSearchedDto(problem),
 		);
 		super(problemsResponse, totalItem, page, limit);
 	}

@@ -20,7 +20,7 @@ enum ProblemSearchSortBy {
 	DESC = 'DESC',
 }
 
-export class ProblemQueryDto extends PaginationMetaDto {
+export class ProblemSearchQueryDto extends PaginationMetaDto {
 	@IsOptional()
 	@IsString()
 	@ApiPropertyOptional({

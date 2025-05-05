@@ -23,10 +23,11 @@ import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.
 import { Role } from 'src/shared/enum/role.enum';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { CreateProblemDto } from './dto/problem-create.dto';
-import { ProblemQueryDto } from './dto/problem-query.dto';
+import { ProblemSearchQueryDto } from './dto/problem-query.dto';
 import {
 	ProblemPaginatedDto,
 	ProblemResponseDto,
+	ProblemSearchedPaginatedDto,
 } from './dto/problem-respond.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
 import { ProblemService } from './problem.service';
@@ -68,14 +69,14 @@ export class ProblemController {
 	-------------------------------------------------------
 	*/
 	@ApiOkResponse({
-		type: ProblemPaginatedDto,
+		type: ProblemSearchedPaginatedDto,
 	})
 	@AllowRole()
 	@Get('search')
 	async search(
-		@Query() query: ProblemQueryDto,
+		@Query() query: ProblemSearchQueryDto,
 		@Req() req: authenticatedRequest,
-	): Promise<ProblemPaginatedDto> {
+	): Promise<ProblemSearchedPaginatedDto> {
 		return this.problemService.search(query, req.user);
 	}
 
