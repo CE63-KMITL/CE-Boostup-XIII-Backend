@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { RunCodeResponseDto } from 'src/runCode/dtos/runCode.dto';
+import { RunCodeResponseDto } from 'src/run_code/dtos/run-code-response.dto';
 
 export class ProblemSubmissionResponseDto extends RunCodeResponseDto {
 	@ApiProperty({

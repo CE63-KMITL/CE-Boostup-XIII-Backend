@@ -4,7 +4,7 @@ import { UserModule } from 'src/user/user.module';
 import { ProblemController } from './problem.controller';
 import { Problem } from './problem.entity';
 import { ProblemService } from './problem.service';
-import { RunCodeModule } from 'src/runCode/runCode.module';
+import { RunCodeModule } from 'src/run_code/run-code.module';
 
 @Module({
 	imports: [TypeOrmModule.forFeature([Problem]), UserModule, RunCodeModule],

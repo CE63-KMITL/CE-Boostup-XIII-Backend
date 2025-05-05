@@ -1,25 +1,30 @@
 import { Injectable } from '@nestjs/common';
 import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
 import { RunCodeResponseDto } from './dtos/run-code-response.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class RunCodeService {
+	constructor(private readonly configService: ConfigService) {}
 	async runCode(
 		input: string,
 		code: string,
 		timeout: number = 100,
 	): Promise<RunCodeResponseDto> {
-		const result = await fetch(`http://${GLOBAL_CONFIG.COMPILER_HOST}/`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
+		const result = await fetch(
+			`http://${this.configService.getOrThrow<string>(GLOBAL_CONFIG.COMPILER_HOST)}/`,
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					input: input,
+					code: code,
+					timeout: timeout,
+				}),
 			},
-			body: JSON.stringify({
-				input: input,
-				code: code,
-				timeout: timeout,
-			}),
-		});
+		);
 
 		if (!result.ok) {
 			console.log('Error: ', result);
