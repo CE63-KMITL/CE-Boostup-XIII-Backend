@@ -74,10 +74,6 @@ export class ProblemResponseDto {
 	}
 }
 
-export class ProblemWithUserStatus extends Problem {
-	status: ProblemStatusEnum;
-}
-
 export class ProblemPaginatedDto extends PaginatedResponseDto(
 	ProblemResponseDto,
 ) {
