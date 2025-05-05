@@ -1,9 +1,13 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Problem } from "src/problem/problem.entity";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class TestCase {
     @PrimaryGeneratedColumn()
     id: number;
+
+    @ManyToOne(() => Problem, (problem) => problem.testCases, { onDelete: 'CASCADE' })
+    problem: Problem
 
     @Column()
     input: string;
