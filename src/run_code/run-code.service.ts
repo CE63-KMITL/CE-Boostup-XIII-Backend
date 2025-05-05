@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { RunCodeResponseDto } from './dtos/runCode.dto';
+import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
+import { RunCodeResponseDto } from './dtos/run-code-response.dto';
 
 @Injectable()
 export class RunCodeService {
@@ -8,7 +9,7 @@ export class RunCodeService {
 		code: string,
 		timeout: number = 100,
 	): Promise<RunCodeResponseDto> {
-		const result = await fetch('http://CE-Boostup-XIII-Compiler:3002/', {
+		const result = await fetch(`http://${GLOBAL_CONFIG.COMPILER_HOST}/`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',

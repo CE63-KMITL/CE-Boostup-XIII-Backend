@@ -7,6 +7,7 @@ export const dotenvConfig = Joi.object({
 	DB_USERNAME: Joi.string().required(),
 	DB_PASSWORD: Joi.string().required(),
 	DB_NAME: Joi.string().required(),
+	COMPILER_HOST: Joi.string().required(),
 	IS_DEVELOPMENT: Joi.boolean().required(),
 	MAIL_HOST: Joi.string().required(),
 	MAIL_PORT: Joi.number().required(),
