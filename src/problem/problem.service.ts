@@ -12,10 +12,11 @@ import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
 import { CreateProblemDto } from './dto/problem-create.dto';
-import { ProblemQueryDto } from './dto/problem-query.dto';
+import { ProblemSearchQueryDto } from './dto/problem-query.dto';
 import {
 	ProblemPaginatedDto,
-	ProblemResponseDto,
+	ProblemSearchedDto,
+	ProblemSearchedPaginatedDto,
 } from './dto/problem-respond.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
 import {
@@ -23,6 +24,7 @@ import {
 	ProblemStatusEnum,
 } from './enum/problem-staff-status.enum';
 import { Problem } from './problem.entity';
+import { ProblemStatus } from 'src/user/score/problem-status.entity';
 
 @Injectable()
 export class ProblemService {
@@ -96,9 +98,9 @@ export class ProblemService {
 	}
 
 	async search(
-		query: ProblemQueryDto,
+		query: ProblemSearchQueryDto,
 		user: jwtPayloadDto,
-	): Promise<ProblemPaginatedDto> {
+	): Promise<ProblemSearchedPaginatedDto> {
 		const {
 			page,
 			searchText,
@@ -113,7 +115,7 @@ export class ProblemService {
 			author,
 		} = query;
 
-		const result = new ProblemPaginatedDto([], 0, page, limit);
+		const result = new ProblemSearchedPaginatedDto([], 0, page, limit);
 
 		const { role, userId } = user;
 
@@ -178,6 +180,8 @@ export class ProblemService {
 			searchProblems.orderBy('entity.id', idReverse ? 'DESC' : 'ASC');
 		}
 
+		let userProblemStatus: ProblemStatus[] = [];
+
 		if (!!staff) {
 			if (role !== Role.STAFF && role !== Role.DEV) {
 				throw new ForbiddenException('You do not have permission.');
@@ -193,17 +197,17 @@ export class ProblemService {
 				devStatus: ProblemStaffStatusEnum.PUBLISHED,
 			});
 
-			if (!!status) {
-				let problems = (
-					await this.userService.findOne({
-						where: { id: userId },
-						relations: { problemStatus: true },
-					})
-				).problemStatus;
+			userProblemStatus = (
+				await this.userService.findOne({
+					where: { id: userId },
+					relations: { problemStatus: true },
+				})
+			).problemStatus;
 
+			if (!!status) {
 				if (status === ProblemStatusEnum.NOT_STARTED) {
-					if (problems.length != 0) {
-						const ids = problems.map(
+					if (userProblemStatus.length != 0) {
+						const ids = userProblemStatus.map(
 							(problem) => problem.problemId,
 						);
 						searchProblems.andWhere(
@@ -214,16 +218,16 @@ export class ProblemService {
 						);
 					}
 				} else {
-					if (problems.length === 0) return result;
+					if (userProblemStatus.length === 0) return result;
 
-					problems = problems.filter(
+					userProblemStatus = userProblemStatus.filter(
 						(problem) =>
 							ProblemStatusEnum[problem.status] === status,
 					);
 
-					if (problems.length === 0) return result;
+					if (userProblemStatus.length === 0) return result;
 
-					problems.map((problem) =>
+					userProblemStatus.map((problem) =>
 						searchProblems.andWhere('entity.id = :id', {
 							id: problem.problemId,
 						}),
@@ -233,7 +237,22 @@ export class ProblemService {
 		}
 
 		const [data, totalItem] = await searchProblems.getManyAndCount();
-		result.data = data.map((d) => new ProblemResponseDto(d));
+		result.data = data.map((d) => {
+			let status;
+
+			if (staff) {
+				status = d.devStatus;
+			} else {
+				const getUserProblem = userProblemStatus.find(
+					(userProblem) => userProblem.problemId === d.id,
+				);
+				status =
+					getUserProblem?.status ??
+					ProblemStatusEnum.NOT_STARTED;
+			}
+
+			return new ProblemSearchedDto(d, status);
+		});
 		result.totalItem = totalItem;
 		result.updateTotalPage();
 		return result;
