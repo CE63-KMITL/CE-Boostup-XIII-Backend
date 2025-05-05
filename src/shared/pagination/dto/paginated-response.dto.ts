@@ -51,3 +51,8 @@ export function PaginatedResponseDto<T>(ItemType: Type<T>) {
 
 	return PaginatedResponseClass;
 }
+
+
+export function PaginatedResponseDto2<T>(ItemType: Type<T>) {
+
+ }
