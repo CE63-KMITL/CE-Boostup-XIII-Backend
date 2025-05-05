@@ -19,7 +19,11 @@ import { FindOneOptions, Repository } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UserQueryDto } from './dtos/user-query.dto';
-import { UserPaginatedDto, UserResponseDto } from './dtos/user-response.dto';
+import {
+	UserFrontDataResponseDto,
+	UserPaginatedDto,
+	UserResponseDto,
+} from './dtos/user-response.dto';
 import { ProblemStatus } from './score/problem-status.entity';
 import { ScoreLog } from './score/score-log.entity';
 import { User } from './user.entity';
@@ -81,6 +85,12 @@ export class UserService implements OnModuleInit {
 			throw new NotFoundException('User not found');
 
 		return responseUser;
+	}
+
+	async getData(id: string) {
+		return new UserFrontDataResponseDto(
+			await this.userRepository.findOne({ where: { id } }),
+		);
 	}
 
 	async search(query: UserQueryDto) {

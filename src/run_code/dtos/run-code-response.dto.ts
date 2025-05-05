@@ -1,8 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import { RunCodeExitStatusEnum } from '../enum/run-code-exit-status.enum';
 
 export class RunCodeResponseDto {
-	@Expose()
 	@ApiProperty({
 		example: '*code output*',
 		description: 'code output',
@@ -10,7 +9,6 @@ export class RunCodeResponseDto {
 	})
 	output: string;
 
-	@Expose()
 	@ApiProperty({
 		example: 0,
 		description: 'exit code',
@@ -18,7 +16,13 @@ export class RunCodeResponseDto {
 	})
 	exit_code: number;
 
-	@Expose()
+	@ApiProperty({
+		example: RunCodeExitStatusEnum.SUCCESS,
+		description: 'runcode status',
+		enum: RunCodeExitStatusEnum,
+	})
+	exit_status: RunCodeExitStatusEnum;
+
 	@ApiProperty({
 		example: '*error message*',
 		description: 'error message',
@@ -26,7 +30,6 @@ export class RunCodeResponseDto {
 	})
 	error_message: string;
 
-	@Expose()
 	@ApiProperty({
 		example: 0,
 		description: 'used time',
