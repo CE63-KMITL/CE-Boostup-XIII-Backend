@@ -18,6 +18,7 @@ import { Problem } from './problem.entity';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
 import { RunCodeService } from 'src/runCode/runCode.service';
+import { TestCase, TestCaseResult } from 'src/test_case/test_case.entity';
 
 @Injectable()
 export class ProblemService {
@@ -226,7 +227,13 @@ export class ProblemService {
 				if ('solutionCode' in updateProblemRequest) {
 					problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
 					// TODO: RUN CODE
-					const runCodePostDto = {}
+					// Loop through all testCases and runCode with their input
+					for (var testCase of problem.testCases) {
+						const input = testCase.input;
+						const code = updateProblemRequest.solutionCode
+						const result = this.runCodeService.runCode(input, code);
+						
+					}
 					await this.problemsRepository.save(problem)
 				}
 				return this.findOne(id);
