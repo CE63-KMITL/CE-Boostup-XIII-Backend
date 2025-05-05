@@ -290,4 +290,32 @@ export class UserService implements OnModuleInit {
 		await this.problemStatusRepository.save(userProblem);
 		return userProblem;
 	}
+
+	async updateProblemStatus(
+		problemId: number,
+		userId: string,
+		status: ProblemStatusEnum,
+		code: string,
+	) {
+		const userProblem = await this.problemStatusRepository.findOne({
+			where: { userId, problemId },
+		});
+		if (!userProblem) {
+			return await this.problemStatusRepository.save({
+				problemId,
+				userId,
+				code,
+				status,
+				lastSubmitted: new Date(),
+			});
+		}
+		await this.problemStatusRepository.update(userProblem, {
+			code,
+			status,
+			lastSubmitted: new Date(),
+		});
+		return await this.problemStatusRepository.findOne({
+			where: { userId, problemId },
+		});
+	}
 }

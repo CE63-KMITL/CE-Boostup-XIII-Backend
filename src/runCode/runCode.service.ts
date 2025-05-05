@@ -8,7 +8,7 @@ export class RunCodeService {
 		code: string,
 		timeout: number = 100,
 	): Promise<RunCodeResponseDto> {
-		const result = await fetch('http://CE-Boostup-XIII-Compiler:3002/', {
+		const result = await fetch('http://localhost:3002/', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',

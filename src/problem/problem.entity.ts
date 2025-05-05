@@ -67,6 +67,12 @@ export class Problem {
 	@Column('text', { nullable: true, array: true })
 	disallowFunctions: string[];
 
+	@Column('text', { nullable: true, array: true })
+	allowHeaders: string[];
+
+	@Column('text', { nullable: true, array: true })
+	allowFunctions: string[];
+
 	constructor(problem: Partial<Problem>) {
 		Object.assign(this, problem);
 	}

@@ -32,7 +32,6 @@ export class CreateProblemDto {
 	@IsString()
 	solutionCode?: string;
 
-
 	@ApiProperty({ example: 3, description: 'Difficulty level (0.5 to 5)' })
 	@IsOptional()
 	@IsNumber()
@@ -52,4 +51,14 @@ export class CreateProblemDto {
 	@IsOptional()
 	@IsString({ each: true })
 	disallowFunctions?: string[];
+
+	@ApiPropertyOptional({ example: ['#include<string.h>'] })
+	@IsOptional()
+	@IsString({ each: true })
+	allowHeaders?: string[];
+
+	@ApiPropertyOptional({ example: ['for'] })
+	@IsOptional()
+	@IsString({ each: true })
+	allowFunctions?: string[];
 }

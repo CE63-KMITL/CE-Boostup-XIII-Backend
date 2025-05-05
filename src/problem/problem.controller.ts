@@ -3,6 +3,7 @@ import {
 	Controller,
 	Delete,
 	Get,
+	HttpStatus,
 	Param,
 	ParseIntPipe,
 	Patch,
@@ -14,6 +15,7 @@ import {
 	ApiCreatedResponse,
 	ApiNoContentResponse,
 	ApiOkResponse,
+	ApiResponse,
 	ApiTags,
 } from '@nestjs/swagger';
 import { AllowRole } from 'src/auth/decorators/auth.decorator';
@@ -28,11 +30,13 @@ import {
 } from './dto/problem-respond.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
 import { ProblemService } from './problem.service';
+import { ProblemSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
+import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
 
 @Controller('problem')
 @ApiTags('Problem')
 export class ProblemController {
-	constructor(private readonly problemService: ProblemService) { }
+	constructor(private readonly problemService: ProblemService) {}
 
 	@ApiCreatedResponse({ type: ProblemResponseDto })
 	@AllowRole(Role.STAFF)
@@ -110,12 +114,32 @@ export class ProblemController {
 	}
 
 	@AllowRole(Role.STAFF)
-	@Post("approve/:id")
+	@Post('approve/:id')
 	async approveProblem(
 		@Param('id', ParseIntPipe) id: number,
 		@Req() req: authenticatedRequest,
-
 	) {
 		this.problemService.approveProblem(id, req.user);
+	}
+
+	@AllowRole(Role.MEMBER)
+	@Post('submission/:problemId')
+	@ApiResponse({ type: ProblemSubmissionResponseDto, isArray: true })
+	async runCode(
+		@Param(
+			'problemId',
+			new ParseIntPipe({
+				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+			}),
+		)
+		problemId: number,
+		@Req() req: authenticatedRequest,
+		@Body() problemSubmission: ProblemSubmissionDto,
+	): Promise<ProblemSubmissionResponseDto[]> {
+		return await this.problemService.runCode(
+			problemSubmission,
+			req.user,
+			problemId,
+		);
 	}
 }
