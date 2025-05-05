@@ -4,6 +4,10 @@ import { IsBoolean, IsString } from "class-validator";
 export class CreateTestCaseRequest {
     @ApiProperty()
     @IsString()
+    input: string;
+
+    @ApiProperty()
+    @IsString()
     expectOutput: string;
 
     @ApiProperty()

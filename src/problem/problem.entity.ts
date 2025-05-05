@@ -10,6 +10,7 @@ import {
 import { ProblemStaffStatusEnum } from './enum/problem-staff-status.enum';
 import { ScoreValue } from './type/score-value.type';
 
+// TODO: Add test cases to Problem
 @Entity()
 export class Problem {
 	@PrimaryGeneratedColumn('increment')

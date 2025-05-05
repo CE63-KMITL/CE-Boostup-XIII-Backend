@@ -6,6 +6,9 @@ export class TestCase {
     id: number;
 
     @Column()
+    input: string;
+
+    @Column()
     expectOutput: string;
 
     @Column()
