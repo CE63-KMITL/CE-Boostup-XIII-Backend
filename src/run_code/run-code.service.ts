@@ -7,22 +7,13 @@ import { RunCodeExitStatusEnum } from './enum/run-code-exit-status.enum';
 @Injectable()
 export class RunCodeService {
 	constructor(private readonly configService: ConfigService) {}
-
 	async runCode(
 		input: string,
 		code: string,
 		timeout: number = 100,
 	): Promise<RunCodeResponseDto> {
-		console.log(
-			this.configService.getOrThrow<string>(
-				GLOBAL_CONFIG.COMPILER_HOST,
-			),
-		);
-
 		const result = await fetch(
-			`http://${this.configService.getOrThrow<string>(
-				GLOBAL_CONFIG.COMPILER_HOST,
-			)}/`,
+			`http://${this.configService.getOrThrow<string>(GLOBAL_CONFIG.COMPILER_HOST)}/`,
 			{
 				method: 'POST',
 				headers: {

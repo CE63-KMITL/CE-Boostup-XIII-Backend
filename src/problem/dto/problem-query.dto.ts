@@ -37,8 +37,8 @@ export class ProblemSearchQueryDto extends PaginationMetaDto {
 		type: Boolean,
 		description: 'Sort by ID in reverse order',
 	})
-	@Transform((idReverse) => (idReverse.value === 'true' ? true : false))
-	idReverse?: string;
+	@Transform(({ value }) => (value === 'true' ? true : false))
+	idReverse?: boolean;
 
 	@IsOptional()
 	@IsArray()

@@ -36,4 +36,8 @@ export class RunCodeResponseDto {
 		type: Number,
 	})
 	used_time: number;
+
+	constructor(partial: Partial<RunCodeResponseDto>) {
+		Object.assign(this, partial);
+	}
 }

@@ -3,6 +3,7 @@ import {
 	ForbiddenException,
 	Injectable,
 	NotFoundException,
+	UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { jwtPayloadDto } from 'src/auth/dto/jwt-payload.dto';
@@ -24,7 +25,11 @@ import {
 	ProblemStatusEnum,
 } from './enum/problem-staff-status.enum';
 import { Problem } from './problem.entity';
+import { ProblemSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
+import { RunCodeService } from 'src/run_code/run-code.service';
+import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
 import { ProblemStatus } from 'src/user/score/problem-status.entity';
+import { RejectProblemDTO } from './dto/problem-reject.dto';
 
 @Injectable()
 export class ProblemService {
@@ -32,6 +37,7 @@ export class ProblemService {
 		@InjectRepository(Problem)
 		private readonly problemsRepository: Repository<Problem>,
 		private readonly userService: UserService,
+		private readonly runCodeService: RunCodeService,
 	) {}
 
 	/*
@@ -263,12 +269,40 @@ export class ProblemService {
 	async updateDraft(
 		id: number,
 		updateProblemRequest: UpdateProblemDto,
+		user: jwtPayloadDto,
 	): Promise<Problem> {
 		try {
-			// TODO: Only owner can update
-
-			await this.problemsRepository.update(id, updateProblemRequest);
-			return this.findOne(id);
+			const problem = await this.problemsRepository.findOneBy({
+				id: id,
+			});
+			const problemAuthorId = problem.author.id;
+			// Only owner of the problem can edit
+			if (problemAuthorId == user.userId) {
+				await this.problemsRepository.update(
+					id,
+					updateProblemRequest,
+				);
+				// Update problem status if there is an update to solution code
+				if ('solutionCode' in updateProblemRequest) {
+					problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
+					// TODO: RUN CODE
+					// Loop through all testCases and runCode with their input
+					for (var testCase of problem.testCases) {
+						const input = testCase.input;
+						const code = updateProblemRequest.solutionCode;
+						const result = this.runCodeService.runCode(
+							input,
+							code,
+						);
+					}
+					await this.problemsRepository.save(problem);
+				}
+				return this.findOne(id);
+			} else {
+				throw new UnauthorizedException(
+					'must be the owner of problem',
+				);
+			}
 		} catch (error) {
 			throw new NotFoundException('problem not found');
 		}
@@ -281,6 +315,64 @@ export class ProblemService {
 	async approveProblem(id: number, user: jwtPayloadDto): Promise<void> {
 		await this.problemsRepository.update(id, {
 			devStatus: ProblemStaffStatusEnum.PUBLISHED,
+		});
+	}
+
+	async runCode(
+		problemSubmission: ProblemSubmissionDto,
+		payload: jwtPayloadDto,
+		problemId: number,
+	) {
+		const { userId } = payload;
+		const { code } = problemSubmission;
+		const problem = await this.findOne(problemId);
+		const { testCases } = problem;
+		if (testCases.length === 0)
+			throw new BadRequestException('no test case for this problem');
+		const runCodeResponse = await Promise.all(
+			testCases.map((testCase) =>
+				this.runCodeService.runCode(testCase.input, code, 1 * 1000),
+			),
+		);
+		const response = runCodeResponse.map((result, i) => {
+			return new ProblemSubmissionResponseDto(
+				testCases[i].isHiddenTestcase ? undefined : result,
+				result.output === testCases[i].expectOutput,
+			);
+		});
+		await this.userService.updateProblemStatus(
+			problemId,
+			userId,
+			response.some((d) => d.isPass === false)
+				? ProblemStatusEnum.IN_PROGRESS
+				: ProblemStatusEnum.DONE,
+			JSON.stringify(code),
+		);
+		return response;
+	}
+
+	async requestReviewProblem(
+		id: number,
+		user: jwtPayloadDto,
+	): Promise<void> {
+		await this.problemsRepository.update(id, {
+			devStatus: ProblemStaffStatusEnum.NEED_REVIEW,
+		});
+	}
+
+	async archiveProblem(id: number, user: jwtPayloadDto): Promise<void> {
+		await this.problemsRepository.update(id, {
+			devStatus: ProblemStaffStatusEnum.ARCHIVED,
+		});
+	}
+
+	async rejectProblem(
+		id: number,
+		message: RejectProblemDTO,
+		user: jwtPayloadDto,
+	): Promise<void> {
+		await this.problemsRepository.update(id, {
+			devStatus: ProblemStaffStatusEnum.ARCHIVED,
 		});
 	}
 }

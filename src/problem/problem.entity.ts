@@ -12,6 +12,7 @@ import { ProblemStaffStatusEnum } from './enum/problem-staff-status.enum';
 import { ScoreValue } from './type/score-value.type';
 import { TestCase } from 'src/test_case/test-case.entity';
 
+// TODO: Add test cases to Problem
 @Entity()
 export class Problem {
 	@PrimaryGeneratedColumn('increment')
@@ -35,7 +36,7 @@ export class Problem {
 	defaultCode?: string;
 
 	@Column({
-		nullable: true,
+		nullable: false,
 	})
 	solutionCode: string;
 
@@ -60,6 +61,18 @@ export class Problem {
 
 	@OneToMany(() => TestCase, (TestCase) => TestCase.problem)
 	testCases: TestCase[];
+
+	@Column('text', { nullable: true, array: true })
+	disallowHeaders: string[];
+
+	@Column('text', { nullable: true, array: true })
+	disallowFunctions: string[];
+
+	@Column('text', { nullable: true, array: true })
+	allowHeaders: string[];
+
+	@Column('text', { nullable: true, array: true })
+	allowFunctions: string[];
 
 	constructor(problem: Partial<Problem>) {
 		Object.assign(this, problem);

@@ -69,8 +69,15 @@ export class ProblemResponseDto {
 	})
 	author: UserResponseDto;
 
+	@ApiPropertyOptional({ example: ['string.h'] })
+	disallowHeaders?: string[];
+
+	@ApiPropertyOptional({ example: ['for'] })
+	disallowFunctions?: string[];
+
 	constructor(problem: Problem) {
 		Object.assign(this, problem);
+		this.author = new UserResponseDto(problem.author);
 	}
 }
 
