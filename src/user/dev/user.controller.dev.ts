@@ -17,7 +17,6 @@ import { AllowRole } from 'src/auth/decorators/auth.decorator';
 @Controller('dev/user/')
 export class DevUserController {
 	constructor(
-		private readonly authService: AuthService,
 		private readonly userService: UserService,
 	) {}
 
@@ -48,13 +47,6 @@ export class DevUserController {
 		)
 		id: string,
 	): Promise<{ message: string }> {
-		if (body.password) {
-			body.password = await this.authService.setPassword(
-				id,
-				body.password,
-			);
-			delete body.password;
-		}
 		await this.userService.update(id, body);
 		return { message: 'User data set successfully' };
 	}
