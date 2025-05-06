@@ -91,6 +91,7 @@ export class UserResponseDto {
 
 	constructor(user: User) {
 		this.id = user.id;
+		this.studentId = user.studentId;
 		this.name = user.name;
 		this.email = user.email;
 		this.house = user.house;

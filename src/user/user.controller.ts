@@ -55,6 +55,23 @@ export class UserController {
 		return await this.userService.findAll(query);
 	}
 
+	@Get('me')
+	@HttpCode(HttpStatus.OK)
+	@AllowRole(Role.MEMBER) // Only authenticated users can access this
+	@ApiResponse({
+		status: HttpStatus.OK,
+		description: 'Get current authenticated user data',
+		type: UserResponseDto,
+	})
+	async getCurrentUser(
+		@Request() req: authenticatedRequest,
+	): Promise<UserResponseDto> {
+		const user = await this.userService.findOne({
+			where: { id: req.user.userId },
+		});
+		return new UserResponseDto(user);
+	}
+
 	/*
 	-------------------------------------------------------
 	Protected Endpoints
