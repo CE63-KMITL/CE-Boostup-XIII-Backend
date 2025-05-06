@@ -76,8 +76,6 @@ export class ProblemService {
 			});
 		}
 
-		console.log(testCasesResult);
-
 		const problem = this.problemsRepository.create({
 			...createProblemRequest,
 			author: author,
