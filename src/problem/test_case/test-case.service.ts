@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+	BadRequestException,
+	forwardRef,
+	Inject,
+	Injectable,
+	NotFoundException,
+} from '@nestjs/common';
 import {
 	CreateTestCaseDto,
 	UpdateTestCaseDto,
@@ -11,27 +17,51 @@ import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.
 import { Role } from 'src/shared/enum/role.enum';
 import { TestCaseResponseDto } from './dto/test-case-response.dto';
 import { RunCodeService } from 'src/run_code/run-code.service';
+import { Problem } from '../problem.entity';
+import { RunCodeExitStatusEnum } from 'src/run_code/enum/run-code-exit-status.enum';
 
 @Injectable()
 export class TestCaseService {
 	constructor(
 		@InjectRepository(TestCase)
 		private readonly testCaseRepository: Repository<TestCase>,
+		@Inject(forwardRef(() => ProblemService))
 		private readonly problemService: ProblemService,
 		private readonly runCodeService: RunCodeService,
 	) {}
 
-	async create(problemId: number, createTestCaseDto: CreateTestCaseDto) {
-		const { isHiddenTestcase, input } = createTestCaseDto;
-		const problem = await this.problemService.findOne(problemId);
+	async checkTestCaseExist(problem: Problem | number, input: string) {
+		if (!(problem instanceof Problem)) {
+			problem = await this.problemService.findOne(problem);
+		}
+		if (problem.testCases.some((testCase) => testCase.input === input)) {
+			throw new BadRequestException('Test case already exist');
+		}
+	}
 
-		problem.checkTestCase(input);
-
+	async getExpectedOutput(solutionCode: string, input: string) {
 		const runCodeResult = await this.runCodeService.runCode(
 			input,
-			problem.solutionCode,
+			solutionCode,
 		);
-		const expectOutput = runCodeResult.output;
+		if (runCodeResult.exit_status != RunCodeExitStatusEnum.SUCCESS) {
+			throw new BadRequestException(
+				`Test case failed ${runCodeResult.output}`,
+			);
+		}
+		return runCodeResult.output;
+	}
+
+	async create(problemId: number, createTestCaseDto: CreateTestCaseDto) {
+		const { isHiddenTestcase, input } = createTestCaseDto;
+
+		const problem = await this.problemService.findOne(problemId);
+
+		await this.checkTestCaseExist(problem, input);
+		const expectOutput = await this.getExpectedOutput(
+			problem.solutionCode,
+			createTestCaseDto.input,
+		);
 
 		return await this.testCaseRepository.save({
 			input,
@@ -84,7 +114,7 @@ export class TestCaseService {
 		const problem = await this.problemService.findOne(
 			testCase.problem.id,
 		);
-		problem.checkTestCase(input);
+		this.checkTestCaseExist(problem, input);
 		await this.testCaseRepository.update(id, updateTestCaseDto);
 		return testCase;
 	}

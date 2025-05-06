@@ -77,15 +77,4 @@ export class Problem {
 	constructor(problem: Partial<Problem>) {
 		Object.assign(this, problem);
 	}
-
-	findTestCase(input: string): TestCase | undefined {
-		return this.testCases.find((testCase) => testCase.input === input);
-	}
-
-	checkTestCase(input: string): boolean {
-		if (this.testCases.some((testCase) => testCase.input === input)) {
-			throw new Error('Test case already exists');
-		}
-		return true;
-	}
 }

@@ -116,6 +116,7 @@ export class TestCaseController {
 			}),
 		)
 		id: string,
+		@Request() req: authenticatedRequest,
 		@Body() updateTestCaseDto: UpdateTestCaseDto,
 	): Promise<TestCaseResponseDto> {
 		return new TestCaseResponseDto(
