@@ -61,7 +61,7 @@ export class UserController {
 		description: 'get user by query',
 		type: UserPaginatedDto,
 	})
-	@AllowRole(Role.MEMBER)
+	@AllowRole()
 	async search(@Query() query: UserQueryDto) {
 		return await this.userService.search(query);
 	}
@@ -72,11 +72,9 @@ export class UserController {
 	-------------------------------------------------------
 	*/
 
-	@Get("data")
+	@Get('data')
 	@AllowRole(Role.MEMBER)
-	async getData(
-		@Request() req: authenticatedRequest
-	) {
+	async getData(@Request() req: authenticatedRequest) {
 		return await this.userService.getData(req.user.userId);
 	}
 
