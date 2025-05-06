@@ -72,6 +72,14 @@ export class UserController {
 	-------------------------------------------------------
 	*/
 
+	@Get("data")
+	@AllowRole(Role.MEMBER)
+	async getData(
+		@Request() req: authenticatedRequest
+	) {
+		return await this.userService.getData(req.user.userId);
+	}
+
 	@Get(':id')
 	@HttpCode(HttpStatus.OK)
 	@AllowRole(Role.MEMBER)

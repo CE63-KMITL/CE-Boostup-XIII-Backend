@@ -201,12 +201,14 @@ export class ProblemService {
 				devStatus: ProblemStaffStatusEnum.PUBLISHED,
 			});
 
-			userProblemStatus = (
-				await this.userService.findOne({
-					where: { id: userId },
-					relations: { problemStatus: true },
-				})
-			).problemStatus;
+			const userData = await this.userService.findOne({
+				where: { id: userId },
+				relations: { problemStatus: true },
+			});
+
+			if (!userData) return result;
+
+			userProblemStatus = userData.problemStatus;
 
 			if (!!status) {
 				if (status === ProblemStatusEnum.NOT_STARTED) {

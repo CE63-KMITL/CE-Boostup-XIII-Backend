@@ -25,7 +25,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
 		// 50 requests per 1 minutes
 		let ttl = 60 * 1000;
 		let limit = 50;
-		let blockDuration = null;
+		let blockDuration = 5 * 1000;
 		if (this.isLimitedPath(req)) {
 			ttl = 60 * 1000;
 			limit = 1;

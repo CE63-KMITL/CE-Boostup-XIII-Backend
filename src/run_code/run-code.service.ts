@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
 import { RunCodeResponseDto } from './dtos/run-code-response.dto';
 import { ConfigService } from '@nestjs/config';
+import { RunCodeExitStatusEnum } from './enum/run-code-exit-status.enum';
 
 @Injectable()
 export class RunCodeService {
@@ -31,6 +32,7 @@ export class RunCodeService {
 			return {
 				output: '',
 				exit_code: 1,
+				exit_status: RunCodeExitStatusEnum.CANT_CONNECT_TO_COMPILER,
 				error_message: 'Error running code',
 				used_time: -1,
 			};
