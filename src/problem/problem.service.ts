@@ -29,7 +29,6 @@ import { ProblemSubmissionDto } from './dto/code-submission-dto/problem-submissi
 import { RunCodeService } from 'src/run_code/run-code.service';
 import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
 import { ProblemStatus } from 'src/user/score/problem-status.entity';
-import { RunCodeService } from 'src/run_code/run-code.service';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
 
 @Injectable()
@@ -38,7 +37,6 @@ export class ProblemService {
 		@InjectRepository(Problem)
 		private readonly problemsRepository: Repository<Problem>,
 		private readonly userService: UserService,
-		private readonly runCodeService: RunCodeService,
 		private readonly runCodeService: RunCodeService,
 	) {}
 
