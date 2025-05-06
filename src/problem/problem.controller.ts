@@ -99,7 +99,11 @@ export class ProblemController {
 		@Req() req: authenticatedRequest,
 	): Promise<ProblemResponseDto> {
 		return new ProblemResponseDto(
-			await this.problemService.updateDraft(id, updateProblemRequest, req.user),
+			await this.problemService.updateDraft(
+				id,
+				updateProblemRequest,
+				req.user,
+			),
 		);
 	}
 
@@ -122,35 +126,30 @@ export class ProblemController {
 	}
 
 	@AllowRole(Role.STAFF)
-	@Post("review/:id")
+	@Post('review/:id')
 	async requestReviewProblem(
 		@Param('id', ParseIntPipe) id: number,
 		@Req() req: authenticatedRequest,
-
 	) {
 		this.problemService.requestReviewProblem(id, req.user);
 	}
 
 	@AllowRole(Role.STAFF)
-	@Post("archive/:id")
+	@Post('archive/:id')
 	async archiveProblem(
 		@Param('id', ParseIntPipe) id: number,
 		@Req() req: authenticatedRequest,
-
 	) {
 		this.problemService.archiveProblem(id, req.user);
 	}
 
 	@AllowRole(Role.STAFF)
-	@Post("archive/:id")
+	@Post('archive/:id')
 	async rejectProblem(
 		@Param('id', ParseIntPipe) id: number,
 		message: RejectProblemDTO,
 		@Req() req: authenticatedRequest,
-
 	) {
 		this.problemService.rejectProblem(id, message, req.user);
 	}
-
-
 }
