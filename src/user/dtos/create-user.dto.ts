@@ -52,7 +52,7 @@ export class CreateUserDto {
 
 	@IsOptional()
 	@IsEnum(AvailableRole, {
-		message: `Role must be a valid enum value: ${Role.STAFF} or ${Role.MEMBER}`,
+		message: `Role must be a valid enum value: ${Role.DEV} or ${Role.STAFF} or ${Role.MEMBER}`,
 	})
 	@ApiPropertyOptional({
 		example: Role.MEMBER,

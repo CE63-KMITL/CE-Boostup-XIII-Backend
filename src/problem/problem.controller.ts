@@ -21,10 +21,11 @@ import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.
 import { Role } from 'src/shared/enum/role.enum';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { CreateProblemDto } from './dto/problem-create.dto';
-import { ProblemQueryDto } from './dto/problem-query.dto';
+import { ProblemSearchQueryDto } from './dto/problem-query.dto';
 import {
 	ProblemPaginatedDto,
 	ProblemResponseDto,
+	ProblemSearchedPaginatedDto,
 } from './dto/problem-respond.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
 import { ProblemService } from './problem.service';
@@ -33,7 +34,7 @@ import { RejectProblemDTO } from './dto/problem-reject.dto';
 @Controller('problem')
 @ApiTags('Problem')
 export class ProblemController {
-	constructor(private readonly problemService: ProblemService) { }
+	constructor(private readonly problemService: ProblemService) {}
 
 	@ApiCreatedResponse({ type: ProblemResponseDto })
 	@AllowRole(Role.STAFF)
@@ -65,14 +66,14 @@ export class ProblemController {
 	-------------------------------------------------------
 	*/
 	@ApiOkResponse({
-		type: ProblemPaginatedDto,
+		type: ProblemSearchedPaginatedDto,
 	})
 	@AllowRole()
 	@Get('search')
 	async search(
-		@Query() query: ProblemQueryDto,
+		@Query() query: ProblemSearchQueryDto,
 		@Req() req: authenticatedRequest,
-	): Promise<ProblemPaginatedDto> {
+	): Promise<ProblemSearchedPaginatedDto> {
 		return this.problemService.search(query, req.user);
 	}
 
@@ -112,11 +113,10 @@ export class ProblemController {
 	}
 
 	@AllowRole(Role.STAFF)
-	@Post("approve/:id")
+	@Post('approve/:id')
 	async approveProblem(
 		@Param('id', ParseIntPipe) id: number,
 		@Req() req: authenticatedRequest,
-
 	) {
 		this.problemService.approveProblem(id, req.user);
 	}

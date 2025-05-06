@@ -1,6 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsArray, IsEnum, IsIn, IsOptional, IsString } from 'class-validator';
+import {
+	IsArray,
+	IsBoolean,
+	IsEnum,
+	IsIn,
+	IsOptional,
+	IsString,
+} from 'class-validator';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import {
 	ProblemStaffStatusEnum,
@@ -13,7 +20,7 @@ enum ProblemSearchSortBy {
 	DESC = 'DESC',
 }
 
-export class ProblemQueryDto extends PaginationMetaDto {
+export class ProblemSearchQueryDto extends PaginationMetaDto {
 	@IsOptional()
 	@IsString()
 	@ApiPropertyOptional({
@@ -24,12 +31,13 @@ export class ProblemQueryDto extends PaginationMetaDto {
 	searchText?: string;
 
 	@IsOptional()
-	@IsString()
+	@IsBoolean()
 	@ApiPropertyOptional({
 		example: true,
 		type: Boolean,
 		description: 'Sort by ID in reverse order',
 	})
+	@Transform((idReverse) => (idReverse.value === 'true' ? true : false))
 	idReverse?: string;
 
 	@IsOptional()
@@ -62,20 +70,15 @@ export class ProblemQueryDto extends PaginationMetaDto {
 	maxDifficulty: ScoreValue = 5;
 
 	@IsOptional()
-	@IsEnum(ProblemStaffStatusEnum)
-	@ApiPropertyOptional({
-		example: ProblemStaffStatusEnum.IN_PROGRESS,
-		enum: ProblemStaffStatusEnum,
-	})
-	devStatus?: ProblemStaffStatusEnum;
-
-	@IsOptional()
-	@IsEnum(ProblemStatusEnum)
+	@IsIn([
+		...Object.values(ProblemStatusEnum),
+		...Object.values(ProblemStaffStatusEnum),
+	])
 	@ApiPropertyOptional({
 		example: ProblemStatusEnum.IN_PROGRESS,
 		enum: ProblemStatusEnum,
 	})
-	status?: ProblemStatusEnum;
+	status?: ProblemStatusEnum | ProblemStaffStatusEnum;
 
 	@IsOptional()
 	@IsString()
@@ -84,15 +87,24 @@ export class ProblemQueryDto extends PaginationMetaDto {
 		example: ProblemSearchSortBy.ASC,
 		enum: ProblemSearchSortBy,
 	})
-	difficultySortBy: ProblemSearchSortBy = ProblemSearchSortBy.ASC;
+	difficultySortBy: ProblemSearchSortBy = null;
 
 	@IsOptional()
-	@IsString()
+	@IsBoolean()
+	@Transform((staff) => (staff.value === 'true' ? true : false))
 	@ApiPropertyOptional({
 		type: Boolean,
 		description: 'For Satff',
 	})
-	staff?: string;
+	staff?: boolean;
+
+	@IsOptional()
+	@IsString()
+	@ApiPropertyOptional({
+		type: String,
+		example: 'author',
+	})
+	author: string;
 }
 export class ProblemUserQueryDto extends PaginationMetaDto {
 	@IsOptional()

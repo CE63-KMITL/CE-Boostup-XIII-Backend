@@ -1,4 +1,10 @@
-import { Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+	BadRequestException,
+	ForbiddenException,
+	Injectable,
+	NotFoundException,
+	UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { jwtPayloadDto } from 'src/auth/dto/jwt-payload.dto';
 import { Role } from 'src/shared/enum/role.enum';
@@ -7,18 +13,20 @@ import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
 import { CreateProblemDto } from './dto/problem-create.dto';
-import { ProblemQueryDto } from './dto/problem-query.dto';
-import { ProblemPaginatedDto } from './dto/problem-respond.dto';
+import { ProblemSearchQueryDto } from './dto/problem-query.dto';
+import {
+	ProblemPaginatedDto,
+	ProblemSearchedDto,
+	ProblemSearchedPaginatedDto,
+} from './dto/problem-respond.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
 import {
 	ProblemStaffStatusEnum,
 	ProblemStatusEnum,
 } from './enum/problem-staff-status.enum';
 import { Problem } from './problem.entity';
-import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
-import { RejectProblemDTO } from './dto/problem-reject.dto';
-import { RunCodeService } from 'src/runCode/runCode.service';
-import { TestCase, TestCaseResult } from 'src/test_case/test_case.entity';
+import { ProblemStatus } from 'src/user/score/problem-status.entity';
+import { RunCodeService } from 'src/run_code/run-code.service';
 
 @Injectable()
 export class ProblemService {
@@ -26,8 +34,8 @@ export class ProblemService {
 		@InjectRepository(Problem)
 		private readonly problemsRepository: Repository<Problem>,
 		private readonly userService: UserService,
-		private readonly runCodeService: RunCodeService
-	) { }
+		private readonly runCodeService: RunCodeService,
+	) {}
 
 	/*
 	-------------------------------------------------------
@@ -38,6 +46,16 @@ export class ProblemService {
 		createProblemRequest: CreateProblemDto,
 		userId: string,
 	): Promise<Problem> {
+		const existProblem = await this.problemsRepository.findOneBy({
+			title: createProblemRequest.title,
+		});
+
+		if (existProblem) {
+			throw new BadRequestException(
+				'Title must be unique. A problem with this title already exists.',
+			);
+		}
+
 		const author = await this.userService.findOne({
 			where: { id: userId },
 		});
@@ -68,6 +86,7 @@ export class ProblemService {
 			where: { id },
 			relations: {
 				author: true,
+				testCases: true,
 			},
 		});
 		if (!problem) {
@@ -82,9 +101,9 @@ export class ProblemService {
 	}
 
 	async search(
-		query: ProblemQueryDto,
+		query: ProblemSearchQueryDto,
 		user: jwtPayloadDto,
-	): Promise<ProblemPaginatedDto> {
+	): Promise<ProblemSearchedPaginatedDto> {
 		const {
 			page,
 			searchText,
@@ -94,10 +113,12 @@ export class ProblemService {
 			idReverse,
 			limit,
 			status,
-			devStatus,
 			tags,
 			staff,
+			author,
 		} = query;
+
+		const result = new ProblemSearchedPaginatedDto([], 0, page, limit);
 
 		const { role, userId } = user;
 
@@ -106,7 +127,15 @@ export class ProblemService {
 			dto: { page, limit },
 		});
 
-		if (searchText && searchText != '') {
+		searchProblems.leftJoinAndSelect('entity.author', 'author');
+
+		if (!!author) {
+			searchProblems.andWhere('author.name ILIKE :author', {
+				author: `%${author}%`,
+			});
+		}
+
+		if (searchText) {
 			searchProblems.andWhere(
 				'(LOWER(author.name) LIKE LOWER(:term) OR LOWER(entity.title) LIKE LOWER(:term))',
 				{
@@ -116,6 +145,7 @@ export class ProblemService {
 		}
 
 		if (tags && tags.length > 0) {
+			console.log(tags);
 			searchProblems.andWhere('entity.tags && ARRAY[:...tags]', {
 				tags,
 			});
@@ -147,82 +177,108 @@ export class ProblemService {
 			}
 		}
 
-		searchProblems.orderBy('entity.id', idReverse ? 'DESC' : 'ASC');
-
 		if (difficultySortBy) {
 			searchProblems.addOrderBy('entity.difficulty', difficultySortBy);
+		} else {
+			searchProblems.orderBy('entity.id', idReverse ? 'DESC' : 'ASC');
 		}
-		if (role == Role.MEMBER) {
+
+		let userProblemStatus: ProblemStatus[] = [];
+
+		if (!!staff) {
+			if (role !== Role.STAFF && role !== Role.DEV) {
+				throw new ForbiddenException('You do not have permission.');
+			}
+
+			if (!!status) {
+				searchProblems.andWhere('entity.devStatus = :devStatus', {
+					devStatus: status,
+				});
+			}
+		} else {
 			searchProblems.andWhere('entity.devStatus = :devStatus', {
 				devStatus: ProblemStaffStatusEnum.PUBLISHED,
 			});
-		} else {
-			if (!!devStatus) {
-				searchProblems.andWhere('entity.devStatus = :devStatus', {
-					devStatus,
-				});
-			}
-		}
-		if (!!status) {
-			let problems = (
-				await this.userService.findOne({
-					where: { id: userId },
-					relations: { problemStatus: true },
-				})
-			).problemStatus;
 
-			if (status === ProblemStatusEnum.NOT_STARTED) {
-				if (problems.length != 0) {
-					const ids = problems.map(
-						(problem) => problem.problemId,
+			const userData = await this.userService.findOne({
+				where: { id: userId },
+				relations: { problemStatus: true },
+			});
+
+			if (!userData) return result;
+
+			userProblemStatus = userData.problemStatus;
+
+			if (!!status) {
+				if (status === ProblemStatusEnum.NOT_STARTED) {
+					if (userProblemStatus.length != 0) {
+						const ids = userProblemStatus.map(
+							(problem) => problem.problemId,
+						);
+						searchProblems.andWhere(
+							'entity.id NOT IN (:...ids)',
+							{
+								ids,
+							},
+						);
+					}
+				} else {
+					if (userProblemStatus.length === 0) return result;
+
+					userProblemStatus = userProblemStatus.filter(
+						(problem) =>
+							ProblemStatusEnum[problem.status] === status,
 					);
-					searchProblems.andWhere('entity.id NOT IN (:...ids)', {
-						ids,
-					});
+
+					if (userProblemStatus.length === 0) return result;
+
+					userProblemStatus.map((problem) =>
+						searchProblems.andWhere('entity.id = :id', {
+							id: problem.problemId,
+						}),
+					);
 				}
-			} else {
-				if (problems.length === 0)
-					throw new NotFoundException(`No problem status yet`);
-
-				problems = problems.filter(
-					(problem) =>
-						ProblemStatusEnum[problem.status] === status,
-				);
-
-				if (problems.length === 0)
-					throw new NotFoundException(
-						`no problem with status ${status}`,
-					);
-
-				problems.map((problem) =>
-					searchProblems.andWhere('entity.id = :id', {
-						id: problem.problemId,
-					}),
-				);
 			}
 		}
 
-		searchProblems.leftJoinAndSelect('entity.author', 'author');
 		const [data, totalItem] = await searchProblems.getManyAndCount();
-		return new ProblemPaginatedDto(
-			data,
-			totalItem,
-			query.limit,
-			query.page,
-		);
+		result.data = data.map((d) => {
+			let status;
+
+			if (staff) {
+				status = d.devStatus;
+			} else {
+				const getUserProblem = userProblemStatus.find(
+					(userProblem) => userProblem.problemId === d.id,
+				);
+				status =
+					getUserProblem?.status ??
+					ProblemStatusEnum.NOT_STARTED;
+			}
+
+			return new ProblemSearchedDto(d, status);
+		});
+		result.totalItem = totalItem;
+		result.updateTotalPage();
+		return result;
 	}
 
 	async updateDraft(
 		id: number,
 		updateProblemRequest: UpdateProblemDto,
-		user: jwtPayloadDto
+		user: jwtPayloadDto,
 	): Promise<Problem> {
 		try {
-			const problem = await this.problemsRepository.findOneBy({ id: id });
+			const problem = await this.problemsRepository.findOneBy({
+				id: id,
+			});
 			const problemAuthorId = problem.author.id;
 			// Only owner of the problem can edit
 			if (problemAuthorId == user.userId) {
-				await this.problemsRepository.update(id, updateProblemRequest);
+				await this.problemsRepository.update(
+					id,
+					updateProblemRequest,
+				);
 				// Update problem status if there is an update to solution code
 				if ('solutionCode' in updateProblemRequest) {
 					problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
@@ -230,17 +286,20 @@ export class ProblemService {
 					// Loop through all testCases and runCode with their input
 					for (var testCase of problem.testCases) {
 						const input = testCase.input;
-						const code = updateProblemRequest.solutionCode
-						const result = this.runCodeService.runCode(input, code);
-						
+						const code = updateProblemRequest.solutionCode;
+						const result = this.runCodeService.runCode(
+							input,
+							code,
+						);
 					}
-					await this.problemsRepository.save(problem)
+					await this.problemsRepository.save(problem);
 				}
 				return this.findOne(id);
 			} else {
-				throw new UnauthorizedException('must be the owner of problem');
+				throw new UnauthorizedException(
+					'must be the owner of problem',
+				);
 			}
-
 		} catch (error) {
 			throw new NotFoundException('problem not found');
 		}
@@ -250,33 +309,9 @@ export class ProblemService {
 		await this.problemsRepository.delete(id);
 	}
 
-	async approveProblem(
-		id: number,
-		user: jwtPayloadDto
-	): Promise<void> {
-		await this.problemsRepository.update(id, { devStatus: ProblemStaffStatusEnum.PUBLISHED });
+	async approveProblem(id: number, user: jwtPayloadDto): Promise<void> {
+		await this.problemsRepository.update(id, {
+			devStatus: ProblemStaffStatusEnum.PUBLISHED,
+		});
 	}
-
-	async requestReviewProblem(
-		id: number,
-		user: jwtPayloadDto
-	): Promise<void> {
-		await this.problemsRepository.update(id, { devStatus: ProblemStaffStatusEnum.NEED_REVIEW });
-	}
-
-	async archiveProblem(
-		id: number,
-		user: jwtPayloadDto
-	): Promise<void> {
-		await this.problemsRepository.update(id, { devStatus: ProblemStaffStatusEnum.ARCHIVED });
-	}
-
-	async rejectProblem(
-		id: number,
-		message: RejectProblemDTO,
-		user: jwtPayloadDto
-	): Promise<void> {
-		await this.problemsRepository.update(id, { devStatus: ProblemStaffStatusEnum.ARCHIVED });
-	}
-
 }

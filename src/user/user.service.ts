@@ -9,8 +9,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 
 import { ConfigService } from '@nestjs/config';
-import { ProblemQueryDto } from 'src/problem/dto/problem-query.dto';
-import { ProblemPaginatedDto } from 'src/problem/dto/problem-respond.dto';
 import { ProblemStatusEnum } from 'src/problem/enum/problem-staff-status.enum';
 import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
 import { House } from 'src/shared/enum/house.enum';
@@ -21,7 +19,11 @@ import { FindOneOptions, Repository } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UserQueryDto } from './dtos/user-query.dto';
-import { UserPaginatedDto, UserResponseDto } from './dtos/user-response.dto';
+import {
+	UserFrontDataResponseDto,
+	UserPaginatedDto,
+	UserResponseDto,
+} from './dtos/user-response.dto';
 import { ProblemStatus } from './score/problem-status.entity';
 import { ScoreLog } from './score/score-log.entity';
 import { User } from './user.entity';
@@ -74,11 +76,21 @@ export class UserService implements OnModuleInit {
 		return new UserPaginatedDto(data, totalItem, query.page, query.limit);
 	}
 
-	async findOne(option: FindOneOptions<User>): Promise<User> {
+	async findOne(
+		option: FindOneOptions<User>,
+		throwError = false,
+	): Promise<User> {
 		const responseUser = await this.userRepository.findOne(option);
-		if (!responseUser) throw new NotFoundException('User not found');
+		if (!responseUser && throwError)
+			throw new NotFoundException('User not found');
 
 		return responseUser;
+	}
+
+	async getData(id: string) {
+		return new UserFrontDataResponseDto(
+			await this.userRepository.findOne({ where: { id } }),
+		);
 	}
 
 	async search(query: UserQueryDto) {
@@ -109,16 +121,33 @@ export class UserService implements OnModuleInit {
 		return new UserPaginatedDto(data, totalItem, page, limit);
 	}
 
-	async create(user: CreateUserDto): Promise<UserResponseDto> {
-		try {
-			const salt = await bcrypt.genSalt(10);
-			const hashedPassword = await bcrypt.hash(user.password, salt);
-			user.password = hashedPassword;
+	async generateHashedPassword(password: string): Promise<string> {
+		const salt = await bcrypt.genSalt(10);
+		const hashedPassword = await bcrypt.hash(password, salt);
+		return hashedPassword;
+	}
 
-			const responseUser = await this.userRepository.save(user);
-			return new UserResponseDto(responseUser);
-		} catch (error) {
+	async create(user: CreateUserDto): Promise<UserResponseDto> {
+		const existUser = await this.findOne(
+			{
+				where: { email: user.email },
+			},
+			false,
+		);
+
+		if (existUser) {
 			throw new BadRequestException('User already exists');
+		}
+
+		if (user.password) {
+			user.password = await this.generateHashedPassword(user.password);
+		}
+
+		try {
+			return await this.userRepository.save(user);
+		} catch (error) {
+			console.log(error);
+			throw new InternalServerErrorException('Error creating user');
 		}
 	}
 
@@ -135,13 +164,10 @@ export class UserService implements OnModuleInit {
 			}
 		}
 
-		if (partialEntity.password !== undefined) {
-			const salt = await bcrypt.genSalt(10);
-			const hashedPassword = await bcrypt.hash(
-				partialEntity.password as string,
-				salt,
+		if (partialEntity.password) {
+			partialEntity.password = await this.generateHashedPassword(
+				String(partialEntity.password),
 			);
-			partialEntity.password = hashedPassword;
 		}
 
 		try {
@@ -247,55 +273,6 @@ export class UserService implements OnModuleInit {
 	Problem Status Management
 	-------------------------------------------------------
 	*/
-
-	// async getProblemsByUserIdAndStatus(id: string, query: ProblemQueryDto) {
-	// 	const {
-	// 		page,
-	// 		searchText,
-	// 		difficultySortBy,
-	// 		maxDifficulty,
-	// 		minDifficulty,
-	// 		idReverse,
-	// 		limit,
-	// 		status,
-	// 		tags,
-	// 		staff,
-	// 	} = query;
-
-	// 	let problems = (
-	// 		await this.userService.findOne({
-	// 			where: { id },
-	// 			relations: { problemStatus: true },
-	// 		})
-	// 	)?.problemStatus;
-
-	// 	if (!problems) {
-	// 		throw new NotFoundException('No problem status yet');
-	// 	}
-
-	// 	if (status) {
-	// 		problems = problems.filter(
-	// 			(problem) => ProblemStatusEnum[problem.status] === status,
-	// 		);
-	// 	}
-
-	// 	const totalItem = problems.length;
-
-	// 	problems = problems.slice((page - 1) * limit, page * limit);
-
-	// 	const resProblems = await Promise.all(
-	// 		problems.map(async (problem) => {
-	// 			return await this.problemsRepository.findOne({
-	// 				where: { id: problem.problemId },
-	// 				relations: {
-	// 					author: true,
-	// 				},
-	// 			});
-	// 		}),
-	// 	);
-	// 	return new ProblemPaginatedDto(resProblems, totalItem, limit, page);
-	// }
-
 	async getProblemStatus(
 		userId: string,
 		problemId: number,

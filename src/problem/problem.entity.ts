@@ -10,7 +10,6 @@ import {
 } from 'typeorm';
 import { ProblemStaffStatusEnum } from './enum/problem-staff-status.enum';
 import { ScoreValue } from './type/score-value.type';
-import { TestCase } from 'src/test_case/test_case.entity';
 
 // TODO: Add test cases to Problem
 @Entity()
@@ -36,12 +35,9 @@ export class Problem {
 	defaultCode?: string;
 
 	@Column({
-		nullable: true
+		nullable: true,
 	})
 	solutionCode: string;
-
-	@OneToMany(() => TestCase, (testcase) => testcase.problem)
-	testCases: TestCase[]
 
 	@Column({
 		type: 'decimal',
@@ -61,6 +57,9 @@ export class Problem {
 
 	@Column('text', { array: true, nullable: true, default: [] })
 	tags: string[];
+
+	@OneToMany(() => TestCase, (TestCase) => TestCase.problem)
+	testCases: TestCase[];
 
 	constructor(problem: Partial<Problem>) {
 		Object.assign(this, problem);

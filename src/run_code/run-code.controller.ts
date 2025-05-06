@@ -1,9 +1,12 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { RunCodePostDto, RunCodeResponseDto } from './dtos/runCode.dto';
-import { RunCodeService } from './runCode.service';
+import { RunCodeRequestDto } from './dtos/run-code-request.dto';
+import { RunCodeService } from './run-code.service';
+import { RunCodeResponseDto } from './dtos/run-code-response.dto';
+import { AllowRole } from 'src/auth/decorators/auth.decorator';
+import { Role } from 'src/shared/enum/role.enum';
 
-@Controller('runcode')
+@Controller('run-code')
 @ApiTags('Run Code')
 export class RunCodeController {
 	constructor(private readonly runCodeService: RunCodeService) {}
@@ -15,10 +18,8 @@ export class RunCodeController {
 		description: 'Code executed successfully',
 		type: RunCodeResponseDto,
 	})
-	@ApiResponse({ status: 400, description: 'Bad Request' })
-	@ApiResponse({ status: 500, description: 'Code execution failed' })
-	Run_Code(@Body() body: RunCodePostDto): Promise<RunCodeResponseDto> {
-		console.log(body);
+	@AllowRole(Role.MEMBER)
+	runCode(@Body() body: RunCodeRequestDto): Promise<RunCodeResponseDto> {
 		return this.runCodeService.runCode(
 			body.input,
 			body.code,

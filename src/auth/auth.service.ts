@@ -28,7 +28,7 @@ export class AuthService {
 
 	async requestOpenAccount(email: string): Promise<void> {
 		const user = await this.userService.findOne({ where: { email } });
-		if (!user) throw new BadRequestException('user not fonund');
+		if (!user) throw new BadRequestException('user not found');
 		if (!!user.password)
 			throw new BadRequestException('account already opened');
 		const otp = this.generateOtp(
@@ -95,7 +95,6 @@ export class AuthService {
 
 		const user = await this.validateUser(email, password);
 		const token = await this.generateToken(user);
-		// return token + user info
 		return {
 			token,
 			user,
@@ -131,6 +130,7 @@ export class AuthService {
 		);
 		return token;
 	}
+
 	private generateOtp(length: number) {
 		const characters =
 			'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
