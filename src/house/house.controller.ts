@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, HttpStatus, Param } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Param } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { House } from 'src/shared/enum/house.enum';
 import { HouseResponseDto } from './dtos/house-response.dto';
@@ -10,7 +10,6 @@ export class HouseController {
 	constructor(private readonly houseService: HouseService) {}
 
 	@Get(':house')
-	@HttpCode(HttpStatus.OK)
 	@ApiResponse({
 		status: HttpStatus.OK,
 		description: 'Get all users in a specific house',

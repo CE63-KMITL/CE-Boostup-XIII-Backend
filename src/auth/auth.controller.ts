@@ -115,7 +115,6 @@ export class AuthController {
 		status: HttpStatus.UNAUTHORIZED,
 		description: 'Wrong email or password',
 	})
-	@HttpCode(HttpStatus.OK)
 	async login(@Body() logindata: LoginDto): Promise<AuthResponseDto> {
 		return this.authService.login(logindata);
 	}

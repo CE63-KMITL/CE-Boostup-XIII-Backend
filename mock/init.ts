@@ -87,7 +87,7 @@ const createUser = async (email: string, role: string, adminToken: string) => {
 				);
 			}
 			problems.push({
-				title: `test${i}`,
+				title: `test${i} ${Date.now()}`,
 				description: 'test',
 				difficulty: Math.floor(Math.random() * 5) + 1,
 				tags: randomTags,

@@ -62,11 +62,9 @@ export class UserService implements OnModuleInit {
 		}
 	}
 
-	/*
-	-------------------------------------------------------
-	User Management
-	-------------------------------------------------------
-	*/
+	//-------------------------------------------------------
+	// User Management
+	//-------------------------------------------------------
 	async findAll(query: PaginationMetaDto): Promise<UserPaginatedDto> {
 		const users = await createPaginationQuery({
 			repository: this.userRepository,
@@ -199,11 +197,9 @@ export class UserService implements OnModuleInit {
 		}
 	}
 
-	/*
-	-------------------------------------------------------
-	House Management
-	-------------------------------------------------------
-	*/
+	//-------------------------------------------------------
+	// House Management
+	//-------------------------------------------------------
 	async getHouse(id: string): Promise<House> {
 		const user = await this.userRepository.findOne({ where: { id } });
 		if (!user) throw new NotFoundException('User not found');
@@ -215,11 +211,9 @@ export class UserService implements OnModuleInit {
 		return response.map((user) => new UserResponseDto(user));
 	}
 
-	/*
-	-------------------------------------------------------
-	Score Management
-	-------------------------------------------------------
-	*/
+	//-------------------------------------------------------
+	// Score Management
+	//-------------------------------------------------------
 	async modifyScore(
 		userId: string,
 		amount: number,
@@ -268,47 +262,33 @@ export class UserService implements OnModuleInit {
 		return user.scoreLogs;
 	}
 
-	/*
-	-------------------------------------------------------
-	Problem Status Management
-	-------------------------------------------------------
-	*/
-	async getProblemStatus(
+	//-------------------------------------------------------
+	// Problem Status Management
+	//-------------------------------------------------------
+	async findOneProblemStatus(
 		userId: string,
 		problemId: number,
-	): Promise<ProblemStatusEnum> {
-		try {
-			const userProblem = await this.getUserProblem(userId, problemId);
-			return userProblem.status;
-		} catch (error) {
-			if (String(error).includes('Problem not found'))
-				return ProblemStatusEnum.NOT_STARTED;
-		}
-		return null;
-	}
+		throwError = false,
+	): Promise<ProblemStatus | null> {
+		const problemStatus = await this.problemStatusRepository.findOne({
+			where: { userId, problemId },
+		});
 
-	async getUserProblem(
-		userId: string,
-		problemId: number,
-	): Promise<ProblemStatus> {
-		const userProblem = await this.userRepository
-			.createQueryBuilder('user')
-			.where('user.id = :userId', { userId })
-			.leftJoinAndSelect('user.problemStatus', 'problemStatus')
-			.andWhere('problemStatus.problemId = :problemId', { problemId })
-			.getOne();
-
-		if (!userProblem?.problemStatus?.length) {
-			throw new NotFoundException('Problem not found');
+		if (!problemStatus && throwError) {
+			throw new NotFoundException(`Problem status not found`);
 		}
-		return userProblem.problemStatus[0];
+
+		return problemStatus;
 	}
 
 	async setProblemStatus(
 		problemId: number,
 		userId: string,
 	): Promise<ProblemStatus> {
-		const userProblem = await this.getUserProblem(userId, problemId);
+		const userProblem = await this.findOneProblemStatus(
+			userId,
+			problemId,
+		);
 		userProblem.status = ProblemStatusEnum.IN_PROGRESS;
 		await this.problemStatusRepository.save(userProblem);
 		return userProblem;
@@ -340,5 +320,43 @@ export class UserService implements OnModuleInit {
 		return await this.problemStatusRepository.findOne({
 			where: { userId, problemId },
 		});
+	}
+
+	//-------------------------------------------------------
+	// Problem Code Methods
+	//-------------------------------------------------------
+
+	async getCode(userId: string, problemId: number): Promise<string | null> {
+		const problemStatus = await this.findOneProblemStatus(
+			userId,
+			problemId,
+		);
+		return problemStatus?.code || null;
+	}
+
+	async saveCode(
+		userId: string,
+		problemId: number,
+		code: string,
+	): Promise<void> {
+		let problemStatus = await this.findOneProblemStatus(
+			userId,
+			problemId,
+		);
+
+		if (!problemStatus) {
+			problemStatus = this.problemStatusRepository.create({
+				userId,
+				problemId,
+				code,
+				status: ProblemStatusEnum.IN_PROGRESS,
+				lastSubmitted: new Date(),
+			});
+		} else {
+			problemStatus.code = code;
+			problemStatus.lastSubmitted = new Date();
+		}
+
+		await this.problemStatusRepository.save(problemStatus);
 	}
 }

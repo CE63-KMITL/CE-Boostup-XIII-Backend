@@ -7,6 +7,7 @@ import {
 	HttpStatus,
 	Param,
 	ParseFilePipeBuilder,
+	ParseIntPipe,
 	ParseUUIDPipe,
 	Patch,
 	Post,
@@ -20,7 +21,11 @@ import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AllowRole } from '../auth/decorators/auth.decorator';
 import { Role } from '../shared/enum/role.enum';
 import { UpdateUserDto } from './dtos/update-user.dto';
-import { UserPaginatedDto, UserResponseDto } from './dtos/user-response.dto';
+import {
+	UserFrontDataResponseDto,
+	UserPaginatedDto,
+	UserResponseDto,
+} from './dtos/user-response.dto';
 import { ModifyScoreDto } from './score/dtos/modify-score.dto';
 import { UserScoreResponseDto } from './score/dtos/score-response.dto';
 import { UserService } from './user.service';
@@ -29,19 +34,18 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { UserQueryDto } from './dtos/user-query.dto';
+import { UserSaveCodeDto } from './dtos/user-request.dto';
 
 @Controller('user')
 @ApiTags('User')
 export class UserController {
 	constructor(private readonly userService: UserService) {}
 
-	/*
-	-------------------------------------------------------
-	Get All Users
-	-------------------------------------------------------
-	*/
+	//-------------------------------------------------------
+	// Public Endpoints
+	//-------------------------------------------------------
+
 	@Get()
-	@HttpCode(HttpStatus.OK)
 	@ApiResponse({
 		status: HttpStatus.OK,
 		description: 'Get all users',
@@ -55,7 +59,6 @@ export class UserController {
 	}
 
 	@Get('/search')
-	@HttpCode(HttpStatus.OK)
 	@ApiResponse({
 		status: HttpStatus.OK,
 		description: 'get user by query',
@@ -66,20 +69,24 @@ export class UserController {
 		return await this.userService.search(query);
 	}
 
-	/*
-	-------------------------------------------------------
-	Protected Endpoints
-	-------------------------------------------------------
-	*/
+	//-------------------------------------------------------
+	// Protected Endpoints
+	//-------------------------------------------------------
 
 	@Get('data')
 	@AllowRole(Role.MEMBER)
-	async getData(@Request() req: authenticatedRequest) {
+	@ApiResponse({
+		status: HttpStatus.OK,
+		description: 'Get user data for front-end server',
+		type: UserFrontDataResponseDto,
+	})
+	async getData(
+		@Request() req: authenticatedRequest,
+	): Promise<UserFrontDataResponseDto> {
 		return await this.userService.getData(req.user.userId);
 	}
 
 	@Get(':id')
-	@HttpCode(HttpStatus.OK)
 	@AllowRole(Role.MEMBER)
 	@ApiResponse({
 		status: HttpStatus.OK,
@@ -101,7 +108,6 @@ export class UserController {
 	}
 
 	@Get('score/:id')
-	@HttpCode(HttpStatus.OK)
 	@ApiResponse({
 		status: HttpStatus.OK,
 		description: 'Get user score by id',
@@ -124,7 +130,6 @@ export class UserController {
 	}
 
 	@Post('score/add')
-	@HttpCode(HttpStatus.OK)
 	@ApiResponse({
 		status: HttpStatus.OK,
 		description: 'Get user score by id',
@@ -162,7 +167,6 @@ export class UserController {
 	}
 
 	@Patch(':id')
-	@HttpCode(HttpStatus.OK)
 	@ApiResponse({
 		status: HttpStatus.OK,
 		description: 'Update a user by id',
@@ -210,6 +214,46 @@ export class UserController {
 	) {
 		return this.userService.setProblemStatus(id, req.user.userId);
 	}
+
+	//-------------------------------------------------------
+	// Problem Code Endpoints
+	//-------------------------------------------------------
+
+	@Get('code/:problemId')
+	@AllowRole(Role.MEMBER)
+	@ApiResponse({
+		status: HttpStatus.OK,
+		description: 'Get saved code for a problem',
+		type: String,
+	})
+	async getCode(
+		@Request() req: authenticatedRequest,
+		@Param('problemId', ParseIntPipe) problemId: number,
+	): Promise<string | null> {
+		return await this.userService.getCode(req.user.userId, problemId);
+	}
+
+	@Post('code/:problemId')
+	@AllowRole(Role.MEMBER)
+	@ApiResponse({
+		status: HttpStatus.OK,
+		description: 'Save code for a problem',
+	})
+	async saveCode(
+		@Request() req: authenticatedRequest,
+		@Param('problemId', ParseIntPipe) problemId: number,
+		@Body() saveCodeDto: UserSaveCodeDto,
+	): Promise<void> {
+		await this.userService.saveCode(
+			req.user.userId,
+			problemId,
+			saveCodeDto.code,
+		);
+	}
+
+	//-------------------------------------------------------
+	// File Upload Endpoints
+	//-------------------------------------------------------
 
 	@Post('upload-icon')
 	@AllowRole(Role.MEMBER, Role.DEV)

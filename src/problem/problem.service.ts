@@ -251,11 +251,11 @@ export class ProblemService {
 			if (staff) {
 				status = d.devStatus;
 			} else {
-				const getUserProblem = userProblemStatus.find(
+				const getUserProblemStatus = userProblemStatus.find(
 					(userProblem) => userProblem.problemId === d.id,
 				);
 				status =
-					getUserProblem?.status ??
+					getUserProblemStatus?.status ??
 					ProblemStatusEnum.NOT_STARTED;
 			}
 
