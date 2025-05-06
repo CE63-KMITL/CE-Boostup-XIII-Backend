@@ -27,6 +27,7 @@ import {
 import { Problem } from './problem.entity';
 import { ProblemStatus } from 'src/user/score/problem-status.entity';
 import { RunCodeService } from 'src/run_code/run-code.service';
+import { RejectProblemDTO } from './dto/problem-reject.dto';
 
 @Injectable()
 export class ProblemService {
@@ -312,6 +313,31 @@ export class ProblemService {
 	async approveProblem(id: number, user: jwtPayloadDto): Promise<void> {
 		await this.problemsRepository.update(id, {
 			devStatus: ProblemStaffStatusEnum.PUBLISHED,
+		});
+	}
+
+	async requestReviewProblem(
+		id: number,
+		user: jwtPayloadDto,
+	): Promise<void> {
+		await this.problemsRepository.update(id, {
+			devStatus: ProblemStaffStatusEnum.NEED_REVIEW,
+		});
+	}
+
+	async archiveProblem(id: number, user: jwtPayloadDto): Promise<void> {
+		await this.problemsRepository.update(id, {
+			devStatus: ProblemStaffStatusEnum.ARCHIVED,
+		});
+	}
+
+	async rejectProblem(
+		id: number,
+		message: RejectProblemDTO,
+		user: jwtPayloadDto,
+	): Promise<void> {
+		await this.problemsRepository.update(id, {
+			devStatus: ProblemStaffStatusEnum.ARCHIVED,
 		});
 	}
 }
