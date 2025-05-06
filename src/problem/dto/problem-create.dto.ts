@@ -42,7 +42,7 @@ export class CreateProblemDto {
 	@IsArray()
 	tags?: string[];
 
-	@ApiPropertyOptional({ example: ['#include<string.h>'] })
+	@ApiPropertyOptional({ example: ['string.h'] })
 	@IsOptional()
 	@IsString({ each: true })
 	disallowHeaders?: string[];
@@ -52,7 +52,7 @@ export class CreateProblemDto {
 	@IsString({ each: true })
 	disallowFunctions?: string[];
 
-	@ApiPropertyOptional({ example: ['#include<string.h>'] })
+	@ApiPropertyOptional({ example: ['string.h'] })
 	@IsOptional()
 	@IsString({ each: true })
 	allowHeaders?: string[];

@@ -26,7 +26,7 @@ export class UpdateProblemDto {
 	@IsOptional()
 	@IsString()
 	defaultCode?: string;
-	
+
 	@ApiProperty({
 		example: '#include <stdio.h>\n\nint main() {\n\tprintf("Hello, World!");\n\treturn 0;\n}',
 		required: false,
@@ -58,7 +58,7 @@ export class UpdateProblemDto {
 	@IsArray()
 	tags: string[];
 
-	@ApiPropertyOptional({ example: ['#include<string.h>'] })
+	@ApiPropertyOptional({ example: ['string.h'] })
 	@IsOptional()
 	@IsString({ each: true })
 	disallowHeaders?: string[];
