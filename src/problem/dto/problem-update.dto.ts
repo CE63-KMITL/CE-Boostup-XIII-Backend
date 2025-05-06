@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
 	IsArray,
 	IsEnum,
@@ -26,7 +26,7 @@ export class UpdateProblemDto {
 	@IsOptional()
 	@IsString()
 	defaultCode?: string;
-	
+
 	@ApiProperty({
 		example: '#include <stdio.h>\n\nint main() {\n\tprintf("Hello, World!");\n\treturn 0;\n}',
 		required: false,
@@ -57,4 +57,14 @@ export class UpdateProblemDto {
 	@IsOptional()
 	@IsArray()
 	tags: string[];
+
+	@ApiPropertyOptional({ example: ['string.h'] })
+	@IsOptional()
+	@IsString({ each: true })
+	disallowHeaders?: string[];
+
+	@ApiPropertyOptional({ example: ['for'] })
+	@IsOptional()
+	@IsString({ each: true })
+	disallowFunctions?: string[];
 }

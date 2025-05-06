@@ -25,8 +25,10 @@ import {
 	ProblemStatusEnum,
 } from './enum/problem-staff-status.enum';
 import { Problem } from './problem.entity';
-import { ProblemStatus } from 'src/user/score/problem-status.entity';
+import { ProblemSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
 import { RunCodeService } from 'src/run_code/run-code.service';
+import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
+import { ProblemStatus } from 'src/user/score/problem-status.entity';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
 
 @Injectable()
@@ -314,6 +316,39 @@ export class ProblemService {
 		await this.problemsRepository.update(id, {
 			devStatus: ProblemStaffStatusEnum.PUBLISHED,
 		});
+	}
+
+	async runCode(
+		problemSubmission: ProblemSubmissionDto,
+		payload: jwtPayloadDto,
+		problemId: number,
+	) {
+		const { userId } = payload;
+		const { code } = problemSubmission;
+		const problem = await this.findOne(problemId);
+		const { testCases } = problem;
+		if (testCases.length === 0)
+			throw new BadRequestException('no test case for this problem');
+		const runCodeResponse = await Promise.all(
+			testCases.map((testCase) =>
+				this.runCodeService.runCode(testCase.input, code, 1 * 1000),
+			),
+		);
+		const response = runCodeResponse.map((result, i) => {
+			return new ProblemSubmissionResponseDto(
+				testCases[i].isHiddenTestcase ? undefined : result,
+				result.output === testCases[i].expectOutput,
+			);
+		});
+		await this.userService.updateProblemStatus(
+			problemId,
+			userId,
+			response.some((d) => d.isPass === false)
+				? ProblemStatusEnum.IN_PROGRESS
+				: ProblemStatusEnum.DONE,
+			JSON.stringify(code),
+		);
+		return response;
 	}
 
 	async requestReviewProblem(

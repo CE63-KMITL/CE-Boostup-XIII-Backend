@@ -24,9 +24,9 @@ export class DevUserController {
 	@AllowRole(Role.DEV)
 	async createUser(
 		@Body() body: CreateUserDto,
-	): Promise<{ message: string }> {
-		await this.userService.create(body);
-		return { message: 'User created successfully' };
+	): Promise<{ message: string; id: string }> {
+		const user = await this.userService.create(body);
+		return { message: 'User created successfully', id: user.id };
 	}
 
 	/*

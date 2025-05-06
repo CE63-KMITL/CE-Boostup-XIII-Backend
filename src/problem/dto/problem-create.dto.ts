@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
 	IsArray,
 	IsNotEmpty,
@@ -32,7 +32,6 @@ export class CreateProblemDto {
 	@IsString()
 	solutionCode?: string;
 
-
 	@ApiProperty({ example: 3, description: 'Difficulty level (0.5 to 5)' })
 	@IsOptional()
 	@IsNumber()
@@ -42,4 +41,24 @@ export class CreateProblemDto {
 	@IsOptional()
 	@IsArray()
 	tags?: string[];
+
+	@ApiPropertyOptional({ example: ['string.h'] })
+	@IsOptional()
+	@IsString({ each: true })
+	disallowHeaders?: string[];
+
+	@ApiPropertyOptional({ example: ['for'] })
+	@IsOptional()
+	@IsString({ each: true })
+	disallowFunctions?: string[];
+
+	@ApiPropertyOptional({ example: ['string.h'] })
+	@IsOptional()
+	@IsString({ each: true })
+	allowHeaders?: string[];
+
+	@ApiPropertyOptional({ example: ['for'] })
+	@IsOptional()
+	@IsString({ each: true })
+	allowFunctions?: string[];
 }
