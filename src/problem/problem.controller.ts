@@ -29,6 +29,7 @@ import {
 } from './dto/problem-respond.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
 import { ProblemService } from './problem.service';
+import { RejectProblemDTO } from './dto/problem-reject.dto';
 
 @Controller('problem')
 @ApiTags('Problem')
@@ -95,9 +96,14 @@ export class ProblemController {
 	async updateDraft(
 		@Param('id', ParseIntPipe) id: number,
 		@Body() updateProblemRequest: UpdateProblemDto,
+		@Req() req: authenticatedRequest,
 	): Promise<ProblemResponseDto> {
 		return new ProblemResponseDto(
-			await this.problemService.updateDraft(id, updateProblemRequest),
+			await this.problemService.updateDraft(
+				id,
+				updateProblemRequest,
+				req.user,
+			),
 		);
 	}
 
@@ -117,5 +123,33 @@ export class ProblemController {
 		@Req() req: authenticatedRequest,
 	) {
 		this.problemService.approveProblem(id, req.user);
+	}
+
+	@AllowRole(Role.STAFF)
+	@Post('review/:id')
+	async requestReviewProblem(
+		@Param('id', ParseIntPipe) id: number,
+		@Req() req: authenticatedRequest,
+	) {
+		this.problemService.requestReviewProblem(id, req.user);
+	}
+
+	@AllowRole(Role.STAFF)
+	@Post('archive/:id')
+	async archiveProblem(
+		@Param('id', ParseIntPipe) id: number,
+		@Req() req: authenticatedRequest,
+	) {
+		this.problemService.archiveProblem(id, req.user);
+	}
+
+	@AllowRole(Role.STAFF)
+	@Post('archive/:id')
+	async rejectProblem(
+		@Param('id', ParseIntPipe) id: number,
+		message: RejectProblemDTO,
+		@Req() req: authenticatedRequest,
+	) {
+		this.problemService.rejectProblem(id, message, req.user);
 	}
 }
