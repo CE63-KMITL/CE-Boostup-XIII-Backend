@@ -6,6 +6,7 @@ import {
 	IsOptional,
 	IsString,
 } from 'class-validator';
+import { CreateTestCaseDto } from '../test_case/dto/test-case-create.dto';
 
 export class CreateProblemDto {
 	@ApiProperty({ example: 'Sample Problem Title' })
@@ -28,7 +29,6 @@ export class CreateProblemDto {
 	@ApiProperty({
 		example: '#include <stdio.h>\n\nint main() {\n\tprintf("Hello, World!");\n\treturn 0;\n}',
 	})
-	@IsOptional()
 	@IsString()
 	solutionCode?: string;
 
@@ -41,6 +41,25 @@ export class CreateProblemDto {
 	@IsOptional()
 	@IsArray()
 	tags?: string[];
+
+	@ApiProperty({
+		example: [
+			{
+				input: '',
+				isHiddenTestcase: false,
+			},
+
+			{
+				input: '1',
+				isHiddenTestcase: true,
+			},
+		],
+		type: CreateTestCaseDto,
+		isArray: true,
+	})
+	@IsArray()
+	@IsNotEmpty()
+	testCases: CreateTestCaseDto[];
 
 	@ApiPropertyOptional({ example: ['string.h'] })
 	@IsOptional()

@@ -9,7 +9,7 @@ import {
 	UpdateDateColumn,
 } from 'typeorm';
 import { Role } from '../shared/enum/role.enum';
-import { ProblemStatus } from './score/problem-status.entity';
+import { ProblemStatus } from './problem_status/problem-status.entity';
 import { ScoreLog } from './score/score-log.entity';
 
 @Entity()

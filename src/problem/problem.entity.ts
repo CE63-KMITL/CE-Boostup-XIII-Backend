@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { ProblemStaffStatusEnum } from './enum/problem-staff-status.enum';
 import { ScoreValue } from './type/score-value.type';
-import { TestCase } from 'src/test_case/test-case.entity';
+import { TestCase } from 'src/problem/test_case/test-case.entity';
 
 // TODO: Add test cases to Problem
 @Entity()
@@ -76,5 +76,16 @@ export class Problem {
 
 	constructor(problem: Partial<Problem>) {
 		Object.assign(this, problem);
+	}
+
+	findTestCase(input: string): TestCase | undefined {
+		return this.testCases.find((testCase) => testCase.input === input);
+	}
+
+	checkTestCase(input: string): boolean {
+		if (this.testCases.some((testCase) => testCase.input === input)) {
+			throw new Error('Test case already exists');
+		}
+		return true;
 	}
 }

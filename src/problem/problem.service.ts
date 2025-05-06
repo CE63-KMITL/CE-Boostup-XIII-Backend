@@ -28,7 +28,7 @@ import { Problem } from './problem.entity';
 import { ProblemSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
 import { RunCodeService } from 'src/run_code/run-code.service';
 import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
-import { ProblemStatus } from 'src/user/score/problem-status.entity';
+import { ProblemStatus } from 'src/user/problem_status/problem-status.entity';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
 
 @Injectable()

@@ -1,20 +1,16 @@
-import {
-	BadRequestException,
-	Injectable,
-	NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import {
 	CreateTestCaseDto,
 	UpdateTestCaseDto,
-} from './dto/create-test-case.dto';
+} from './dto/test-case-create.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TestCase } from './test-case.entity';
 import { FindOneOptions, Repository } from 'typeorm';
 import { ProblemService } from 'src/problem/problem.service';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 import { Role } from 'src/shared/enum/role.enum';
-import { Problem } from 'src/problem/problem.entity';
 import { TestCaseResponseDto } from './dto/test-case-response.dto';
+import { RunCodeService } from 'src/run_code/run-code.service';
 
 @Injectable()
 export class TestCaseService {
@@ -22,29 +18,27 @@ export class TestCaseService {
 		@InjectRepository(TestCase)
 		private readonly testCaseRepository: Repository<TestCase>,
 		private readonly problemService: ProblemService,
+		private readonly runCodeService: RunCodeService,
 	) {}
 
-	async create(createTestCaseDto: CreateTestCaseDto, problemId: number) {
-		const { expectOutput, isHiddenTestcase, input } = createTestCaseDto;
+	async create(problemId: number, createTestCaseDto: CreateTestCaseDto) {
+		const { isHiddenTestcase, input } = createTestCaseDto;
 		const problem = await this.problemService.findOne(problemId);
-		if (!!input) this.createProblemFilter(problem, input);
+
+		problem.checkTestCase(input);
+
+		const runCodeResult = await this.runCodeService.runCode(
+			input,
+			problem.solutionCode,
+		);
+		const expectOutput = runCodeResult.output;
+
 		return await this.testCaseRepository.save({
 			input,
 			expectOutput,
 			isHiddenTestcase,
 			problem,
 		});
-	}
-
-	private createProblemFilter(problem: Problem, input: string): void {
-		const testCaseOutput = problem.testCases.filter(
-			(testcase) => testcase.input === input,
-		);
-		if (testCaseOutput.length !== 0) {
-			throw new BadRequestException(
-				`test case ${testCaseOutput[0].input} already exists`,
-			);
-		}
 	}
 
 	async findAll(): Promise<TestCaseResponseDto[]> {
@@ -90,9 +84,7 @@ export class TestCaseService {
 		const problem = await this.problemService.findOne(
 			testCase.problem.id,
 		);
-		if (input) {
-			this.createProblemFilter(problem, input);
-		}
+		problem.checkTestCase(input);
 		await this.testCaseRepository.update(id, updateTestCaseDto);
 		return testCase;
 	}

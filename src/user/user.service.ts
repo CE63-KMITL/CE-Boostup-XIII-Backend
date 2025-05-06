@@ -24,7 +24,7 @@ import {
 	UserPaginatedDto,
 	UserResponseDto,
 } from './dtos/user-response.dto';
-import { ProblemStatus } from './score/problem-status.entity';
+import { ProblemStatus } from './problem_status/problem-status.entity';
 import { ScoreLog } from './score/score-log.entity';
 import { User } from './user.entity';
 

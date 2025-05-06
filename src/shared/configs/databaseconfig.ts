@@ -3,7 +3,7 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 import { GLOBAL_CONFIG } from '../constants/global-config.constant';
 import { User } from '../../user/user.entity';
 import { Problem } from '../../problem/problem.entity';
-import { TestCase } from 'src/test_case/test-case.entity';
+import { TestCase } from 'src/problem/test_case/test-case.entity';
 
 import 'dotenv/config';
 

@@ -16,7 +16,7 @@ import { TestCaseService } from './test-case.service';
 import {
 	CreateTestCaseDto,
 	UpdateTestCaseDto,
-} from './dto/create-test-case.dto';
+} from './dto/test-case-create.dto';
 import { AllowRole } from 'src/auth/decorators/auth.decorator';
 import { Role } from 'src/shared/enum/role.enum';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
@@ -45,8 +45,8 @@ export class TestCaseController {
 	): Promise<TestCaseResponseDto> {
 		return new TestCaseResponseDto(
 			await this.testCaseService.create(
-				createTestCaseRequest,
 				problemId,
+				createTestCaseRequest,
 			),
 		);
 	}
