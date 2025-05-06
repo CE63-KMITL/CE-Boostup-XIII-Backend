@@ -61,7 +61,7 @@ export class UserController {
 		description: 'get user by query',
 		type: UserPaginatedDto,
 	})
-	@AllowRole()
+	@AllowRole(Role.MEMBER)
 	async search(@Query() query: UserQueryDto) {
 		return await this.userService.search(query);
 	}
