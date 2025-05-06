@@ -69,7 +69,7 @@ export class AuthService {
 			throw new GoneException('OTP code expired');
 
 		const userResponse = await this.userService.update(user.id, {
-			password: await this.generateHashedPassword(password),
+			password,
 			name,
 			otp: null,
 			otpExpires: null,
@@ -90,18 +90,11 @@ export class AuthService {
 		}
 	}
 
-	async setPassword(id: string, password: string): Promise<void> {
-		await this.userService.update(id, {
-			password: await this.generateHashedPassword(password),
-		});
-	}
-
 	async login(loginData: LoginDto): Promise<AuthResponseDto> {
 		const { email, password } = loginData;
 
 		const user = await this.validateUser(email, password);
 		const token = await this.generateToken(user);
-		// return token + user info
 		return {
 			token,
 			user,
@@ -149,11 +142,5 @@ export class AuthService {
 			);
 		}
 		return token;
-	}
-
-	private async generateHashedPassword(password: string): Promise<string> {
-		const salt = await bcrypt.genSalt(10);
-		const hashedPassword = await bcrypt.hash(password, salt);
-		return hashedPassword;
 	}
 }

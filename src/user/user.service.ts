@@ -19,7 +19,11 @@ import { FindOneOptions, Repository } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UserQueryDto } from './dtos/user-query.dto';
-import { UserPaginatedDto, UserResponseDto } from './dtos/user-response.dto';
+import {
+	UserFrontDataResponseDto,
+	UserPaginatedDto,
+	UserResponseDto,
+} from './dtos/user-response.dto';
 import { ProblemStatus } from './score/problem-status.entity';
 import { ScoreLog } from './score/score-log.entity';
 import { User } from './user.entity';
@@ -83,6 +87,12 @@ export class UserService implements OnModuleInit {
 		return responseUser;
 	}
 
+	async getData(id: string) {
+		return new UserFrontDataResponseDto(
+			await this.userRepository.findOne({ where: { id } }),
+		);
+	}
+
 	async search(query: UserQueryDto) {
 		const { limit, page, email, name, orderByScore, house, role } = query;
 		const users = await createPaginationQuery({
@@ -111,6 +121,12 @@ export class UserService implements OnModuleInit {
 		return new UserPaginatedDto(data, totalItem, page, limit);
 	}
 
+	async generateHashedPassword(password: string): Promise<string> {
+		const salt = await bcrypt.genSalt(10);
+		const hashedPassword = await bcrypt.hash(password, salt);
+		return hashedPassword;
+	}
+
 	async create(user: CreateUserDto): Promise<UserResponseDto> {
 		const existUser = await this.findOne(
 			{
@@ -124,6 +140,7 @@ export class UserService implements OnModuleInit {
 		}
 
 		if (user.password) {
+			user.password = await this.generateHashedPassword(user.password);
 		}
 
 		try {
@@ -145,6 +162,12 @@ export class UserService implements OnModuleInit {
 					'Score must be a valid number >= 0',
 				);
 			}
+		}
+
+		if (partialEntity.password) {
+			partialEntity.password = await this.generateHashedPassword(
+				String(partialEntity.password),
+			);
 		}
 
 		try {

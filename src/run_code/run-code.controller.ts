@@ -20,7 +20,6 @@ export class RunCodeController {
 	})
 	@AllowRole(Role.MEMBER)
 	runCode(@Body() body: RunCodeRequestDto): Promise<RunCodeResponseDto> {
-		console.log(body);
 		return this.runCodeService.runCode(
 			body.input,
 			body.code,
