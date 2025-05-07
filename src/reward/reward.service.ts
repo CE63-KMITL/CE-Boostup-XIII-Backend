@@ -90,7 +90,13 @@ export class RewardService {
     }
   
     await this.redeemRepo.delete(id);
-  
+    const reward = this.rewards.find(r => r.id === redeem.rewardId);
+   
+    id = redeem.userId
+    const user = await this.userRepo.findOne({ where: { id } });
+    let amount = user.score+reward.points
+    await this.userRepo.update(id,{score : amount})
+
     return { 
         success: true,
         message: 'Redeem canceled successfully'
