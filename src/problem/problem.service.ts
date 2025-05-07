@@ -378,6 +378,7 @@ export class ProblemService {
 				? ProblemStatusEnum.IN_PROGRESS
 				: ProblemStatusEnum.DONE,
 			JSON.stringify(code),
+			problem.difficulty,
 		);
 		return response;
 	}
