@@ -48,3 +48,12 @@ export class ProblemSearchRequest {
 	@IsEnum(ProblemSearchSortBy)
 	difficultySortBy: ProblemSearchSortBy = ProblemSearchSortBy.ASC;
 }
+
+export class ProblemRunCodeRequest {
+	@ApiProperty({
+		description: 'Input for the code execution',
+		example: '1 2',
+	})
+	@IsString()
+	input: string;
+}
