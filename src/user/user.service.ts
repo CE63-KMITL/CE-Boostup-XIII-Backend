@@ -233,7 +233,6 @@ export class UserService implements OnModuleInit {
 		scoreLog.amount = amount;
 		scoreLog.user = user;
 		scoreLog.modifiedBy = modifiedBy;
-		console.log(scoreLog);
 		await this.scoreLogRepository.save(scoreLog);
 		const response = await this.userRepository.save(user);
 		return new UserResponseDto(response);
