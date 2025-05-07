@@ -27,7 +27,10 @@ import {
 import { Problem } from './problem.entity';
 import { ProblemSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
 import { RunCodeService } from 'src/run_code/run-code.service';
-import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
+import {
+	ProblemSubmissionResponseDto,
+	RunDraftCodeResponseDto,
+} from './dto/code-submission-dto/problem-submission-response.dto';
 import { ProblemStatus } from 'src/user/problem_status/problem-status.entity';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
 import { TestCaseService } from './test_case/test-case.service';
@@ -365,6 +368,26 @@ export class ProblemService {
 			JSON.stringify(code),
 		);
 		return response;
+	}
+
+	async runDraftCode(problemId: number) {
+		const problem = await this.findOne(problemId);
+		const testCases = problem.testCases;
+		if (testCases.length === 0) {
+			throw new BadRequestException('problem has no test case');
+		}
+		const result = await Promise.all(
+			testCases.map((testCase) => {
+				return this.runCodeService.runCode(
+					testCase.input,
+					JSON.parse(problem.solutionCode),
+					1 * 1000,
+				);
+			}),
+		);
+		return result.map(
+			(d, i) => new RunDraftCodeResponseDto(d, testCases[i].input),
+		);
 	}
 
 	async requestReviewProblem(
