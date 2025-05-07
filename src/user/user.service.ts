@@ -331,7 +331,7 @@ export class UserService implements OnModuleInit {
 			userId,
 			problemId,
 		);
-		return problemStatus?.code || null;
+		return problemStatus?.code || problemStatus?.problem.defaultCode;
 	}
 
 	async saveCode(
