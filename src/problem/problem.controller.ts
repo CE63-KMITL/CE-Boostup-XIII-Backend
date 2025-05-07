@@ -32,7 +32,10 @@ import {
 import { UpdateProblemDto } from './dto/problem-update.dto';
 import { ProblemService } from './problem.service';
 import { ProblemSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
-import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
+import {
+	ProblemSubmissionResponseDto,
+	RunDraftCodeResponseDto,
+} from './dto/code-submission-dto/problem-submission-response.dto';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
 import { ProblemRunCodeRequest } from './dto/problem-request.dto';
 import { RunCodeResponseDto } from 'src/run_code/dtos/run-code-response.dto';
@@ -169,6 +172,11 @@ export class ProblemController {
 
 	@AllowRole(Role.STAFF)
 	@Get('run-draft-code/:problemId')
+	@ApiResponse({
+		type: RunDraftCodeResponseDto,
+		status: HttpStatus.OK,
+		isArray: true,
+	})
 	async runDraftCode(
 		@Param(
 			'problemId',
@@ -177,7 +185,7 @@ export class ProblemController {
 			}),
 		)
 		problemId: number,
-	) {
+	): Promise<RunDraftCodeResponseDto[]> {
 		return await this.problemService.runDraftCode(problemId);
 	}
 
