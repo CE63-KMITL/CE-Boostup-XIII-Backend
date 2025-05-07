@@ -247,7 +247,6 @@ export class UserService implements OnModuleInit {
 		scoreLog.amount = amount;
 		scoreLog.user = user;
 		scoreLog.modifiedBy = modifiedBy;
-
 		await this.scoreLogRepository.save(scoreLog);
 		const response = await this.userRepository.save(user);
 		return new UserResponseDto(response);
@@ -313,27 +312,32 @@ export class UserService implements OnModuleInit {
 		userId: string,
 		status: ProblemStatusEnum,
 		code: string,
-	) {
+		difficulty: number,
+	): Promise<void> {
 		const userProblem = await this.problemStatusRepository.findOne({
 			where: { userId, problemId },
 		});
 		if (!userProblem) {
-			return await this.problemStatusRepository.save({
+			await this.problemStatusRepository.save({
 				problemId,
 				userId,
 				code,
 				status,
 				lastSubmitted: new Date(),
 			});
+		} else {
+			if (userProblem.status === ProblemStatusEnum.DONE) return;
+			await this.problemStatusRepository.update(userProblem, {
+				code,
+				status,
+				lastSubmitted: new Date(),
+			});
 		}
-		await this.problemStatusRepository.update(userProblem, {
-			code,
-			status,
-			lastSubmitted: new Date(),
-		});
-		return await this.problemStatusRepository.findOne({
-			where: { userId, problemId },
-		});
+		if (status === ProblemStatusEnum.DONE) {
+			//change this to actual logic to calculate score
+			const score = 100 * difficulty;
+			this.modifyScore(userId, score, userId);
+		}
 	}
 
 	//-------------------------------------------------------
