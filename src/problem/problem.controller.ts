@@ -168,6 +168,20 @@ export class ProblemController {
 	}
 
 	@AllowRole(Role.STAFF)
+	@Get('run-draft-code/:problemId')
+	async runDraftCode(
+		@Param(
+			'problemId',
+			new ParseIntPipe({
+				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+			}),
+		)
+		problemId: number,
+	) {
+		return await this.problemService.runDraftCode(problemId);
+	}
+
+	@AllowRole(Role.STAFF)
 	@Post('review/:id')
 	async requestReviewProblem(
 		@Param('id', ParseIntPipe) id: number,

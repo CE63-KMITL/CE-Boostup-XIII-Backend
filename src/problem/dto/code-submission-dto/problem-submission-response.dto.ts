@@ -13,3 +13,16 @@ export class ProblemSubmissionResponseDto extends RunCodeResponseDto {
 		this.isPass = isPass;
 	}
 }
+
+export class RunDraftCodeResponseDto extends RunCodeResponseDto {
+	@ApiProperty({
+		example: '1',
+		type: String,
+	})
+	input: string;
+
+	constructor(runCodeDto: RunCodeResponseDto, input: string) {
+		super(runCodeDto);
+		this.input = input;
+	}
+}
