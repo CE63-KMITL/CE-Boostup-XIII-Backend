@@ -34,6 +34,8 @@ import { ProblemService } from './problem.service';
 import { ProblemSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
 import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
+import { ProblemRunCodeRequest } from './dto/problem-request.dto';
+import { RunCodeResponseDto } from 'src/run_code/dtos/run-code-response.dto';
 
 @Controller('problem')
 @ApiTags('Problem')
@@ -129,10 +131,25 @@ export class ProblemController {
 		this.problemService.approveProblem(id, req.user);
 	}
 
+	@Post('run-code/:id')
+	async runCode(
+		@Param('id', ParseIntPipe) id: number,
+		@Req() req: authenticatedRequest,
+		@Body() body: ProblemRunCodeRequest,
+	) {
+		return new RunCodeResponseDto(
+			await this.problemService.runCode(
+				id,
+				req.user.userId,
+				body.input,
+			),
+		);
+	}
+
 	@AllowRole(Role.MEMBER)
 	@Post('submission/:problemId')
 	@ApiResponse({ type: ProblemSubmissionResponseDto, isArray: true })
-	async runCode(
+	async submission(
 		@Param(
 			'problemId',
 			new ParseIntPipe({
@@ -143,7 +160,7 @@ export class ProblemController {
 		@Req() req: authenticatedRequest,
 		@Body() problemSubmission: ProblemSubmissionDto,
 	): Promise<ProblemSubmissionResponseDto[]> {
-		return await this.problemService.runCode(
+		return await this.problemService.submission(
 			problemSubmission,
 			req.user,
 			problemId,

@@ -11,6 +11,7 @@ import {
 import { ProblemStaffStatusEnum } from './enum/problem-staff-status.enum';
 import { ScoreValue } from './type/score-value.type';
 import { TestCase } from 'src/problem/test_case/test-case.entity';
+import { ProblemAllowMode } from './enum/problem-allow-mode.enum';
 
 // TODO: Add test cases to Problem
 @Entity()
@@ -29,6 +30,34 @@ export class Problem {
 		nullable: true,
 	})
 	description?: string;
+
+	@Column({
+		nullable: false,
+		default: 100000,
+	})
+	timeLimit: number;
+
+	@Column({
+		nullable: false,
+		default: ProblemAllowMode.DISALLOWED,
+		enum: ProblemAllowMode,
+	})
+	@IsEnum(ProblemAllowMode)
+	headerMode: ProblemAllowMode;
+
+	@Column('text', { nullable: true, array: true })
+	headers: string[];
+
+	@Column({
+		nullable: false,
+		default: ProblemAllowMode.DISALLOWED,
+		enum: ProblemAllowMode,
+	})
+	@IsEnum(ProblemAllowMode)
+	functionMode: ProblemAllowMode;
+
+	@Column('text', { nullable: true, array: true })
+	functions: string[];
 
 	@Column({
 		nullable: true,
@@ -61,18 +90,6 @@ export class Problem {
 
 	@OneToMany(() => TestCase, (TestCase) => TestCase.problem)
 	testCases: TestCase[];
-
-	@Column('text', { nullable: true, array: true })
-	disallowHeaders: string[];
-
-	@Column('text', { nullable: true, array: true })
-	disallowFunctions: string[];
-
-	@Column('text', { nullable: true, array: true })
-	allowHeaders: string[];
-
-	@Column('text', { nullable: true, array: true })
-	allowFunctions: string[];
 
 	constructor(problem: Partial<Problem>) {
 		Object.assign(this, problem);

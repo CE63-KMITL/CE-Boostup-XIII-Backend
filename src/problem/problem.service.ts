@@ -337,7 +337,19 @@ export class ProblemService {
 		});
 	}
 
-	async runCode(
+	async runCode(problemId: number, userId: string, input: string) {
+		const problem = await this.findOne(problemId);
+		const userCode = (
+			await this.userService.findOneProblemStatus(userId, problemId)
+		).code;
+		return await this.runCodeService.runCode(
+			input,
+			userCode,
+			problem.timeLimit,
+		);
+	}
+
+	async submission(
 		problemSubmission: ProblemSubmissionDto,
 		payload: jwtPayloadDto,
 		problemId: number,

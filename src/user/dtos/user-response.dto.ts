@@ -104,6 +104,7 @@ export class UserPaginatedDto extends PaginatedResponseDto(UserResponseDto) {
 export class UserFrontDataResponseDto extends Filter(UserResponseDto, [
 	'role',
 	'icon',
+	'name',
 ]) {}
 
 export class UserSmallResponseDto extends Filter(UserResponseDto, [
