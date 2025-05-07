@@ -375,4 +375,17 @@ export class UserService implements OnModuleInit {
 
 		await this.problemStatusRepository.save(problemStatus);
 	}
+	//getCollectedItems
+	async getCollectedItems(id:string){
+		const user =await this.userRepository.findOne({where : { id }})
+		if (!user){
+			throw new NotFoundException('User not found');
+		}
+		const rewards = user.rewards
+		return{ 
+			success: true,
+			message: 'Show rewards',
+			data : rewards
+		};
+	}
 }

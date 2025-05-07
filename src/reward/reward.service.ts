@@ -39,7 +39,7 @@ export class RewardService {
     }
     const user = await this.userRepo.findOne({ where: { id } });
     if(!user){
-        throw new BadRequestException('User not found');
+        throw new NotFoundException('User not found');
     }
 
     let amount = user.score - reward.points
@@ -47,6 +47,7 @@ export class RewardService {
     if (amount<0){
         throw new BadRequestException('Insufficient score');
     }
+    
     await this.userRepo.update(userId,{score : amount})
 
     //ลบคะเเนนบ้าน
@@ -55,7 +56,10 @@ export class RewardService {
     amount = house.value - reward.points
     await this.houseScoreRepo.update(house.id,{value : amount})
     const redeem = this.redeemRepo.create({ userId, rewardId,isApproved: false });
-    
+
+    user.rewards.push({ redeemId: redeem.id,rewardId:rewardId});
+    await this.userRepo.save(user);
+
     
     return {
         success: true,
