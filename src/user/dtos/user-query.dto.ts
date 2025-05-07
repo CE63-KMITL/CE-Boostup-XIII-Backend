@@ -60,4 +60,13 @@ export class UserQueryDto extends PaginationMetaDto {
 	@IsOptional()
 	@IsEnum(AvailableRole)
 	role: AvailableRole = AvailableRole.MEMBER;
+
+	@ApiPropertyOptional({
+		example: '67011501',
+		type: String,
+		description: 'search by stundent id',
+	})
+	@IsString()
+	@IsOptional()
+	studentId: string;
 }
