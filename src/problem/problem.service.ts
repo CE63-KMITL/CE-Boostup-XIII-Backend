@@ -75,6 +75,7 @@ export class ProblemService {
 				expectOutput: await this.testCaseService.getExpectedOutput(
 					createProblemRequest.solutionCode,
 					testCase.input,
+					createProblemRequest.timeLimit,
 				),
 			});
 		}
@@ -312,6 +313,7 @@ export class ProblemService {
 						const result = this.runCodeService.runCode(
 							input,
 							code,
+							problem.timeLimit,
 						);
 					}
 					await this.problemsRepository.save(problem);
@@ -362,7 +364,11 @@ export class ProblemService {
 			throw new BadRequestException('no test case for this problem');
 		const runCodeResponse = await Promise.all(
 			testCases.map((testCase) =>
-				this.runCodeService.runCode(testCase.input, code, 1 * 1000),
+				this.runCodeService.runCode(
+					testCase.input,
+					code,
+					problem.timeLimit,
+				),
 			),
 		);
 		const response = runCodeResponse.map((result, i) => {
@@ -393,7 +399,7 @@ export class ProblemService {
 				return this.runCodeService.runCode(
 					testCase.input,
 					JSON.parse(problem.solutionCode),
-					1 * 1000,
+					problem.timeLimit,
 				);
 			}),
 		);
