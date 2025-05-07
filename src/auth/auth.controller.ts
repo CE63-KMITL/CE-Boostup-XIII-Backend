@@ -88,7 +88,7 @@ export class AuthController {
 		description: 'Registeration successfull',
 	})
 	@ApiResponse({ status: 400, description: 'Bad Request.' })
-	@AllowRole(Role.DEV)
+	// @AllowRole(Role.DEV) มาเอาออกด้วย
 	async register(
 		@Body() user: RegisterUserDto,
 	): Promise<{ message: string }> {

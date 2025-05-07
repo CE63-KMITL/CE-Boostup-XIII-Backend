@@ -211,6 +211,42 @@ export class UserService implements OnModuleInit {
 		return response.map((user) => new UserResponseDto(user));
 	}
 
+	async updateHouseByEmail(
+		email: string,
+		house: House,
+	): Promise<UserResponseDto> {
+		if (!Object.values(House).includes(house)) {
+			throw new BadRequestException(
+				`House '${house}' is not a valid house.`,
+			);
+		}
+
+		const user = await this.userRepository.findOne({ where: { email } });
+		if (!user) {
+			throw new NotFoundException(
+				`User with email '${email}' not found`,
+			);
+		}
+
+		user.house = house;
+		const updatedUser = await this.userRepository.save(user);
+
+		return new UserResponseDto(updatedUser);
+	}
+
+	async removeUserFromHouse(email: string): Promise<UserResponseDto> {
+		const user = await this.userRepository.findOne({ where: { email } });
+		if (!user) {
+			throw new NotFoundException(
+				`User with email '${email}' not found`,
+			);
+		}
+
+		user.house = null;
+		const updatedUser = await this.userRepository.save(user);
+
+		return new UserResponseDto(updatedUser);
+	}
 	//-------------------------------------------------------
 	// Score Management
 	//-------------------------------------------------------
