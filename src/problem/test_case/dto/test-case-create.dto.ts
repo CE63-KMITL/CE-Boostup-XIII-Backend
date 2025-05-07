@@ -12,14 +12,6 @@ export class CreateTestCaseDto {
 	input?: string;
 
 	@ApiProperty({
-		example: 'abc',
-		type: String,
-	})
-	@IsString()
-	@IsNotEmpty()
-	expectOutput: string;
-
-	@ApiProperty({
 		example: true,
 		type: Boolean,
 	})

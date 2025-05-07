@@ -28,8 +28,9 @@ import { Problem } from './problem.entity';
 import { ProblemSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
 import { RunCodeService } from 'src/run_code/run-code.service';
 import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
-import { ProblemStatus } from 'src/user/score/problem-status.entity';
+import { ProblemStatus } from 'src/user/problem_status/problem-status.entity';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
+import { TestCaseService } from './test_case/test-case.service';
 
 @Injectable()
 export class ProblemService {
@@ -38,6 +39,7 @@ export class ProblemService {
 		private readonly problemsRepository: Repository<Problem>,
 		private readonly userService: UserService,
 		private readonly runCodeService: RunCodeService,
+		private readonly testCaseService: TestCaseService,
 	) {}
 
 	/*
@@ -62,10 +64,24 @@ export class ProblemService {
 		const author = await this.userService.findOne({
 			where: { id: userId },
 		});
+
+		const testCasesResult = [];
+		for (let testCase of createProblemRequest.testCases) {
+			testCasesResult.push({
+				...testCase,
+				expectOutput: await this.testCaseService.getExpectedOutput(
+					createProblemRequest.solutionCode,
+					testCase.input,
+				),
+			});
+		}
+
 		const problem = this.problemsRepository.create({
 			...createProblemRequest,
 			author: author,
+			testCases: testCasesResult,
 		});
+
 		return this.problemsRepository.save(problem);
 	}
 
@@ -251,11 +267,11 @@ export class ProblemService {
 			if (staff) {
 				status = d.devStatus;
 			} else {
-				const getUserProblem = userProblemStatus.find(
+				const getUserProblemStatus = userProblemStatus.find(
 					(userProblem) => userProblem.problemId === d.id,
 				);
 				status =
-					getUserProblem?.status ??
+					getUserProblemStatus?.status ??
 					ProblemStatusEnum.NOT_STARTED;
 			}
 
