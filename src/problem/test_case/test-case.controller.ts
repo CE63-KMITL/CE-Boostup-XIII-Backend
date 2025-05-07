@@ -16,7 +16,7 @@ import { TestCaseService } from './test-case.service';
 import {
 	CreateTestCaseDto,
 	UpdateTestCaseDto,
-} from './dto/test-case-create.dto';
+} from './dto/create-test-case.dto';
 import { AllowRole } from 'src/auth/decorators/auth.decorator';
 import { Role } from 'src/shared/enum/role.enum';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';

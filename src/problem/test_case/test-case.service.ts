@@ -8,7 +8,7 @@ import {
 import {
 	CreateTestCaseDto,
 	UpdateTestCaseDto,
-} from './dto/test-case-create.dto';
+} from './dto/create-test-case.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TestCase } from './test-case.entity';
 import { FindOneOptions, Repository } from 'typeorm';

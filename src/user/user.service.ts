@@ -350,11 +350,9 @@ export class UserService implements OnModuleInit {
 				problemId,
 				code,
 				status: ProblemStatusEnum.IN_PROGRESS,
-				lastSubmitted: new Date(),
 			});
 		} else {
 			problemStatus.code = code;
-			problemStatus.lastSubmitted = new Date();
 		}
 
 		await this.problemStatusRepository.save(problemStatus);

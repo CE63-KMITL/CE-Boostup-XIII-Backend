@@ -6,7 +6,7 @@ import {
 	IsOptional,
 	IsString,
 } from 'class-validator';
-import { CreateTestCaseDto } from '../test_case/dto/test-case-create.dto';
+import { CreateTestCaseDto } from '../test_case/dto/create-test-case.dto';
 
 export class CreateProblemDto {
 	@ApiProperty({ example: 'Sample Problem Title' })
