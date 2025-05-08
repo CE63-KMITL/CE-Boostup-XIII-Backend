@@ -23,7 +23,7 @@ export class RunCodeController {
 		return this.runCodeService.runCode(
 			body.input,
 			body.code,
-			body.timeout,
+			100,
 		);
 	}
 }

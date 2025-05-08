@@ -10,7 +10,7 @@ export class RunCodeService {
 	async runCode(
 		input: string,
 		code: string,
-		timeout: number = 100,
+		timeout: number,
 	): Promise<RunCodeResponseDto> {
 		const result = await fetch(
 			`http://${this.configService.getOrThrow<string>(GLOBAL_CONFIG.COMPILER_HOST)}/`,
