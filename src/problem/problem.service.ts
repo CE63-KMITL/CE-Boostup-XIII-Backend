@@ -304,7 +304,8 @@ export class ProblemService {
 				// Update problem status if there is an update to solution code
 				if ('solutionCode' in updateProblemRequest) {
 					problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
-					// TODO: Change score
+					// TODO: Change score (Look into score-log dto)
+					// TODO: We might need to add problemId to score-log, otherwise we won't know where the score came from
 					// Loop through all testCases and runCode with their input
 					for (var testCase of problem.testCases) {
 						const input = testCase.input;
@@ -424,9 +425,10 @@ export class ProblemService {
 		id: number,
 		message: RejectProblemDTO,
 		user: jwtPayloadDto,
-	): Promise<void> {
+	): Promise<RejectProblemDTO> {
 		await this.problemsRepository.update(id, {
 			devStatus: ProblemStaffStatusEnum.ARCHIVED,
 		});
+		return message;
 	}
 }
