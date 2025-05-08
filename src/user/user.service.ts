@@ -27,6 +27,7 @@ import {
 import { ProblemStatus } from './problem_status/problem-status.entity';
 import { ScoreLog } from './score/score-log.entity';
 import { User } from './user.entity';
+import { HouseScoreService } from 'src/house_score/house_score.service';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -38,6 +39,7 @@ export class UserService implements OnModuleInit {
 		@InjectRepository(ProblemStatus)
 		private readonly problemStatusRepository: Repository<ProblemStatus>,
 		private readonly configService: ConfigService,
+		private readonly houseScoreService: HouseScoreService,
 	) {}
 
 	async onModuleInit() {
@@ -279,12 +281,15 @@ export class UserService implements OnModuleInit {
 		user.score += amount;
 		if (user.score < 0) user.score = 0;
 
+		this.houseScoreService.changeScore(user.house, amount);
+
 		const scoreLog = new ScoreLog();
 		scoreLog.amount = amount;
 		scoreLog.user = user;
 		scoreLog.modifiedBy = modifiedBy;
 		await this.scoreLogRepository.save(scoreLog);
 		const response = await this.userRepository.save(user);
+
 		return new UserResponseDto(response);
 	}
 
