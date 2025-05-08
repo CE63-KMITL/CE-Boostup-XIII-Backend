@@ -44,8 +44,8 @@ export class ProblemService {
 		private readonly userService: UserService,
 		private readonly runCodeService: RunCodeService,
 		private readonly testCaseService: TestCaseService,
-		private readonly houseScoreService: HouseScoreService
-	) { }
+		private readonly houseScoreService: HouseScoreService,
+	) {}
 
 	/*
 	-------------------------------------------------------
@@ -317,24 +317,41 @@ export class ProblemService {
 							problem.timeLimit,
 						);
 						// Set to new output
-						testCase.expectOutput = result.output
+						testCase.expectOutput = result.output;
 					}
 					await this.problemsRepository.save(problem);
 
 					// Remove user and house score
 					const allUsers = await this.userService.findAll({});
 					for (let userResponse of allUsers.data) {
-						const problemStatus = await this.userService.findOneProblemStatus(userResponse.id, problem.id);
+						const problemStatus =
+							await this.userService.findOneProblemStatus(
+								userResponse.id,
+								problem.id,
+							);
 						// We only remove score when the problem was finished
-						if (problemStatus != null && problemStatus.status == ProblemStatusEnum.DONE) {
-							this.userService.setProblemStatus(problem.id, userResponse.id)
+						if (
+							problemStatus != null &&
+							problemStatus.status ==
+								ProblemStatusEnum.DONE
+						) {
+							this.userService.setProblemStatus(
+								problem.id,
+								userResponse.id,
+							);
 							// No function for calculating score?
 							const score = 100 * problem.difficulty;
-							this.userService.modifyScore(userResponse.id, score, userResponse.id)
-							this.houseScoreService.subtractScore(userResponse.house, score)l
+							this.userService.modifyScore(
+								userResponse.id,
+								score,
+								userResponse.id,
+							);
+							this.houseScoreService.subtractScore(
+								userResponse.house,
+								score,
+							);
 						}
 					}
-
 				}
 				return this.findOne(id);
 			} else {
