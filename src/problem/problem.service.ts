@@ -34,6 +34,7 @@ import {
 import { ProblemStatus } from 'src/user/problem_status/problem-status.entity';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
 import { TestCaseService } from './test_case/test-case.service';
+import { HouseScoreService } from 'src/house_score/house_score.service';
 
 @Injectable()
 export class ProblemService {
@@ -43,7 +44,8 @@ export class ProblemService {
 		private readonly userService: UserService,
 		private readonly runCodeService: RunCodeService,
 		private readonly testCaseService: TestCaseService,
-	) {}
+		private readonly houseScoreService: HouseScoreService
+	) { }
 
 	/*
 	-------------------------------------------------------
@@ -305,18 +307,34 @@ export class ProblemService {
 				// Update problem status if there is an update to solution code
 				if ('solutionCode' in updateProblemRequest) {
 					problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
-					// TODO: RUN CODE
 					// Loop through all testCases and runCode with their input
 					for (var testCase of problem.testCases) {
 						const input = testCase.input;
 						const code = updateProblemRequest.solutionCode;
-						const result = this.runCodeService.runCode(
+						const result = await this.runCodeService.runCode(
 							input,
 							code,
 							problem.timeLimit,
 						);
+						// Set to new output
+						testCase.expectOutput = result.output
 					}
 					await this.problemsRepository.save(problem);
+
+					// Remove user and house score
+					const allUsers = await this.userService.findAll({});
+					for (let userResponse of allUsers.data) {
+						const problemStatus = await this.userService.findOneProblemStatus(userResponse.id, problem.id);
+						// We only remove score when the problem was finished
+						if (problemStatus != null && problemStatus.status == ProblemStatusEnum.DONE) {
+							this.userService.setProblemStatus(problem.id, userResponse.id)
+							// No function for calculating score?
+							const score = 100 * problem.difficulty;
+							this.userService.modifyScore(userResponse.id, score, userResponse.id)
+							this.houseScoreService.subtractScore(userResponse.house, score)l
+						}
+					}
+
 				}
 				return this.findOne(id);
 			} else {
@@ -428,9 +446,10 @@ export class ProblemService {
 		id: number,
 		message: RejectProblemDTO,
 		user: jwtPayloadDto,
-	): Promise<void> {
+	): Promise<RejectProblemDTO> {
 		await this.problemsRepository.update(id, {
 			devStatus: ProblemStaffStatusEnum.ARCHIVED,
 		});
+		return message;
 	}
 }
