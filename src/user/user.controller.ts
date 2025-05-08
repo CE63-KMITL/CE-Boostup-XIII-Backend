@@ -72,6 +72,25 @@ export class UserController {
 		return new UserResponseDto(user);
 	}
 
+	@Get('me/scorelog')
+	@HttpCode(HttpStatus.OK)
+	@AllowRole(Role.MEMBER)
+	@ApiResponse({
+		status: HttpStatus.OK,
+		description: 'Get current authenticated user score log',
+		type: UserScoreResponseDto,
+	})
+	async getCurrentUserScoreLog(
+		@Request() req: authenticatedRequest,
+	): Promise<UserScoreResponseDto> {
+		const user = await this.userService.findOne({
+			where: { id: req.user.userId },
+		});
+		const scoreLogs = await this.userService.getUserScoreLogs(user.id);
+		const json = { score: user.score, scoreLogs: scoreLogs };
+		return json;
+	}
+
 	/*
 	-------------------------------------------------------
 	Protected Endpoints
