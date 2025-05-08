@@ -312,16 +312,24 @@ export class UserService implements OnModuleInit {
 				lastSubmitted: new Date(),
 			});
 		} else {
-			if (userProblem.status === ProblemStatusEnum.DONE) return;
 			await this.problemStatusRepository.update(userProblem, {
 				code,
-				status,
+				status:
+					userProblem.status === ProblemStatusEnum.DONE
+						? ProblemStatusEnum.DONE
+						: status,
 				lastSubmitted: new Date(),
 			});
 		}
-		if (status === ProblemStatusEnum.DONE) {
+		if (
+			status === ProblemStatusEnum.DONE &&
+			userProblem.status === ProblemStatusEnum.IN_PROGRESS
+		) {
 			//change this to actual logic to calculate score
-			const score = 100 * difficulty;
+			const score =
+				difficulty <= 3
+					? difficulty
+					: (difficulty * (difficulty - 1)) / 2;
 			this.modifyScore(userId, score, userId);
 		}
 	}
