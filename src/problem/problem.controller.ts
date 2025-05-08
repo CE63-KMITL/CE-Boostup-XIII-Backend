@@ -43,7 +43,7 @@ import { RunCodeResponseDto } from 'src/run_code/dtos/run-code-response.dto';
 @Controller('problem')
 @ApiTags('Problem')
 export class ProblemController {
-	constructor(private readonly problemService: ProblemService) {}
+	constructor(private readonly problemService: ProblemService) { }
 
 	@ApiCreatedResponse({ type: ProblemResponseDto })
 	@AllowRole(Role.STAFF)
@@ -194,7 +194,7 @@ export class ProblemController {
 	async requestReviewProblem(
 		@Param('id', ParseIntPipe) id: number,
 		@Req() req: authenticatedRequest,
-	) {
+	): Promise<void> {
 		this.problemService.requestReviewProblem(id, req.user);
 	}
 
@@ -203,7 +203,7 @@ export class ProblemController {
 	async archiveProblem(
 		@Param('id', ParseIntPipe) id: number,
 		@Req() req: authenticatedRequest,
-	) {
+	): Promise<void> {
 		this.problemService.archiveProblem(id, req.user);
 	}
 
@@ -213,7 +213,7 @@ export class ProblemController {
 		@Param('id', ParseIntPipe) id: number,
 		message: RejectProblemDTO,
 		@Req() req: authenticatedRequest,
-	) {
-		this.problemService.rejectProblem(id, message, req.user);
+	): Promise<RejectProblemDTO> {
+		return this.problemService.rejectProblem(id, message, req.user);
 	}
 }
