@@ -20,6 +20,14 @@ export class CreateProblemDto {
 	description?: string;
 
 	@ApiProperty({
+		description: 'Time limit in milliseconds',
+		example: 100,
+		default: 100,
+	})
+	@IsNumber()
+	timeLimit?: number = 100;
+
+	@ApiProperty({
 		example: '#include <stdio.h>\n\nint main() {\n\tprintf("Hello, World!");\n\treturn 0;\n}',
 	})
 	@IsOptional()

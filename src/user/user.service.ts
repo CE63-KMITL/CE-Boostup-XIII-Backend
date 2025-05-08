@@ -92,7 +92,16 @@ export class UserService implements OnModuleInit {
 	}
 
 	async search(query: UserQueryDto) {
-		const { limit, page, email, name, orderByScore, house, role } = query;
+		const {
+			limit,
+			page,
+			email,
+			name,
+			orderByScore,
+			house,
+			role,
+			studentId,
+		} = query;
 		const users = await createPaginationQuery({
 			repository: this.userRepository,
 			dto: { limit, page },
@@ -112,6 +121,11 @@ export class UserService implements OnModuleInit {
 		}
 
 		if (!!house) users.andWhere('entity.house  = :house', { house });
+
+		if (!!studentId)
+			users.andWhere('entity.studentId = :studentId', {
+				studentId: `%${studentId}%`,
+			});
 
 		users.andWhere('entity.role = :role', { role });
 
@@ -211,6 +225,42 @@ export class UserService implements OnModuleInit {
 		return response.map((user) => new UserResponseDto(user));
 	}
 
+	async updateHouseByEmail(
+		email: string,
+		house: House,
+	): Promise<UserResponseDto> {
+		if (!Object.values(House).includes(house)) {
+			throw new BadRequestException(
+				`House '${house}' is not a valid house.`,
+			);
+		}
+
+		const user = await this.userRepository.findOne({ where: { email } });
+		if (!user) {
+			throw new NotFoundException(
+				`User with email '${email}' not found`,
+			);
+		}
+
+		user.house = house;
+		const updatedUser = await this.userRepository.save(user);
+
+		return new UserResponseDto(updatedUser);
+	}
+
+	async removeUserFromHouse(email: string): Promise<UserResponseDto> {
+		const user = await this.userRepository.findOne({ where: { email } });
+		if (!user) {
+			throw new NotFoundException(
+				`User with email '${email}' not found`,
+			);
+		}
+
+		user.house = null;
+		const updatedUser = await this.userRepository.save(user);
+
+		return new UserResponseDto(updatedUser);
+	}
 	//-------------------------------------------------------
 	// Score Management
 	//-------------------------------------------------------
