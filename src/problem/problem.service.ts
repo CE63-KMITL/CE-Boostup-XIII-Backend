@@ -43,7 +43,7 @@ export class ProblemService {
 		private readonly userService: UserService,
 		private readonly runCodeService: RunCodeService,
 		private readonly testCaseService: TestCaseService,
-	) {}
+	) { }
 
 	/*
 	-------------------------------------------------------
@@ -304,15 +304,17 @@ export class ProblemService {
 				// Update problem status if there is an update to solution code
 				if ('solutionCode' in updateProblemRequest) {
 					problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
-					// TODO: RUN CODE
+					// TODO: Change score
 					// Loop through all testCases and runCode with their input
 					for (var testCase of problem.testCases) {
 						const input = testCase.input;
 						const code = updateProblemRequest.solutionCode;
-						const result = this.runCodeService.runCode(
+						const result = await this.runCodeService.runCode(
 							input,
 							code,
 						);
+						// Set to new output
+						testCase.expectOutput = result.output
 					}
 					await this.problemsRepository.save(problem);
 				}
