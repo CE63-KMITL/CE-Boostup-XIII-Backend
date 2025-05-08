@@ -24,6 +24,7 @@ export class RewardController {
     return this.rewardService.cancelRedeem(id);
   }
   @Get('user/:id/status')
+  @AllowRole(Role.MEMBER)
   async getUserRewardStatus(@Param('id') id: string) {
     return this.rewardService.getUserRewardStatus(id);
   }
