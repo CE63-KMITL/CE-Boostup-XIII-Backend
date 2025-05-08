@@ -13,19 +13,18 @@ export class RewardController {
   }
 
   @Post('redeem')
-  @AllowRole(Role.MEMBER)
+  @AllowRole(Role.STAFF)
   redeemReward(@Body() body: { userId: string; rewardId: string }) {
     return this.rewardService.redeemReward(body.userId, body.rewardId);
   }
 
-  @Post('approved')
-  @AllowRole(Role.STAFF)
-  approveReward(@Body() body: { id: string }) {
-    return this.rewardService.approveReward(body.id);
-  }
   @Delete('redeem/:id/cancel')
-    @AllowRole(Role.MEMBER)
-    async cancelRedeem(@Param('id') id: string) {
+  @AllowRole(Role.STAFF)
+  async cancelRedeem(@Param('id') id: string) {
     return this.rewardService.cancelRedeem(id);
-}
+  }
+  @Get('user/:id/status')
+  async getUserRewardStatus(@Param('id') id: string) {
+    return this.rewardService.getUserRewardStatus(id);
+  }
 }

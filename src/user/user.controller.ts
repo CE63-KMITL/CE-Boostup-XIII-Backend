@@ -295,10 +295,4 @@ export class UserController {
 		const iconBase64 = file.buffer.toString('base64');
 		this.userService.uploadIcon(req.user.userId, iconBase64);
 	}
-	//getCollectedItems
-
-	@Get('collectedItems/:id')
-		async getCollectedItems(@Param('id') id: string){
-			return this.userService.getCollectedItems(id)
-		}
 }

@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity()
 export class Redeem {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
@@ -11,6 +11,6 @@ export class Redeem {
   @Column()
   rewardId: string;
 
-  @Column({ default: false })
+  @Column({ default: true })
   isApproved: boolean;
 }

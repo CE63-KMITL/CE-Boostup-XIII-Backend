@@ -45,9 +45,6 @@ export class User {
 	@IsNumber()
 	score: number;
 
-	@Column('json')
- 	 rewards: { redeemId: string; rewardId: string }[];
-
 	@Column({ nullable: true, type: 'char', length: 8 })
 	studentId?: string;
 

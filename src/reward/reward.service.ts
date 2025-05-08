@@ -31,57 +31,64 @@ export class RewardService {
     return this.rewards;
   }
 
+  // async redeemReward(userId: string, rewardId: string) {
+  //   const reward = this.rewards.find(r => r.id === rewardId);
+  //   let id=userId
+  //   if (!reward) {
+  //       throw new NotFoundException('Reward not found');
+  //   }
+  //   const user = await this.userRepo.findOne({ where: { id } });
+  //   if(!user){
+  //       throw new NotFoundException('User not found');
+  //   }
+
+
+  //   if (user.score<reward.points){
+  //       throw new BadRequestException('Insufficient score');
+  //   }
+    
+
+  //   const redeem = this.redeemRepo.create({ userId, rewardId,isApproved: false });
+
+  //   user.rewards.push({ redeemId: redeem.id,rewardId:rewardId});
+  //   await this.userRepo.save(user);
+
+    
+  //   return {
+  //       success: true,
+  //       message: "Redeem created successfully",
+  //       data:this.redeemRepo.save(redeem)
+  //       };
+  //   }
   async redeemReward(userId: string, rewardId: string) {
-    const reward = this.rewards.find(r => r.id === rewardId);
-    let id=userId
-    if (!reward) {
-        throw new NotFoundException('Reward not found');
-    }
-    const user = await this.userRepo.findOne({ where: { id } });
-    if(!user){
-        throw new NotFoundException('User not found');
-    }
-
-    let amount = user.score - reward.points
-
-    if (amount<0){
-        throw new BadRequestException('Insufficient score');
-    }
+      const user = await this.userRepo.findOneBy({ id: userId });
+      const reward = this.rewards.find(r => r.id === rewardId);
     
-    await this.userRepo.update(userId,{score : amount})
-
-    //ลบคะเเนนบ้าน
-    let name = user.house
-    const house = await this.houseScoreRepo.findOne({ where: { name } })
-    amount = house.value - reward.points
-    await this.houseScoreRepo.update(house.id,{value : amount})
-    const redeem = this.redeemRepo.create({ userId, rewardId,isApproved: false });
-
-    user.rewards.push({ redeemId: redeem.id,rewardId:rewardId});
-    await this.userRepo.save(user);
-
+      if (!user || !reward) throw new NotFoundException();
     
-    return {
+      if (user.score < reward.points) {
+        throw new BadRequestException('คะแนนไม่เพียงพอ');
+      }
+    
+      const alreadyRedeemed = await this.redeemRepo.findOneBy({
+        userId: userId ,
+        rewardId: rewardId
+      });
+    
+      if (alreadyRedeemed) {
+        throw new BadRequestException('คุณแลกของชิ้นนี้ไปแล้ว');
+      }
+    
+    
+      const redeem = this.redeemRepo.create({ userId, rewardId });
+
+      return {
         success: true,
         message: "Redeem created successfully",
-        data:this.redeemRepo.save(redeem)
+        data : this.redeemRepo.save(redeem)
         };
     }
 
-  async approveReward(id:string){
-    const reward = await this.redeemRepo.findOne({ where:{ id } })
-    if (!reward){
-        throw new NotFoundException('Reward not found')
-    }
-    if (reward.isApproved){
-        throw new BadRequestException('The reward is approved');
-    }
-    await this.redeemRepo.update(id, { isApproved: true });
-    return {
-        success: true,
-        message: "Redeem created successfully",
-        };
-  }
 
   async cancelRedeem(id: string) {
     const redeem = await this.redeemRepo.findOneBy({ id });
@@ -92,18 +99,45 @@ export class RewardService {
     if (redeem.isApproved) {
       throw new BadRequestException('Cannot cancel this redeem');
     }
-  
+    
     await this.redeemRepo.delete(id);
-    const reward = this.rewards.find(r => r.id === redeem.rewardId);
-   
-    id = redeem.userId
-    const user = await this.userRepo.findOne({ where: { id } });
-    let amount = user.score+reward.points
-    await this.userRepo.update(id,{score : amount})
 
     return { 
         success: true,
         message: 'Redeem canceled successfully'
     };
   }
-}
+
+  async getUserRewardStatus(userId: string) {
+    const user = await this.userRepo.findOneBy({ id: userId });
+    if (!user) throw new NotFoundException('User not found');
+
+    const redeemed = await this.redeemRepo.find({
+      where: { userId },
+    });
+
+    const redeemedIds = new Set(redeemed.map(r => r.rewardId));
+
+    const result = {
+      redeemed: [],
+      available: [],
+      locked: [],
+    };
+
+    for (const reward of this.rewards) {
+      if (redeemedIds.has(reward.id)) {
+        result.redeemed.push(reward);
+      } else if (user.score >= reward.points) {
+        result.available.push(reward);
+      } else {
+        result.locked.push(reward);
+      }
+    }
+
+    return { 
+        success: true,
+        message: 'Redeem canceled successfully',
+        data : result
+    };
+  }
+} 

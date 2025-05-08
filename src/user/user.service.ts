@@ -27,6 +27,7 @@ import {
 import { ProblemStatus } from './problem_status/problem-status.entity';
 import { ScoreLog } from './score/score-log.entity';
 import { User } from './user.entity';
+import { HouseScore } from 'src/house_score/house_score.entity';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -38,6 +39,8 @@ export class UserService implements OnModuleInit {
 		@InjectRepository(ProblemStatus)
 		private readonly problemStatusRepository: Repository<ProblemStatus>,
 		private readonly configService: ConfigService,
+		@InjectRepository(HouseScore)
+		private readonly HouseScoreRepo:Repository<HouseScore>
 	) {}
 
 	async onModuleInit() {
@@ -249,6 +252,15 @@ export class UserService implements OnModuleInit {
 		scoreLog.modifiedBy = modifiedBy;
 		await this.scoreLogRepository.save(scoreLog);
 		const response = await this.userRepository.save(user);
+		const house = await this.HouseScoreRepo.findOneBy({ id: user.house });
+		if (!house) throw new NotFoundException('House not found');
+
+		let newScore = house.value + amount;
+		if (newScore < 0) {
+			newScore=0
+		}
+
+		await this.HouseScoreRepo.update({ id: user.house }, { value: newScore });
 		return new UserResponseDto(response);
 	}
 
@@ -375,17 +387,5 @@ export class UserService implements OnModuleInit {
 
 		await this.problemStatusRepository.save(problemStatus);
 	}
-	//getCollectedItems
-	async getCollectedItems(id:string){
-		const user =await this.userRepository.findOne({where : { id }})
-		if (!user){
-			throw new NotFoundException('User not found');
-		}
-		const rewards = user.rewards
-		return{ 
-			success: true,
-			message: 'Show rewards',
-			data : rewards
-		};
-	}
+
 }
