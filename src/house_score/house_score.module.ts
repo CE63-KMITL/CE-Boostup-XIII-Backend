@@ -8,5 +8,6 @@ import { HouseScore } from './house_score.entity';
 	imports: [TypeOrmModule.forFeature([HouseScore])],
 	controllers: [HouseScoreController],
 	providers: [HouseScoreService],
+	exports: [HouseScoreService],
 })
 export class HouseScoreModule {}

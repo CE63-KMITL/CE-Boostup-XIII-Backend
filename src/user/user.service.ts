@@ -27,6 +27,7 @@ import {
 import { ProblemStatus } from './problem_status/problem-status.entity';
 import { ScoreLog } from './score/score-log.entity';
 import { User } from './user.entity';
+import { HouseScoreService } from 'src/house_score/house_score.service';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -38,6 +39,7 @@ export class UserService implements OnModuleInit {
 		@InjectRepository(ProblemStatus)
 		private readonly problemStatusRepository: Repository<ProblemStatus>,
 		private readonly configService: ConfigService,
+		private readonly houseScoreService: HouseScoreService,
 	) {}
 
 	async onModuleInit() {
@@ -279,12 +281,15 @@ export class UserService implements OnModuleInit {
 		user.score += amount;
 		if (user.score < 0) user.score = 0;
 
+		this.houseScoreService.changeScore(user.house, amount);
+
 		const scoreLog = new ScoreLog();
 		scoreLog.amount = amount;
 		scoreLog.user = user;
 		scoreLog.modifiedBy = modifiedBy;
 		await this.scoreLogRepository.save(scoreLog);
 		const response = await this.userRepository.save(user);
+
 		return new UserResponseDto(response);
 	}
 
@@ -362,16 +367,24 @@ export class UserService implements OnModuleInit {
 				lastSubmitted: new Date(),
 			});
 		} else {
-			if (userProblem.status === ProblemStatusEnum.DONE) return;
 			await this.problemStatusRepository.update(userProblem, {
 				code,
-				status,
+				status:
+					userProblem.status === ProblemStatusEnum.DONE
+						? ProblemStatusEnum.DONE
+						: status,
 				lastSubmitted: new Date(),
 			});
 		}
-		if (status === ProblemStatusEnum.DONE) {
+		if (
+			status === ProblemStatusEnum.DONE &&
+			userProblem.status === ProblemStatusEnum.IN_PROGRESS
+		) {
 			//change this to actual logic to calculate score
-			const score = 100 * difficulty;
+			const score =
+				difficulty <= 3
+					? difficulty
+					: (difficulty * (difficulty - 1)) / 2;
 			this.modifyScore(userId, score, userId);
 		}
 	}
