@@ -136,7 +136,7 @@ export class RewardService {
 
     return { 
         success: true,
-        message: 'Redeem canceled successfully',
+        message: 'get redeem successfully',
         data : result
     };
   }
