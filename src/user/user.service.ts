@@ -41,7 +41,7 @@ export class UserService implements OnModuleInit {
 		private readonly problemStatusRepository: Repository<ProblemStatus>,
 		private readonly configService: ConfigService,
 		@InjectRepository(HouseScore)
-		private readonly HouseScoreRepo:Repository<HouseScore>
+		private readonly HouseScoreRepo: Repository<HouseScore>,
 		private readonly houseScoreService: HouseScoreService,
 	) {}
 
@@ -297,10 +297,13 @@ export class UserService implements OnModuleInit {
 
 		let newScore = house.value + amount;
 		if (newScore < 0) {
-			newScore=0
+			newScore = 0;
 		}
 
-		await this.HouseScoreRepo.update({ id: user.house }, { value: newScore });
+		await this.HouseScoreRepo.update(
+			{ id: user.house },
+			{ value: newScore },
+		);
 		return new UserResponseDto(response);
 	}
 
@@ -435,5 +438,4 @@ export class UserService implements OnModuleInit {
 
 		await this.problemStatusRepository.save(problemStatus);
 	}
-
 }

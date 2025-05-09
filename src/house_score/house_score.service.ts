@@ -15,23 +15,23 @@ import { User } from 'src/user/user.entity';
 export class HouseScoreService implements OnModuleInit {
 	constructor(
 		@InjectRepository(HouseScore)
-		private readonly scoreRepository: Repository<HouseScore>,
+		private readonly houseRepository: Repository<HouseScore>,
 		@InjectRepository(User)
-		private readonly userRepo: Repository<User>,
+		private readonly userRepository: Repository<User>,
 	) {}
 
 	async onModuleInit() {
 		const house = Object.values(House);
-		const res = await this.scoreRepository.count();
+		const res = await this.houseRepository.count();
 		if (res !== 0) return;
 		for (let i = 0; i < house.length; i++) {
-			await this.scoreRepository.save({ name: house[i] });
+			await this.houseRepository.save({ name: house[i] });
 		}
 	}
 
 	// สร้างคะแนนใหม่
 	async create(name: string, value: number) {
-		const existingScore = await this.scoreRepository.findOne({
+		const existingScore = await this.houseRepository.findOne({
 			where: { name },
 		});
 
@@ -48,7 +48,7 @@ export class HouseScoreService implements OnModuleInit {
 		score.value = value;
 
 		try {
-			const savedScore = await this.scoreRepository.save(score);
+			const savedScore = await this.houseRepository.save(score);
 			return {
 				success: true,
 				message: 'Score created successfully',
@@ -63,15 +63,16 @@ export class HouseScoreService implements OnModuleInit {
 		}
 	}
 
-
 	// ปรับคะแนน
 	async changeScore(name: String, value: number) {
-		const house = await this.scoreRepository.findOneBy({name: name });
-		if (!house) throw new NotFoundException('Group not found')
+		const house = await this.houseRepository.findOneBy({ name: name });
+		if (!house) throw new NotFoundException('Group not found');
 
 		const amount = value - house.value;
 
-		const users = await this.userRepo.find({ where: { house:house.name as House } });
+		const users = await this.userRepository.find({
+			where: { house: house.name as House },
+		});
 		if (users.length === 0) return;
 
 		const perUser = Math.floor(amount / users.length);
@@ -80,21 +81,21 @@ export class HouseScoreService implements OnModuleInit {
 			user.score += perUser;
 		}
 
-		await this.userRepo.save(users);
+		await this.userRepository.save(users);
 
 		house.value = value;
-		await this.scoreRepository.save(house);
+		await this.houseRepository.save(house);
 
 		return {
 			success: true,
 			message: `${house.name} score updated to ${value}`,
 			perUserEffect: perUser,
-  };
+		};
 	}
 
 	// ค้นหาคะแนนของเเต่ละบ้าน
 	async findOne(name: string) {
-		const score = await this.scoreRepository.findOne({ where: { name } });
+		const score = await this.houseRepository.findOne({ where: { name } });
 
 		if (!score) {
 			console.log(`Score not found for ${name} group`);
@@ -113,7 +114,7 @@ export class HouseScoreService implements OnModuleInit {
 
 	// ค้นหาคะแนนบ้านทั้งหมด
 	async findAll() {
-		const scores = await this.scoreRepository.find();
+		const scores = await this.houseRepository.find();
 		return {
 			success: true,
 			message: 'All scores fetched successfully',
@@ -123,7 +124,7 @@ export class HouseScoreService implements OnModuleInit {
 
 	// ค้นหาคะแนนทั้งหมดและจัดเรียงตามคำสั่ง ASC DESC
 	async findAllSorted(order: 'ASC' | 'DESC') {
-		const scores = await this.scoreRepository.find({
+		const scores = await this.houseRepository.find({
 			order: { value: order },
 		});
 		return {
@@ -135,7 +136,7 @@ export class HouseScoreService implements OnModuleInit {
 
 	// ลบคะแนน
 	async remove(name: string) {
-		const score = await this.scoreRepository.findOne({ where: { name } });
+		const score = await this.houseRepository.findOne({ where: { name } });
 
 		if (!score) {
 			console.log(`Score not found for ${name} group`);
@@ -145,41 +146,44 @@ export class HouseScoreService implements OnModuleInit {
 			);
 		}
 
-		await this.scoreRepository.remove(score);
+		await this.houseRepository.remove(score);
 		console.log(`Score removed for ${name} group`);
 		return { success: true, message: 'Score removed successfully' };
 	}
 
 	async adjustHouseValue(name: string, amount: number) {
-		const house = await this.scoreRepository.findOneBy({ name });
+		const house = await this.houseRepository.findOneBy({ name });
 		if (!house) throw new NotFoundException('House not found');
-	  
-		const users = await this.userRepo.find({
-		  where: { house: name as House },
+
+		const users = await this.userRepository.find({
+			where: { house: name as House },
 		});
 		if (users.length === 0) return;
-	  
+
 		const perUser = Math.floor(amount / users.length);
-	  
+
 		for (const user of users) {
-		  user.score += perUser;
-		  if (user.score < 0){
-			user.score=0
-		  }
+			user.score += perUser;
+			if (user.score < 0) {
+				user.score = 0;
+			}
 		}
-		await this.userRepo.save(users);
-	  
+		await this.userRepository.save(users);
+
 		house.value += amount;
-		if (house.value < 0){
-			house.value=0
-		  }
-		await this.scoreRepository.save(house);
-	  
+		if (house.value < 0) {
+			house.value = 0;
+		}
+		await this.houseRepository.save(house);
+
 		return {
-		  message: amount >= 0 ? `เพิ่มคะแนนกลุ่ม ${name}` : `ลดคะแนนกลุ่ม ${name}`,
-		  totalChange: amount,
-		  perUserEffect: perUser,
-		  newHouseScore: house.value,
+			message:
+				amount >= 0
+					? `เพิ่มคะแนนกลุ่ม ${name}`
+					: `ลดคะแนนกลุ่ม ${name}`,
+			totalChange: amount,
+			perUserEffect: perUser,
+			newHouseScore: house.value,
 		};
-	  }
+	}
 }

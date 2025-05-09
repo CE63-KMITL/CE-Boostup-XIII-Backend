@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProblemStatus } from './problem_status/problem-status.entity';
 import { ScoreLog } from './score/score-log.entity';
@@ -10,7 +10,7 @@ import { HouseScoreModule } from 'src/house_score/house_score.module';
 @Module({
 	imports: [
 		TypeOrmModule.forFeature([User, ScoreLog, ProblemStatus]),
-		HouseScoreModule,
+		forwardRef(() => HouseScoreModule),
 	],
 	controllers: [UserController],
 	providers: [UserService],

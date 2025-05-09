@@ -349,7 +349,7 @@ export class ProblemService {
 								score,
 								userResponse.id,
 							);
-							this.houseScoreService.subtractScore(
+							this.houseScoreService.adjustHouseValue(
 								userResponse.house,
 								score,
 							);
