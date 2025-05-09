@@ -28,7 +28,7 @@ export class CreateProblemDto {
 	})
 	@IsNumber()
 	@IsOptional()
-	timeLimit?: number = 100;
+	timeLimit: number = 100;
 
 	@ApiProperty({
 		example: ProblemAllowMode.DISALLOWED,

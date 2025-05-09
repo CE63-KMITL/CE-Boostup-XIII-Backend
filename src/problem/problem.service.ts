@@ -53,15 +53,20 @@ export class ProblemService {
 		private readonly testCaseService: TestCaseService,
 	) {}
 
-	/*
-	-------------------------------------------------------
-	Create Problem
-	-------------------------------------------------------
-	*/
+	//-------------------------------------------------------
+	// Create Problem
+	//-------------------------------------------------------
 	async create(
 		createProblemRequest: CreateProblemDto,
 		userId: string,
 	): Promise<Problem> {
+		console.log(createProblemRequest);
+
+		//-------------------------------------------------------
+		// Apply default values if not provided
+		//-------------------------------------------------------
+		const timeLimit = createProblemRequest.timeLimit ?? 100; // Default to 100ms if not provided
+
 		const existProblem = await this.problemsRepository.findOneBy({
 			title: createProblemRequest.title,
 		});
@@ -76,25 +81,24 @@ export class ProblemService {
 			where: { id: userId },
 		});
 
-		const testCasesResult = await Promise.all(
-			createProblemRequest.testCases.map(async (testCase) => {
-				const expectOutput =
-					await this.testCaseService.getExpectedOutput(
-						createProblemRequest.solutionCode,
-						testCase.input,
-						createProblemRequest.timeLimit,
-					);
-				return {
-					...testCase,
-					expectOutput,
-				};
+		const codeResults = await this.runCodeService.runCodeMultipleInputs(
+			createProblemRequest.testCases.map((testCase) => testCase.input),
+			createProblemRequest.solutionCode,
+			timeLimit, // Use the potentially defaulted timeLimit
+		);
+
+		const testCasesWithOutput = createProblemRequest.testCases.map(
+			(testCase, index) => ({
+				...testCase,
+				expectOutput: codeResults[index].output,
 			}),
 		);
 
 		const problem = this.problemsRepository.create({
 			...createProblemRequest,
+			timeLimit: timeLimit, // Ensure the defaulted timeLimit is saved
 			author: author,
-			testCases: testCasesResult,
+			testCases: testCasesWithOutput,
 		});
 
 		return this.problemsRepository.save(problem);
@@ -337,7 +341,7 @@ export class ProblemService {
 				await this.runCodeService.runCodeMultipleInputs(
 					problem.testCases.map((testCase) => testCase.input),
 					updateProblemRequest.solutionCode,
-					newTimeLimit,
+					newTimeLimit, 
 				);
 
 			problem.testCases.forEach((testCase, index) => {
@@ -470,7 +474,7 @@ export class ProblemService {
 	) {
 		const { code } = problemSubmission;
 		const problem = await this.findOne(problemId);
-		const { testCases } = problem;
+		const { testCases, timeLimit } = problem; // Destructure timeLimit here
 		if (testCases.length === 0)
 			throw new BadRequestException('no test case for this problem');
 		const runCodeResponse = await Promise.all(
@@ -478,7 +482,7 @@ export class ProblemService {
 				this.runCodeService.runCode(
 					testCase.input,
 					code,
-					problem.timeLimit,
+					timeLimit, // Use problem's timeLimit
 				),
 			),
 		);
@@ -511,7 +515,7 @@ export class ProblemService {
 				return this.runCodeService.runCode(
 					testCase.input,
 					JSON.parse(problem.solutionCode),
-					problem.timeLimit,
+					problem.timeLimit, // Use problem's timeLimit
 				);
 			}),
 		);
