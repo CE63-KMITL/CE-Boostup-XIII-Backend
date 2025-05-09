@@ -17,6 +17,11 @@ export const dotenvConfig = Joi.object({
 	JWT_ACCESS_EXPIRATION: Joi.string()
 		.required()
 		.pattern(/^\d+[smhd]$/),
+	REWARDS: Joi.object({
+		id: Joi.number().integer().positive().required(),
+		name: Joi.string().min(1).required(),
+		points: Joi.number().integer().min(0).required(),
+	}),
 	REDIS_HOST: Joi.string().required(),
 	OTP_EXPIRY_MINUTE: Joi.number().required(),
 	OTP_LENGTH: Joi.number().required(),

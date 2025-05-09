@@ -2,18 +2,22 @@ import {
 	HttpException,
 	HttpStatus,
 	Injectable,
+	NotFoundException,
 	OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { HouseScore } from './house_score.entity';
 import { House } from 'src/shared/enum/house.enum';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class HouseScoreService implements OnModuleInit {
 	constructor(
 		@InjectRepository(HouseScore)
 		private readonly scoreRepository: Repository<HouseScore>,
+		@InjectRepository(User)
+		private readonly userRepo: Repository<User>,
 	) {}
 
 	async onModuleInit() {
@@ -59,108 +63,33 @@ export class HouseScoreService implements OnModuleInit {
 		}
 	}
 
-	// เพิ่มคะแนน
-	async addScore(name: String, value: number) {
-		const score = await this.scoreRepository.findOne({ where: { name } });
-
-		if (!score) {
-			console.log(`Score not found for ${name} group`);
-			throw new HttpException(
-				{ success: false, message: 'Score not found' },
-				HttpStatus.NOT_FOUND,
-			);
-		}
-
-		score.value += value;
-
-		try {
-			const updatedScore = await this.scoreRepository.save(score);
-			return {
-				success: true,
-				message: 'Score updated successfully',
-				data: updatedScore,
-			};
-		} catch (error) {
-			console.error('Error adding score:', error);
-			throw new HttpException(
-				{ success: false, message: 'Failed to add score' },
-				HttpStatus.INTERNAL_SERVER_ERROR,
-			);
-		}
-	}
 
 	// ปรับคะแนน
 	async changeScore(name: String, value: number) {
-		const score = await this.scoreRepository.findOne({ where: { name } });
+		const house = await this.scoreRepository.findOneBy({name: name });
+		if (!house) throw new NotFoundException('Group not found')
 
-		if (!score) {
-			console.log(`Score not found for ${name} group`);
-			throw new HttpException(
-				{ success: false, message: 'Score not found' },
-				HttpStatus.NOT_FOUND,
-			);
+		const amount = value - house.value;
+
+		const users = await this.userRepo.find({ where: { house:house.name as House } });
+		if (users.length === 0) return;
+
+		const perUser = Math.floor(amount / users.length);
+
+		for (const user of users) {
+			user.score += perUser;
 		}
 
-		score.value = value;
+		await this.userRepo.save(users);
 
-		try {
-			const updatedScore = await this.scoreRepository.save(score);
-			return {
-				success: true,
-				message: 'Score updated successfully',
-				data: updatedScore,
-			};
-		} catch (error) {
-			console.error('Error adding score:', error);
-			throw new HttpException(
-				{ success: false, message: 'Failed to add score' },
-				HttpStatus.INTERNAL_SERVER_ERROR,
-			);
-		}
-	}
+		house.value = value;
+		await this.scoreRepository.save(house);
 
-	// ลดคะแนน
-	async subtractScore(name: string, value: number) {
-		const score = await this.scoreRepository.findOne({ where: { name } });
-
-		if (!score) {
-			console.log(`Score not found for ${name} group`);
-			throw new HttpException(
-				{ success: false, message: 'Score not found' },
-				HttpStatus.NOT_FOUND,
-			);
-		}
-
-		// ตรวจสอบว่าคะแนนหลังจากการลดแล้วไม่ต่ำกว่า 0
-		if (score.value - value < 0) {
-			console.log(
-				`Cannot subtract from ${name} group as it would result in negative score`,
-			);
-			throw new HttpException(
-				{
-					success: false,
-					message: 'Cannot subtract score, it will result in a negative value',
-				},
-				HttpStatus.BAD_REQUEST,
-			);
-		}
-
-		score.value -= value;
-
-		try {
-			const updatedScore = await this.scoreRepository.save(score);
-			return {
-				success: true,
-				message: 'Score subtracted successfully',
-				data: updatedScore,
-			};
-		} catch (error) {
-			console.error('Error subtracting score:', error);
-			throw new HttpException(
-				{ success: false, message: 'Failed to subtract score' },
-				HttpStatus.INTERNAL_SERVER_ERROR,
-			);
-		}
+		return {
+			success: true,
+			message: `${house.name} score updated to ${value}`,
+			perUserEffect: perUser,
+  };
 	}
 
 	// ค้นหาคะแนนของเเต่ละบ้าน
@@ -221,29 +150,36 @@ export class HouseScoreService implements OnModuleInit {
 		return { success: true, message: 'Score removed successfully' };
 	}
 
-	async update(name: string, value: number) {
-		try {
-			const score = await this.scoreRepository.findOne({
-				where: { name },
-			});
-			if (!score)
-				throw new HttpException(
-					{ success: false, message: 'Score not found' },
-					HttpStatus.NOT_FOUND,
-				);
-
-			score.value = value;
-			await this.scoreRepository.save(score);
-			return {
-				success: true,
-				message: 'Score updated successfully',
-				score,
-			};
-		} catch (error) {
-			throw new HttpException(
-				{ success: false, message: 'Failed to update score' },
-				HttpStatus.INTERNAL_SERVER_ERROR,
-			);
+	async adjustHouseValue(name: string, amount: number) {
+		const house = await this.scoreRepository.findOneBy({ name });
+		if (!house) throw new NotFoundException('House not found');
+	  
+		const users = await this.userRepo.find({
+		  where: { house: name as House },
+		});
+		if (users.length === 0) return;
+	  
+		const perUser = Math.floor(amount / users.length);
+	  
+		for (const user of users) {
+		  user.score += perUser;
+		  if (user.score < 0){
+			user.score=0
+		  }
 		}
-	}
+		await this.userRepo.save(users);
+	  
+		house.value += amount;
+		if (house.value < 0){
+			house.value=0
+		  }
+		await this.scoreRepository.save(house);
+	  
+		return {
+		  message: amount >= 0 ? `เพิ่มคะแนนกลุ่ม ${name}` : `ลดคะแนนกลุ่ม ${name}`,
+		  totalChange: amount,
+		  perUserEffect: perUser,
+		  newHouseScore: house.value,
+		};
+	  }
 }
