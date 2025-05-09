@@ -51,7 +51,7 @@ export class TestCaseService {
 		);
 		if (runCodeResult.exit_status != RunCodeExitStatusEnum.SUCCESS) {
 			throw new BadRequestException(
-				`Test case failed ${runCodeResult.output}`,
+				`Test case failed at input:\n\n${input}\n\noutput:\n\n${runCodeResult.output}`,
 			);
 		}
 		return runCodeResult.output;

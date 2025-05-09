@@ -70,17 +70,21 @@ export class ProblemService {
 			where: { id: userId },
 		});
 
-		const testCasesResult = [];
-		for (let testCase of createProblemRequest.testCases) {
-			testCasesResult.push({
-				...testCase,
-				expectOutput: await this.testCaseService.getExpectedOutput(
-					createProblemRequest.solutionCode,
-					testCase.input,
-					createProblemRequest.timeLimit,
-				),
-			});
-		}
+		const testCasesWithOutputs = await Promise.all(
+			createProblemRequest.testCases.map(async (testCase) => {
+				const expectOutput =
+					await this.testCaseService.getExpectedOutput(
+						createProblemRequest.solutionCode,
+						testCase.input,
+						createProblemRequest.timeLimit,
+					);
+				return {
+					...testCase,
+					expectOutput,
+				};
+			}),
+		);
+		const testCasesResult = testCasesWithOutputs;
 
 		const problem = this.problemsRepository.create({
 			...createProblemRequest,
