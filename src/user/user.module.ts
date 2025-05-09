@@ -6,10 +6,14 @@ import { UserController } from './user.controller';
 import { User } from './user.entity';
 import { UserService } from './user.service';
 import { HouseScoreModule } from 'src/house_score/house_score.module';
+import { ProblemModule } from 'src/problem/problem.module';
+import { HouseScore } from 'src/house_score/house_score.entity';
 
 @Module({
 	imports: [
-		TypeOrmModule.forFeature([User, ScoreLog, ProblemStatus]),
+		TypeOrmModule.forFeature([User, ScoreLog, ProblemStatus, HouseScore]),
+		forwardRef(() => HouseScoreModule),
+		forwardRef(() => ProblemModule),
 	],
 	controllers: [UserController],
 	providers: [UserService],

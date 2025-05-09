@@ -9,7 +9,6 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { Role } from 'src/shared/enum/role.enum';
 import { CreateUserDto } from '../dtos/create-user.dto';
-import { AuthService } from 'src/auth/auth.service';
 import { UserService } from '../user.service';
 import { AllowRole } from 'src/auth/decorators/auth.decorator';
 

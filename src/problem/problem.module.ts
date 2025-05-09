@@ -10,9 +10,9 @@ import { TestCaseModule } from './test_case/test-case.module';
 @Module({
 	imports: [
 		TypeOrmModule.forFeature([Problem]),
-		UserModule,
-		RunCodeModule,
-		TestCaseModule,
+		forwardRef(() => UserModule),
+		forwardRef(() => RunCodeModule),
+		forwardRef(() => TestCaseModule),
 	],
 	controllers: [ProblemController],
 	providers: [ProblemService],

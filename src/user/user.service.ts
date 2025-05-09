@@ -48,7 +48,8 @@ export class UserService implements OnModuleInit {
 
 		@Inject(forwardRef(() => HouseScoreService))
 		private readonly houseScoreService: HouseScoreService,
-		
+
+		@Inject(forwardRef(() => ProblemService))
 		private readonly problemService: ProblemService,
 	) {}
 

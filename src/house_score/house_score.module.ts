@@ -3,10 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { HouseScoreService } from './house_score.service';
 import { HouseScoreController } from './house_score.controller';
 import { HouseScore } from './house_score.entity';
-import { UserModule } from 'src/user/user.module';
+import { User } from 'src/user/user.entity';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([HouseScore]), UserModule],
+	imports: [TypeOrmModule.forFeature([HouseScore, User])],
 	controllers: [HouseScoreController],
 	providers: [HouseScoreService],
 	exports: [HouseScoreService],

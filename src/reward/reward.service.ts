@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Redeem } from './redeem.entity';
-import { HouseScore } from '../house_score/house_score.entity';
 import { User } from '../user/user.entity';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
@@ -12,132 +11,126 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class RewardService {
-  private rewards: { id: string; name: string; points: number }[];
+	private rewards: { id: string; name: string; points: number }[];
 
-  constructor(
-    private configService: ConfigService,
-    @InjectRepository(Redeem)
-    @InjectRepository(HouseScore)
-    @InjectRepository(User)
-    private readonly houseScoreRepo: Repository<HouseScore>,
-    public readonly userRepo: Repository<User>,
-    private redeemRepo: Repository<Redeem>,
-  ) {
-    const rewardsString = this.configService.get<string>('REWARDS');
-    this.rewards = rewardsString ? JSON.parse(rewardsString) : [];
-  }
+	constructor(
+		private configService: ConfigService,
 
-  getAllRewards() {
-    return this.rewards;
-  }
+		@InjectRepository(User)
+		public readonly userRepo: Repository<User>,
 
-  // async redeemReward(userId: string, rewardId: string) {
-  //   const reward = this.rewards.find(r => r.id === rewardId);
-  //   let id=userId
-  //   if (!reward) {
-  //       throw new NotFoundException('Reward not found');
-  //   }
-  //   const user = await this.userRepo.findOne({ where: { id } });
-  //   if(!user){
-  //       throw new NotFoundException('User not found');
-  //   }
+		@InjectRepository(Redeem)
+		private redeemRepo: Repository<Redeem>,
+	) {
+		this.rewards = this.configService.getOrThrow('REWARDS');
+	}
 
+	getAllRewards() {
+		return this.rewards;
+	}
 
-  //   if (user.score<reward.points){
-  //       throw new BadRequestException('Insufficient score');
-  //   }
-    
+	// async redeemReward(userId: string, rewardId: string) {
+	//   const reward = this.rewards.find(r => r.id === rewardId);
+	//   let id=userId
+	//   if (!reward) {
+	//       throw new NotFoundException('Reward not found');
+	//   }
+	//   const user = await this.userRepo.findOne({ where: { id } });
+	//   if(!user){
+	//       throw new NotFoundException('User not found');
+	//   }
 
-  //   const redeem = this.redeemRepo.create({ userId, rewardId,isApproved: false });
+	//   if (user.score<reward.points){
+	//       throw new BadRequestException('Insufficient score');
+	//   }
 
-  //   user.rewards.push({ redeemId: redeem.id,rewardId:rewardId});
-  //   await this.userRepo.save(user);
+	//   const redeem = this.redeemRepo.create({ userId, rewardId,isApproved: false });
 
-    
-  //   return {
-  //       success: true,
-  //       message: "Redeem created successfully",
-  //       data:this.redeemRepo.save(redeem)
-  //       };
-  //   }
-  async redeemReward(userId: string, rewardId: string) {
-      const user = await this.userRepo.findOneBy({ id: userId });
-      const reward = this.rewards.find(r => r.id === rewardId);
-    
-      if (!user || !reward) throw new NotFoundException();
-    
-      if (user.score < reward.points) {
-        throw new BadRequestException('คะแนนไม่เพียงพอ');
-      }
-    
-      const alreadyRedeemed = await this.redeemRepo.findOneBy({
-        userId: userId ,
-        rewardId: rewardId
-      });
-    
-      if (alreadyRedeemed) {
-        throw new BadRequestException('คุณแลกของชิ้นนี้ไปแล้ว');
-      }
-    
-    
-      const redeem = this.redeemRepo.create({ userId, rewardId });
+	//   user.rewards.push({ redeemId: redeem.id,rewardId:rewardId});
+	//   await this.userRepo.save(user);
 
-      return {
-        success: true,
-        message: "Redeem created successfully",
-        data : this.redeemRepo.save(redeem)
-        };
-    }
+	//   return {
+	//       success: true,
+	//       message: "Redeem created successfully",
+	//       data:this.redeemRepo.save(redeem)
+	//       };
+	//   }
+	async redeemReward(userId: string, rewardId: string) {
+		const user = await this.userRepo.findOneBy({ id: userId });
+		const reward = this.rewards.find((r) => r.id === rewardId);
 
+		if (!user || !reward) throw new NotFoundException();
 
-  async cancelRedeem(id: string) {
-    const redeem = await this.redeemRepo.findOneBy({ id });
-    if (!redeem) {
-      throw new NotFoundException('Redeem not found');
-    }
-  
-    if (redeem.isApproved) {
-      throw new BadRequestException('Cannot cancel this redeem');
-    }
-    
-    await this.redeemRepo.delete(id);
+		if (user.score < reward.points) {
+			throw new BadRequestException('คะแนนไม่เพียงพอ');
+		}
 
-    return { 
-        success: true,
-        message: 'Redeem canceled successfully'
-    };
-  }
+		const alreadyRedeemed = await this.redeemRepo.findOneBy({
+			userId: userId,
+			rewardId: rewardId,
+		});
 
-  async getUserRewardStatus(userId: string) {
-    const user = await this.userRepo.findOneBy({ id: userId });
-    if (!user) throw new NotFoundException('User not found');
+		if (alreadyRedeemed) {
+			throw new BadRequestException('คุณแลกของชิ้นนี้ไปแล้ว');
+		}
 
-    const redeemed = await this.redeemRepo.find({
-      where: { userId },
-    });
+		const redeem = this.redeemRepo.create({ userId, rewardId });
 
-    const redeemedIds = new Set(redeemed.map(r => r.rewardId));
+		return {
+			success: true,
+			message: 'Redeem created successfully',
+			data: this.redeemRepo.save(redeem),
+		};
+	}
 
-    const result = {
-      redeemed: [],
-      available: [],
-      locked: [],
-    };
+	async cancelRedeem(id: string) {
+		const redeem = await this.redeemRepo.findOneBy({ id });
+		if (!redeem) {
+			throw new NotFoundException('Redeem not found');
+		}
 
-    for (const reward of this.rewards) {
-      if (redeemedIds.has(reward.id)) {
-        result.redeemed.push(reward);
-      } else if (user.score >= reward.points) {
-        result.available.push(reward);
-      } else {
-        result.locked.push(reward);
-      }
-    }
+		if (redeem.isApproved) {
+			throw new BadRequestException('Cannot cancel this redeem');
+		}
 
-    return { 
-        success: true,
-        message: 'get redeem successfully',
-        data : result
-    };
-  }
-} 
+		await this.redeemRepo.delete(id);
+
+		return {
+			success: true,
+			message: 'Redeem canceled successfully',
+		};
+	}
+
+	async getUserRewardStatus(userId: string) {
+		const user = await this.userRepo.findOneBy({ id: userId });
+		if (!user) throw new NotFoundException('User not found');
+
+		const redeemed = await this.redeemRepo.find({
+			where: { userId },
+		});
+
+		const redeemedIds = new Set(redeemed.map((r) => r.rewardId));
+
+		const result = {
+			redeemed: [],
+			available: [],
+			locked: [],
+		};
+
+		for (const reward of this.rewards) {
+			if (redeemedIds.has(reward.id)) {
+				result.redeemed.push(reward);
+			} else if (user.score >= reward.points) {
+				result.available.push(reward);
+			} else {
+				result.locked.push(reward);
+			}
+		}
+
+		return {
+			success: true,
+			message: 'get redeem successfully',
+			data: result,
+		};
+	}
+}

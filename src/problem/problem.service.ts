@@ -43,7 +43,7 @@ export class ProblemService {
 		@InjectRepository(Problem)
 		private readonly problemsRepository: Repository<Problem>,
 
-		
+		@Inject(forwardRef(() => UserService))
 		private readonly userService: UserService,
 
 		@Inject(forwardRef(() => RunCodeService))
