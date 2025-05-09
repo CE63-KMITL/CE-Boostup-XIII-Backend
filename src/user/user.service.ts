@@ -28,6 +28,7 @@ import { ProblemStatus } from './problem_status/problem-status.entity';
 import { ScoreLog } from './score/score-log.entity';
 import { User } from './user.entity';
 import { HouseScore } from 'src/house_score/house_score.entity';
+import { HouseScoreService } from 'src/house_score/house_score.service';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -41,6 +42,7 @@ export class UserService implements OnModuleInit {
 		private readonly configService: ConfigService,
 		@InjectRepository(HouseScore)
 		private readonly HouseScoreRepo:Repository<HouseScore>
+		private readonly houseScoreService: HouseScoreService,
 	) {}
 
 	async onModuleInit() {
@@ -228,6 +230,42 @@ export class UserService implements OnModuleInit {
 		return response.map((user) => new UserResponseDto(user));
 	}
 
+	async updateHouseByEmail(
+		email: string,
+		house: House,
+	): Promise<UserResponseDto> {
+		if (!Object.values(House).includes(house)) {
+			throw new BadRequestException(
+				`House '${house}' is not a valid house.`,
+			);
+		}
+
+		const user = await this.userRepository.findOne({ where: { email } });
+		if (!user) {
+			throw new NotFoundException(
+				`User with email '${email}' not found`,
+			);
+		}
+
+		user.house = house;
+		const updatedUser = await this.userRepository.save(user);
+
+		return new UserResponseDto(updatedUser);
+	}
+
+	async removeUserFromHouse(email: string): Promise<UserResponseDto> {
+		const user = await this.userRepository.findOne({ where: { email } });
+		if (!user) {
+			throw new NotFoundException(
+				`User with email '${email}' not found`,
+			);
+		}
+
+		user.house = null;
+		const updatedUser = await this.userRepository.save(user);
+
+		return new UserResponseDto(updatedUser);
+	}
 	//-------------------------------------------------------
 	// Score Management
 	//-------------------------------------------------------
@@ -245,6 +283,8 @@ export class UserService implements OnModuleInit {
 
 		user.score += amount;
 		if (user.score < 0) user.score = 0;
+
+		this.houseScoreService.changeScore(user.house, amount);
 
 		const scoreLog = new ScoreLog();
 		scoreLog.amount = amount;
@@ -338,16 +378,24 @@ export class UserService implements OnModuleInit {
 				lastSubmitted: new Date(),
 			});
 		} else {
-			if (userProblem.status === ProblemStatusEnum.DONE) return;
 			await this.problemStatusRepository.update(userProblem, {
 				code,
-				status,
+				status:
+					userProblem.status === ProblemStatusEnum.DONE
+						? ProblemStatusEnum.DONE
+						: status,
 				lastSubmitted: new Date(),
 			});
 		}
-		if (status === ProblemStatusEnum.DONE) {
+		if (
+			status === ProblemStatusEnum.DONE &&
+			userProblem.status === ProblemStatusEnum.IN_PROGRESS
+		) {
 			//change this to actual logic to calculate score
-			const score = 100 * difficulty;
+			const score =
+				difficulty <= 3
+					? difficulty
+					: (difficulty * (difficulty - 1)) / 2;
 			this.modifyScore(userId, score, userId);
 		}
 	}

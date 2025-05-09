@@ -7,10 +7,12 @@ import { UserService } from '../user.service';
 import { DevUserController } from './user.controller.dev';
 import { AuthService } from 'src/auth/auth.service';
 import { MailModule } from 'src/mail/mail.module';
+import { HouseScoreModule } from 'src/house_score/house_score.module';
 
 @Module({
 	imports: [
 		TypeOrmModule.forFeature([User, ScoreLog, ProblemStatus]),
+		HouseScoreModule,
 		MailModule,
 	],
 	controllers: [DevUserController],

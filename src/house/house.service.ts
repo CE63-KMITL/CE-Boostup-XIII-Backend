@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { House } from 'src/shared/enum/house.enum';
 import { UserService } from 'src/user/user.service';
 

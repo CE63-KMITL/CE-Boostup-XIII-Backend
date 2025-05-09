@@ -39,10 +39,15 @@ export class TestCaseService {
 		}
 	}
 
-	async getExpectedOutput(solutionCode: string, input: string) {
+	async getExpectedOutput(
+		solutionCode: string,
+		input: string,
+		timeLimit: number,
+	) {
 		const runCodeResult = await this.runCodeService.runCode(
 			input,
 			solutionCode,
+			timeLimit,
 		);
 		if (runCodeResult.exit_status != RunCodeExitStatusEnum.SUCCESS) {
 			throw new BadRequestException(
@@ -61,6 +66,7 @@ export class TestCaseService {
 		const expectOutput = await this.getExpectedOutput(
 			problem.solutionCode,
 			createTestCaseDto.input,
+			problem.timeLimit,
 		);
 
 		return await this.testCaseRepository.save({
