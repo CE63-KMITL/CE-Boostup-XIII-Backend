@@ -1,5 +1,7 @@
 import {
 	BadRequestException,
+	forwardRef,
+	Inject,
 	Injectable,
 	InternalServerErrorException,
 	NotFoundException,
@@ -29,6 +31,7 @@ import { ScoreLog } from './score/score-log.entity';
 import { User } from './user.entity';
 import { HouseScore } from 'src/house_score/house_score.entity';
 import { HouseScoreService } from 'src/house_score/house_score.service';
+import { ProblemService } from 'src/problem/problem.service';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -42,7 +45,11 @@ export class UserService implements OnModuleInit {
 		private readonly configService: ConfigService,
 		@InjectRepository(HouseScore)
 		private readonly HouseScoreRepo: Repository<HouseScore>,
+
+		@Inject(forwardRef(() => HouseScoreService))
 		private readonly houseScoreService: HouseScoreService,
+		
+		private readonly problemService: ProblemService,
 	) {}
 
 	async onModuleInit() {
@@ -273,6 +280,7 @@ export class UserService implements OnModuleInit {
 		userId: string,
 		amount: number,
 		modifiedById: string,
+		message: string,
 	): Promise<UserResponseDto> {
 		const user = await this.userRepository.findOneOrFail({
 			where: { id: userId },
@@ -290,19 +298,20 @@ export class UserService implements OnModuleInit {
 		scoreLog.amount = amount;
 		scoreLog.user = user;
 		scoreLog.modifiedBy = modifiedBy;
+		scoreLog.message = message;
 		await this.scoreLogRepository.save(scoreLog);
 		const response = await this.userRepository.save(user);
 		const house = await this.HouseScoreRepo.findOneBy({ id: user.house });
 		if (!house) throw new NotFoundException('House not found');
 
-		let newScore = house.value + amount;
-		if (newScore < 0) {
-			newScore = 0;
+		house.value += amount;
+		if (house.value < 0) {
+			house.value = 0;
 		}
 
 		await this.HouseScoreRepo.update(
 			{ id: user.house },
-			{ value: newScore },
+			{ value: house.value },
 		);
 		return new UserResponseDto(response);
 	}
@@ -392,14 +401,12 @@ export class UserService implements OnModuleInit {
 		}
 		if (
 			status === ProblemStatusEnum.DONE &&
-			userProblem.status === ProblemStatusEnum.IN_PROGRESS
+			userProblem?.status !== ProblemStatusEnum.DONE
 		) {
 			//change this to actual logic to calculate score
-			const score =
-				difficulty <= 3
-					? difficulty
-					: (difficulty * (difficulty - 1)) / 2;
-			this.modifyScore(userId, score, userId);
+			const score = this.problemService.calScore(difficulty);
+
+			this.modifyScore(userId, score, userId, 'แก้โจทย์');
 		}
 	}
 

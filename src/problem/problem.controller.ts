@@ -43,7 +43,7 @@ import { RunCodeResponseDto } from 'src/run_code/dtos/run-code-response.dto';
 @Controller('problem')
 @ApiTags('Problem')
 export class ProblemController {
-	constructor(private readonly problemService: ProblemService) { }
+	constructor(private readonly problemService: ProblemService) {}
 
 	@ApiCreatedResponse({ type: ProblemResponseDto })
 	@AllowRole(Role.STAFF)
@@ -102,13 +102,13 @@ export class ProblemController {
 	@ApiOkResponse({ type: ProblemResponseDto })
 	@AllowRole(Role.STAFF)
 	@Patch(':id')
-	async updateDraft(
+	async update(
 		@Param('id', ParseIntPipe) id: number,
 		@Body() updateProblemRequest: UpdateProblemDto,
 		@Req() req: authenticatedRequest,
 	): Promise<ProblemResponseDto> {
 		return new ProblemResponseDto(
-			await this.problemService.updateDraft(
+			await this.problemService.update(
 				id,
 				updateProblemRequest,
 				req.user,
@@ -127,11 +127,11 @@ export class ProblemController {
 
 	@AllowRole(Role.STAFF)
 	@Post('approve/:id')
-	async approveProblem(
+	async approve(
 		@Param('id', ParseIntPipe) id: number,
 		@Req() req: authenticatedRequest,
 	) {
-		this.problemService.approveProblem(id, req.user);
+		this.problemService.approve(id, req.user);
 	}
 
 	@Post('run-code/:id')
@@ -165,7 +165,7 @@ export class ProblemController {
 	): Promise<ProblemSubmissionResponseDto[]> {
 		return await this.problemService.submission(
 			problemSubmission,
-			req.user,
+			req.user.userId,
 			problemId,
 		);
 	}

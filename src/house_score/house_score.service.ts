@@ -64,33 +64,13 @@ export class HouseScoreService implements OnModuleInit {
 	}
 
 	// ปรับคะแนน
-	async changeScore(name: String, value: number) {
+	async setScore(name: string, value: number) {
 		const house = await this.houseRepository.findOneBy({ name: name });
 		if (!house) throw new NotFoundException('Group not found');
 
 		const amount = value - house.value;
 
-		const users = await this.userRepository.find({
-			where: { house: house.name as House },
-		});
-		if (users.length === 0) return;
-
-		const perUser = Math.floor(amount / users.length);
-
-		for (const user of users) {
-			user.score += perUser;
-		}
-
-		await this.userRepository.save(users);
-
-		house.value = value;
-		await this.houseRepository.save(house);
-
-		return {
-			success: true,
-			message: `${house.name} score updated to ${value}`,
-			perUserEffect: perUser,
-		};
+		return await this.changeScore(name, amount);
 	}
 
 	// ค้นหาคะแนนของเเต่ละบ้าน
@@ -151,7 +131,7 @@ export class HouseScoreService implements OnModuleInit {
 		return { success: true, message: 'Score removed successfully' };
 	}
 
-	async adjustHouseValue(name: string, amount: number) {
+	async changeScore(name: string, amount: number) {
 		const house = await this.houseRepository.findOneBy({ name });
 		if (!house) throw new NotFoundException('House not found');
 

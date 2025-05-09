@@ -145,6 +145,7 @@ export class UserController {
 			modifyScoreDto.userId,
 			Math.abs(modifyScoreDto.amount),
 			req.user.userId,
+			modifyScoreDto.message,
 		);
 	}
 
@@ -163,6 +164,7 @@ export class UserController {
 			modifyScoreDto.userId,
 			-Math.abs(modifyScoreDto.amount),
 			req.user.userId,
+			modifyScoreDto.message,
 		);
 	}
 

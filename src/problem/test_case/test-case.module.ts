@@ -9,8 +9,8 @@ import { RunCodeModule } from 'src/run_code/run-code.module';
 @Module({
 	imports: [
 		TypeOrmModule.forFeature([TestCase]),
+		RunCodeModule,
 		forwardRef(() => ProblemModule),
-		forwardRef(() => RunCodeModule),
 	],
 	controllers: [TestCaseController],
 	providers: [TestCaseService],

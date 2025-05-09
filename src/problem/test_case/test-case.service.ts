@@ -25,8 +25,10 @@ export class TestCaseService {
 	constructor(
 		@InjectRepository(TestCase)
 		private readonly testCaseRepository: Repository<TestCase>,
+
 		@Inject(forwardRef(() => ProblemService))
 		private readonly problemService: ProblemService,
+		@Inject(forwardRef(() => RunCodeService))
 		private readonly runCodeService: RunCodeService,
 	) {}
 

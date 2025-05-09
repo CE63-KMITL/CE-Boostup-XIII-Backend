@@ -8,4 +8,8 @@ export class ProblemSubmissionDto {
 	@IsNotEmpty()
 	@IsString()
 	code: string;
+
+	constructor({ code }: { code: string }) {
+		this.code = code;
+	}
 }

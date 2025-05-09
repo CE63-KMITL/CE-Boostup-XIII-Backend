@@ -1,6 +1,8 @@
 import {
 	BadRequestException,
 	ForbiddenException,
+	forwardRef,
+	Inject,
 	Injectable,
 	NotFoundException,
 	UnauthorizedException,
@@ -34,17 +36,21 @@ import {
 import { ProblemStatus } from 'src/user/problem_status/problem-status.entity';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
 import { TestCaseService } from './test_case/test-case.service';
-import { HouseScoreService } from 'src/house_score/house_score.service';
 
 @Injectable()
 export class ProblemService {
 	constructor(
 		@InjectRepository(Problem)
 		private readonly problemsRepository: Repository<Problem>,
+
+		
 		private readonly userService: UserService,
+
+		@Inject(forwardRef(() => RunCodeService))
 		private readonly runCodeService: RunCodeService,
+
+		@Inject(forwardRef(() => TestCaseService))
 		private readonly testCaseService: TestCaseService,
-		private readonly houseScoreService: HouseScoreService,
 	) {}
 
 	/*
@@ -291,87 +297,155 @@ export class ProblemService {
 		return result;
 	}
 
-	async updateDraft(
+	async update(
 		id: number,
 		updateProblemRequest: UpdateProblemDto,
 		user: jwtPayloadDto,
 	): Promise<Problem> {
-		try {
-			const problem = await this.problemsRepository.findOneBy({
-				id: id,
-			});
-			const problemAuthorId = problem.author.id;
-			// Only owner of the problem can edit
-			if (problemAuthorId == user.userId) {
-				await this.problemsRepository.update(
-					id,
-					updateProblemRequest,
-				);
-				// Update problem status if there is an update to solution code
-				if ('solutionCode' in updateProblemRequest) {
-					problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
-					// Loop through all testCases and runCode with their input
-					for (var testCase of problem.testCases) {
-						const input = testCase.input;
-						const code = updateProblemRequest.solutionCode;
-						const result = await this.runCodeService.runCode(
-							input,
-							code,
-							problem.timeLimit,
-						);
-						// Set to new output
-						testCase.expectOutput = result.output;
-					}
-					await this.problemsRepository.save(problem);
+		const problem = await this.problemsRepository.findOne({
+			where: { id: id },
+			relations: ['author', 'testCases'],
+		});
 
-					// Remove user and house score
-					const allUsers = await this.userService.findAll({});
-					for (let userResponse of allUsers.data) {
-						const problemStatus =
-							await this.userService.findOneProblemStatus(
-								userResponse.id,
-								problem.id,
-							);
-						// We only remove score when the problem was finished
-						if (
-							problemStatus != null &&
-							problemStatus.status ==
-								ProblemStatusEnum.DONE
-						) {
-							this.userService.setProblemStatus(
-								problem.id,
-								userResponse.id,
-							);
-							// No function for calculating score?
-							const score = 100 * problem.difficulty;
-							this.userService.modifyScore(
-								userResponse.id,
-								score,
-								userResponse.id,
-							);
-							this.houseScoreService.adjustHouseValue(
-								userResponse.house,
-								score,
-							);
-						}
-					}
-				}
-				return this.findOne(id);
-			} else {
-				throw new UnauthorizedException(
-					'must be the owner of problem',
-				);
-			}
-		} catch (error) {
-			throw new NotFoundException('problem not found');
+		if (!problem) {
+			throw new NotFoundException(`Problem with ID ${id} not found`);
 		}
+
+		if (problem.author.id !== user.userId) {
+			throw new UnauthorizedException(
+				'Must be the owner of the problem to update.',
+			);
+		}
+
+		const originalDifficulty = problem.difficulty;
+		let solutionCodeChanged = false;
+
+		//-------------------------------------------------------
+		// Handle solution code update
+		//-------------------------------------------------------
+		if (
+			updateProblemRequest.solutionCode &&
+			updateProblemRequest.solutionCode.trim() !==
+				problem.solutionCode.trim()
+		) {
+			solutionCodeChanged = true;
+			problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
+
+			const newTimeLimit =
+				updateProblemRequest.timeLimit ?? problem.timeLimit;
+			const codeResult =
+				await this.runCodeService.runCodeMultipleInputs(
+					problem.testCases.map((testCase) => testCase.input),
+					updateProblemRequest.solutionCode,
+					newTimeLimit,
+				);
+
+			problem.testCases.forEach((testCase, index) => {
+				testCase.expectOutput = codeResult[index];
+			});
+
+			problem.solutionCode = updateProblemRequest.solutionCode;
+
+			const allUsers = await this.userService.findAll({});
+			for (const userResponse of allUsers.data) {
+				const problemStatus =
+					await this.userService.findOneProblemStatus(
+						userResponse.id,
+						problem.id,
+					);
+				if (
+					problemStatus &&
+					problemStatus.status === ProblemStatusEnum.DONE
+				) {
+					await this.userService.updateProblemStatus(
+						problem.id,
+						userResponse.id,
+						ProblemStatusEnum.IN_PROGRESS,
+						problemStatus.code,
+						problem.difficulty,
+					);
+
+					const scoreToRemove =
+						this.calScore(originalDifficulty);
+
+					await this.userService.modifyScore(
+						userResponse.id,
+						-scoreToRemove,
+						user.userId,
+						`โจทย์มีการแก้ไข้ : ${problem.title}`,
+					);
+
+					await this.submission(
+						new ProblemSubmissionDto({
+							code: problemStatus.code,
+						}),
+						userResponse.id,
+						problem.id,
+					);
+				}
+			}
+		}
+
+		//-------------------------------------------------------
+		// Handle difficulty update (only if solution code didn't change)
+		//-------------------------------------------------------
+		if (
+			!solutionCodeChanged &&
+			updateProblemRequest.difficulty &&
+			updateProblemRequest.difficulty !== originalDifficulty
+		) {
+			const newDifficulty = updateProblemRequest.difficulty;
+			const allUsers = await this.userService.findAll({}); // Note: This might be paginated.
+			for (const userResponse of allUsers.data) {
+				const problemStatus =
+					await this.userService.findOneProblemStatus(
+						userResponse.id,
+						problem.id,
+					);
+				if (
+					problemStatus &&
+					problemStatus.status === ProblemStatusEnum.DONE
+				) {
+					const scoreToRemove =
+						this.calScore(originalDifficulty);
+					await this.userService.modifyScore(
+						userResponse.id,
+						-scoreToRemove,
+						user.userId,
+						`Difficulty updated for problem: ${problem.title}`,
+					);
+
+					const scoreToAdd = this.calScore(newDifficulty);
+					await this.userService.modifyScore(
+						userResponse.id,
+						scoreToAdd,
+						user.userId,
+						`Difficulty updated for problem: ${problem.title}`,
+					);
+					// If house scores need explicit adjustment, add here:
+					// await this.houseScoreService.modifyScore(userResponse.houseId, -scoreToRemove, ...);
+					// await this.houseScoreService.modifyScore(userResponse.houseId, scoreToAdd, ...);
+				}
+			}
+			problem.difficulty = newDifficulty;
+		}
+
+		//-------------------------------------------------------
+		// Apply other updates
+		//-------------------------------------------------------
+		const { solutionCode, difficulty, ...otherUpdates } =
+			updateProblemRequest;
+		Object.assign(problem, otherUpdates);
+
+		await this.problemsRepository.save(problem);
+		return this.findOne(id);
 	}
 
 	async remove(id: number): Promise<void> {
 		await this.problemsRepository.delete(id);
 	}
 
-	async approveProblem(id: number, user: jwtPayloadDto): Promise<void> {
+	async approve(id: number, user: jwtPayloadDto): Promise<void> {
 		await this.problemsRepository.update(id, {
 			devStatus: ProblemStaffStatusEnum.PUBLISHED,
 		});
@@ -391,10 +465,9 @@ export class ProblemService {
 
 	async submission(
 		problemSubmission: ProblemSubmissionDto,
-		payload: jwtPayloadDto,
+		userId: string,
 		problemId: number,
 	) {
-		const { userId } = payload;
 		const { code } = problemSubmission;
 		const problem = await this.findOne(problemId);
 		const { testCases } = problem;
@@ -471,5 +544,11 @@ export class ProblemService {
 			devStatus: ProblemStaffStatusEnum.ARCHIVED,
 		});
 		return message;
+	}
+
+	calScore(difficulty: number): number {
+		return difficulty <= 3
+			? difficulty
+			: (difficulty * (difficulty - 1)) / 2;
 	}
 }

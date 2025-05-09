@@ -10,7 +10,6 @@ import { HouseScoreModule } from 'src/house_score/house_score.module';
 @Module({
 	imports: [
 		TypeOrmModule.forFeature([User, ScoreLog, ProblemStatus]),
-		forwardRef(() => HouseScoreModule),
 	],
 	controllers: [UserController],
 	providers: [UserService],
