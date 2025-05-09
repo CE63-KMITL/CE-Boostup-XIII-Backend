@@ -17,11 +17,28 @@ export const dotenvConfig = Joi.object({
 	JWT_ACCESS_EXPIRATION: Joi.string()
 		.required()
 		.pattern(/^\d+[smhd]$/),
-	REWARDS: Joi.object({
-		id: Joi.number().integer().positive().required(),
-		name: Joi.string().min(1).required(),
-		points: Joi.number().integer().min(0).required(),
-	}),
+	REWARDS: Joi.string().custom((value, helpers) => {
+		try {
+			const parsedValue = JSON.parse(value);
+			const arraySchema = Joi.array().items(
+				Joi.object({
+					id: Joi.number().integer().positive().required(),
+					name: Joi.string().min(1).required(),
+					points: Joi.number().integer().min(0).required(),
+				}),
+			);
+			const { error, value: validatedValue } =
+				arraySchema.validate(parsedValue);
+			if (error) {
+				return helpers.error('any.invalid', {
+					details: error.details,
+				});
+			}
+			return validatedValue;
+		} catch (e) {
+			return helpers.error('string.jsonParse');
+		}
+	}, 'JSON array string'),
 	REDIS_HOST: Joi.string().required(),
 	OTP_EXPIRY_MINUTE: Joi.number().required(),
 	OTP_LENGTH: Joi.number().required(),

@@ -39,7 +39,7 @@ export class HouseScoreController {
 		@Body() body: { value: number },
 	) {
 		try {
-			return await this.scoreService.changeScore(name, body.value);
+			return await this.scoreService.setScore(name, body.value);
 		} catch (error) {
 			return { success: false, message: error.response.message };
 		}
@@ -90,7 +90,7 @@ export class HouseScoreController {
 		@Body() body: { value: number },
 	) {
 		try {
-			return await this.scoreService.adjustHouseValue(name, body.value);
+			return await this.scoreService.changeScore(name, body.value);
 		} catch (error) {
 			return { success: false, message: error.response.message };
 		}
@@ -104,7 +104,7 @@ export class HouseScoreController {
 		@Body() body: { value: number },
 	) {
 		try {
-			return await this.scoreService.adjustHouseValue(name, -body.value);
+			return await this.scoreService.changeScore(name, -body.value);
 		} catch (error) {
 			return { success: false, message: error.response.message };
 		}

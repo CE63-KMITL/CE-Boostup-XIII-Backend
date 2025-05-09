@@ -25,8 +25,10 @@ export class TestCaseService {
 	constructor(
 		@InjectRepository(TestCase)
 		private readonly testCaseRepository: Repository<TestCase>,
+
 		@Inject(forwardRef(() => ProblemService))
 		private readonly problemService: ProblemService,
+		@Inject(forwardRef(() => RunCodeService))
 		private readonly runCodeService: RunCodeService,
 	) {}
 
@@ -51,7 +53,7 @@ export class TestCaseService {
 		);
 		if (runCodeResult.exit_status != RunCodeExitStatusEnum.SUCCESS) {
 			throw new BadRequestException(
-				`Test case failed ${runCodeResult.output}`,
+				`Test case failed at input:\n>>>\n${input}\n>>>\noutput:\n>>>\n${runCodeResult.output}\n>>>`,
 			);
 		}
 		return runCodeResult.output;

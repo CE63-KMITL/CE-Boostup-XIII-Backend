@@ -1,12 +1,14 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import {
 	IsArray,
+	IsEnum,
 	IsNotEmpty,
 	IsNumber,
 	IsOptional,
 	IsString,
 } from 'class-validator';
 import { CreateTestCaseDto } from '../test_case/dto/create-test-case.dto';
+import { ProblemAllowMode } from '../enum/problem-allow-mode.enum';
 
 export class CreateProblemDto {
 	@ApiProperty({ example: 'Sample Problem Title' })
@@ -25,7 +27,40 @@ export class CreateProblemDto {
 		default: 100,
 	})
 	@IsNumber()
+	@IsOptional()
 	timeLimit?: number = 100;
+
+	@ApiProperty({
+		example: ProblemAllowMode.DISALLOWED,
+		enum: ProblemAllowMode,
+	})
+	@IsEnum(ProblemAllowMode)
+	@IsOptional()
+	headerMode: ProblemAllowMode;
+
+	@ApiProperty({
+		example: ['stdio.h'],
+	})
+	@IsOptional()
+	@IsArray()
+	@IsString({ each: true })
+	headers: string[];
+
+	@ApiProperty({
+		example: ProblemAllowMode.DISALLOWED,
+		enum: ProblemAllowMode,
+	})
+	@IsOptional()
+	@IsEnum(ProblemAllowMode)
+	functionMode: ProblemAllowMode;
+
+	@ApiProperty({
+		example: ['for'],
+	})
+	@IsOptional()
+	@IsArray()
+	@IsString({ each: true })
+	functions: string[];
 
 	@ApiProperty({
 		example: '#include <stdio.h>\n\nint main() {\n\tprintf("Hello, World!");\n\treturn 0;\n}',
@@ -68,24 +103,4 @@ export class CreateProblemDto {
 	@IsArray()
 	@IsNotEmpty()
 	testCases: CreateTestCaseDto[];
-
-	@ApiPropertyOptional({ example: ['string.h'] })
-	@IsOptional()
-	@IsString({ each: true })
-	disallowHeaders?: string[];
-
-	@ApiPropertyOptional({ example: ['for'] })
-	@IsOptional()
-	@IsString({ each: true })
-	disallowFunctions?: string[];
-
-	@ApiPropertyOptional({ example: ['string.h'] })
-	@IsOptional()
-	@IsString({ each: true })
-	allowHeaders?: string[];
-
-	@ApiPropertyOptional({ example: ['for'] })
-	@IsOptional()
-	@IsString({ each: true })
-	allowFunctions?: string[];
 }

@@ -40,4 +40,18 @@ export class RunCodeService {
 
 		return await result.json();
 	}
+
+	async runCodeMultipleInputs(
+		inputs: string[],
+		code: string,
+		timeout: number,
+	) {
+		const result = [];
+
+		for (const input of inputs) {
+			result.push(this.runCode(input, code, timeout));
+		}
+
+		return Promise.all(result);
+	}
 }
