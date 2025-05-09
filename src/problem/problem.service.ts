@@ -70,7 +70,7 @@ export class ProblemService {
 			where: { id: userId },
 		});
 
-		const testCasesWithOutputs = await Promise.all(
+		const testCasesResult = await Promise.all(
 			createProblemRequest.testCases.map(async (testCase) => {
 				const expectOutput =
 					await this.testCaseService.getExpectedOutput(
@@ -84,7 +84,6 @@ export class ProblemService {
 				};
 			}),
 		);
-		const testCasesResult = testCasesWithOutputs;
 
 		const problem = this.problemsRepository.create({
 			...createProblemRequest,
