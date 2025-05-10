@@ -56,7 +56,7 @@ export class ProblemService {
 	) {}
 
 	//-------------------------------------------------------
-	// Create Problem
+	// Problem Management
 	//-------------------------------------------------------
 	async create(
 		createProblemRequest: CreateProblemDto,
@@ -305,21 +305,27 @@ export class ProblemService {
 		}
 
 		const originalDifficulty = problem.difficulty;
-		let solutionCodeChanged = false;
+		let importantChanged = false;
 
 		//-------------------------------------------------------
 		// Handle testcase or solution code update
 		//-------------------------------------------------------
-		if (
-			JSON.stringify(updateProblemRequest.testCases) !==
-				JSON.stringify(problem.testCases) &&
-			updateProblemRequest.solutionCode &&
-			updateProblemRequest.solutionCode.trim() !==
-				problem.solutionCode.trim()
-		) {
-			solutionCodeChanged = true;
 
-			let filteredTestCases: (TestCase | CreateTestCaseDto)[] = [];
+		const sameTestCase =
+			JSON.stringify(updateProblemRequest.testCases) ==
+			JSON.stringify(problem.testCases);
+
+		const sameSolutionCode =
+			updateProblemRequest.solutionCode &&
+			updateProblemRequest.solutionCode.trim() ==
+				problem.solutionCode.trim();
+
+		if (!sameTestCase || !sameSolutionCode) {
+			importantChanged = true;
+
+			let filteredTestCases: typeof updateProblemRequest.testCases =
+				[];
+
 			for (const testCase of updateProblemRequest.testCases) {
 				if (
 					!filteredTestCases.find(
@@ -329,16 +335,29 @@ export class ProblemService {
 					filteredTestCases.push(testCase as TestCase);
 				}
 			}
-			updateProblemRequest.testCases = filteredTestCases;
 
 			problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
 
 			problem.timeLimit =
 				updateProblemRequest.timeLimit ?? problem.timeLimit;
+			problem.solutionCode =
+				updateProblemRequest.solutionCode ?? problem.solutionCode;
 
-			problem.testCases = await this.genTestCaseExpectOutput(problem);
+			if (problem.testCases && problem.testCases.length > 0) {
+				await Promise.all(
+					problem.testCases.map((testCase) =>
+						this.testCaseService.remove(testCase.id),
+					),
+				);
+			}
 
-			problem.solutionCode = updateProblemRequest.solutionCode;
+			const newTestCases = await Promise.all(
+				filteredTestCases.map((testCase) =>
+					this.testCaseService.create(problem.id, testCase),
+				),
+			);
+
+			problem.testCases = newTestCases;
 
 			const users = await this.userService.findAll(
 				{
@@ -385,7 +404,7 @@ export class ProblemService {
 		// Handle difficulty update (only if solution code didn't change)
 		//-------------------------------------------------------
 		if (
-			!solutionCodeChanged &&
+			!importantChanged &&
 			updateProblemRequest.difficulty &&
 			updateProblemRequest.difficulty !== originalDifficulty
 		) {
@@ -421,13 +440,9 @@ export class ProblemService {
 					`โจทย์มีการปรับความยาก : ${problem.title}`,
 				);
 			}
-			
+
 			problem.difficulty = newDifficulty;
 		}
-
-		const { solutionCode, difficulty, ...otherUpdates } =
-			updateProblemRequest;
-		Object.assign(problem, otherUpdates);
 
 		return await this.problemsRepository.save(problem);
 	}
@@ -511,6 +526,9 @@ export class ProblemService {
 		);
 	}
 
+	//-------------------------------------------------------
+	// Problem Status Management
+	//-------------------------------------------------------
 	async requestReviewProblem(
 		id: number,
 		user: jwtPayloadDto,
@@ -537,10 +555,40 @@ export class ProblemService {
 		return message;
 	}
 
+	//-------------------------------------------------------
+	// Scoring
+	//-------------------------------------------------------
 	calScore(difficulty: number): number {
 		return difficulty <= 3
 			? difficulty
 			: (difficulty * (difficulty - 1)) / 2;
+	}
+
+	//-------------------------------------------------------
+	// Test Case Management
+	//-------------------------------------------------------
+	async updateTestCase(
+		problem: Problem,
+		testCases: CreateTestCaseDto[],
+	): Promise<TestCase[] | undefined> {
+		if (problem.testCases && problem.testCases.length > 0) {
+			await Promise.all(
+				problem.testCases.map((testCase) =>
+					this.testCaseService.remove(testCase.id),
+				),
+			);
+		}
+
+		const newTestCases = await Promise.all(
+			testCases.map((testCase) =>
+				this.testCaseService.create(problem.id, testCase),
+			),
+		);
+
+		problem.testCases = newTestCases;
+		await this.problemsRepository.save(problem);
+
+		return newTestCases;
 	}
 
 	async genTestCaseExpectOutput(
