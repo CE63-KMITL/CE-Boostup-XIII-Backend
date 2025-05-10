@@ -323,19 +323,6 @@ export class ProblemService {
 		if (!sameTestCase || !sameSolutionCode) {
 			importantChanged = true;
 
-			let filteredTestCases: typeof updateProblemRequest.testCases =
-				[];
-
-			for (const testCase of updateProblemRequest.testCases) {
-				if (
-					!filteredTestCases.find(
-						(t) => t.input === testCase.input,
-					)
-				) {
-					filteredTestCases.push(testCase as TestCase);
-				}
-			}
-
 			problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
 
 			problem.timeLimit =
@@ -352,9 +339,14 @@ export class ProblemService {
 			}
 
 			const newTestCases = await Promise.all(
-				filteredTestCases.map((testCase) =>
-					this.testCaseService.create(problem.id, testCase),
-				),
+				updateProblemRequest.testCases.map((testCase) => {
+					try {
+						return this.testCaseService.create(
+							problem.id,
+							testCase,
+						);
+					} catch (e) {}
+				}),
 			);
 
 			problem.testCases = newTestCases;
