@@ -76,14 +76,26 @@ export class ProblemService {
 			where: { id: userId },
 		});
 
+		const testCasesResult = await Promise.all(
+			createProblemRequest.testCases.map(async (testCase) => {
+				const expectOutput =
+					await this.testCaseService.getExpectedOutput(
+						createProblemRequest.solutionCode,
+						testCase.input,
+						createProblemRequest.timeLimit,
+					);
+				return {
+					...testCase,
+					expectOutput,
+				};
+			}),
+		);
+
 		const problem = this.problemsRepository.create({
 			...createProblemRequest,
-			timeLimit: createProblemRequest.timeLimit,
 			author: author,
-			testCases:
-				await this.genTestCaseExpectOutput(createProblemRequest),
+			testCases: testCasesResult,
 		});
-
 		return this.problemsRepository.save(problem);
 	}
 
@@ -554,47 +566,5 @@ export class ProblemService {
 		return difficulty <= 3
 			? difficulty
 			: (difficulty * (difficulty - 1)) / 2;
-	}
-
-	//-------------------------------------------------------
-	// Test Case Management
-	//-------------------------------------------------------
-	async updateTestCase(
-		problem: Problem,
-		testCases: CreateTestCaseDto[],
-	): Promise<TestCase[] | undefined> {
-		if (problem.testCases && problem.testCases.length > 0) {
-			await Promise.all(
-				problem.testCases.map((testCase) =>
-					this.testCaseService.remove(testCase.id),
-				),
-			);
-		}
-
-		const newTestCases = await Promise.all(
-			testCases.map((testCase) =>
-				this.testCaseService.create(problem.id, testCase),
-			),
-		);
-
-		problem.testCases = newTestCases;
-		await this.problemsRepository.save(problem);
-
-		return newTestCases;
-	}
-
-	async genTestCaseExpectOutput(
-		problem: CreateProblemDto | UpdateProblemDto | Problem,
-	) {
-		const codeResults = await this.runCodeService.runCodeMultipleInputs(
-			problem.testCases.map((testCase) => testCase.input),
-			problem.solutionCode,
-			problem.timeLimit,
-		);
-
-		return problem.testCases.map((testCase, index) => ({
-			...testCase,
-			expectOutput: codeResults[index].output,
-		}));
 	}
 }
