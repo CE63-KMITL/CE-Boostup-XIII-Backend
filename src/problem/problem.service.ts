@@ -36,6 +36,8 @@ import {
 import { ProblemStatus } from 'src/user/problem_status/problem-status.entity';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
 import { TestCaseService } from './test_case/test-case.service';
+import { TestCase } from './test_case/test-case.entity';
+import { CreateTestCaseDto } from './test_case/dto/create-test-case.dto';
 
 @Injectable()
 export class ProblemService {
@@ -53,11 +55,9 @@ export class ProblemService {
 		private readonly testCaseService: TestCaseService,
 	) {}
 
-	/*
-	-------------------------------------------------------
-	Create Problem
-	-------------------------------------------------------
-	*/
+	//-------------------------------------------------------
+	// Problem Management
+	//-------------------------------------------------------
 	async create(
 		createProblemRequest: CreateProblemDto,
 		userId: string,
@@ -96,7 +96,6 @@ export class ProblemService {
 			author: author,
 			testCases: testCasesResult,
 		});
-
 		return this.problemsRepository.save(problem);
 	}
 
@@ -318,71 +317,90 @@ export class ProblemService {
 		}
 
 		const originalDifficulty = problem.difficulty;
-		let solutionCodeChanged = false;
+		let importantChanged = false;
 
 		//-------------------------------------------------------
-		// Handle solution code update
+		// Handle testcase or solution code update
 		//-------------------------------------------------------
-		if (
+
+		const sameTestCase =
+			JSON.stringify(updateProblemRequest.testCases) ==
+			JSON.stringify(problem.testCases);
+
+		const sameSolutionCode =
 			updateProblemRequest.solutionCode &&
-			updateProblemRequest.solutionCode.trim() !==
-				problem.solutionCode.trim()
-		) {
-			solutionCodeChanged = true;
+			updateProblemRequest.solutionCode.trim() ==
+				problem.solutionCode.trim();
+
+		if (!sameTestCase || !sameSolutionCode) {
+			importantChanged = true;
+
 			problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
 
-			const newTimeLimit =
+			problem.timeLimit =
 				updateProblemRequest.timeLimit ?? problem.timeLimit;
-			const codeResult =
-				await this.runCodeService.runCodeMultipleInputs(
-					problem.testCases.map((testCase) => testCase.input),
-					updateProblemRequest.solutionCode,
-					newTimeLimit,
+			problem.solutionCode =
+				updateProblemRequest.solutionCode ?? problem.solutionCode;
+
+			if (problem.testCases && problem.testCases.length > 0) {
+				await Promise.all(
+					problem.testCases.map((testCase) =>
+						this.testCaseService.remove(testCase.id),
+					),
+				);
+			}
+
+			const newTestCases = await Promise.all(
+				updateProblemRequest.testCases.map((testCase) => {
+					try {
+						return this.testCaseService.create(
+							problem.id,
+							testCase,
+						);
+					} catch (e) {}
+				}),
+			);
+
+			problem.testCases = newTestCases;
+
+			const users = await this.userService.findAll(
+				{
+					where: {
+						problemStatus: {
+							problemId: problem.id,
+							status: ProblemStatusEnum.DONE,
+						},
+					},
+					relations: ['problemStatus'],
+				},
+				false,
+			);
+
+			for (const user of users) {
+				await this.userService.updateProblemStatus(
+					problem.id,
+					user.id,
+					ProblemStatusEnum.IN_PROGRESS,
+					user.problemStatus[0].code,
+					problem.difficulty,
 				);
 
-			problem.testCases.forEach((testCase, index) => {
-				testCase.expectOutput = codeResult[index];
-			});
+				const scoreToRemove = this.calScore(originalDifficulty);
 
-			problem.solutionCode = updateProblemRequest.solutionCode;
+				await this.userService.modifyScore(
+					user.id,
+					-scoreToRemove,
+					problem.author.id,
+					`โจทย์มีการแก้ไข : ${problem.title}`,
+				);
 
-			const allUsers = await this.userService.findAll({});
-			for (const userResponse of allUsers.data) {
-				const problemStatus =
-					await this.userService.findOneProblemStatus(
-						userResponse.id,
-						problem.id,
-					);
-				if (
-					problemStatus &&
-					problemStatus.status === ProblemStatusEnum.DONE
-				) {
-					await this.userService.updateProblemStatus(
-						problem.id,
-						userResponse.id,
-						ProblemStatusEnum.IN_PROGRESS,
-						problemStatus.code,
-						problem.difficulty,
-					);
-
-					const scoreToRemove =
-						this.calScore(originalDifficulty);
-
-					await this.userService.modifyScore(
-						userResponse.id,
-						-scoreToRemove,
-						user.userId,
-						`โจทย์มีการแก้ไข้ : ${problem.title}`,
-					);
-
-					await this.submission(
-						new ProblemSubmissionDto({
-							code: problemStatus.code,
-						}),
-						userResponse.id,
-						problem.id,
-					);
-				}
+				await this.submission(
+					new ProblemSubmissionDto({
+						code: user.problemStatus[0].code,
+					}),
+					user.id,
+					problem.id,
+				);
 			}
 		}
 
@@ -390,55 +408,47 @@ export class ProblemService {
 		// Handle difficulty update (only if solution code didn't change)
 		//-------------------------------------------------------
 		if (
-			!solutionCodeChanged &&
+			!importantChanged &&
 			updateProblemRequest.difficulty &&
 			updateProblemRequest.difficulty !== originalDifficulty
 		) {
 			const newDifficulty = updateProblemRequest.difficulty;
-			const allUsers = await this.userService.findAll({}); // Note: This might be paginated.
-			for (const userResponse of allUsers.data) {
-				const problemStatus =
-					await this.userService.findOneProblemStatus(
-						userResponse.id,
-						problem.id,
-					);
-				if (
-					problemStatus &&
-					problemStatus.status === ProblemStatusEnum.DONE
-				) {
-					const scoreToRemove =
-						this.calScore(originalDifficulty);
-					await this.userService.modifyScore(
-						userResponse.id,
-						-scoreToRemove,
-						user.userId,
-						`Difficulty updated for problem: ${problem.title}`,
-					);
 
-					const scoreToAdd = this.calScore(newDifficulty);
-					await this.userService.modifyScore(
-						userResponse.id,
-						scoreToAdd,
-						user.userId,
-						`Difficulty updated for problem: ${problem.title}`,
-					);
-					// If house scores need explicit adjustment, add here:
-					// await this.houseScoreService.modifyScore(userResponse.houseId, -scoreToRemove, ...);
-					// await this.houseScoreService.modifyScore(userResponse.houseId, scoreToAdd, ...);
-				}
+			const users = await this.userService.findAll(
+				{
+					where: {
+						problemStatus: {
+							problemId: problem.id,
+							status: ProblemStatusEnum.DONE,
+						},
+					},
+					relations: ['problemStatus'],
+				},
+				false,
+			);
+
+			for (const user of users) {
+				const scoreToRemove = this.calScore(originalDifficulty);
+				await this.userService.modifyScore(
+					user.id,
+					-scoreToRemove,
+					problem.author.id,
+					`โจทย์มีการปรับความยาก : ${problem.title}`,
+				);
+
+				const scoreToAdd = this.calScore(newDifficulty);
+				await this.userService.modifyScore(
+					user.id,
+					scoreToAdd,
+					problem.author.id,
+					`โจทย์มีการปรับความยาก : ${problem.title}`,
+				);
 			}
+
 			problem.difficulty = newDifficulty;
 		}
 
-		//-------------------------------------------------------
-		// Apply other updates
-		//-------------------------------------------------------
-		const { solutionCode, difficulty, ...otherUpdates } =
-			updateProblemRequest;
-		Object.assign(problem, otherUpdates);
-
-		await this.problemsRepository.save(problem);
-		return this.findOne(id);
+		return await this.problemsRepository.save(problem);
 	}
 
 	async remove(id: number): Promise<void> {
@@ -470,7 +480,7 @@ export class ProblemService {
 	) {
 		const { code } = problemSubmission;
 		const problem = await this.findOne(problemId);
-		const { testCases } = problem;
+		const { testCases, timeLimit } = problem;
 		if (testCases.length === 0)
 			throw new BadRequestException('no test case for this problem');
 		const runCodeResponse = await Promise.all(
@@ -478,7 +488,7 @@ export class ProblemService {
 				this.runCodeService.runCode(
 					testCase.input,
 					code,
-					problem.timeLimit,
+					timeLimit,
 				),
 			),
 		);
@@ -520,6 +530,9 @@ export class ProblemService {
 		);
 	}
 
+	//-------------------------------------------------------
+	// Problem Status Management
+	//-------------------------------------------------------
 	async requestReviewProblem(
 		id: number,
 		user: jwtPayloadDto,
@@ -546,6 +559,9 @@ export class ProblemService {
 		return message;
 	}
 
+	//-------------------------------------------------------
+	// Scoring
+	//-------------------------------------------------------
 	calScore(difficulty: number): number {
 		return difficulty <= 3
 			? difficulty

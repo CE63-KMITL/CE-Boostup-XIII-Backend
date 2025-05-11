@@ -17,7 +17,7 @@ import { House } from 'src/shared/enum/house.enum';
 import { Role } from 'src/shared/enum/role.enum';
 import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
-import { FindOneOptions, Repository } from 'typeorm';
+import { FindManyOptions, FindOneOptions, Repository } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UserQueryDto } from './dtos/user-query.dto';
@@ -78,13 +78,37 @@ export class UserService implements OnModuleInit {
 	//-------------------------------------------------------
 	// User Management
 	//-------------------------------------------------------
-	async findAll(query: PaginationMetaDto): Promise<UserPaginatedDto> {
-		const users = await createPaginationQuery({
-			repository: this.userRepository,
-			dto: query,
-		});
-		const [data, totalItem] = await users.getManyAndCount();
-		return new UserPaginatedDto(data, totalItem, query.page, query.limit);
+	async findAll(
+		query: PaginationMetaDto,
+		pagination?: true,
+	): Promise<UserPaginatedDto>;
+
+	async findAll(
+		query: FindManyOptions<User>,
+		pagination: false,
+	): Promise<User[]>;
+
+	async findAll(
+		query: PaginationMetaDto | FindManyOptions<User>,
+		pagination = true,
+	) {
+		if (pagination) {
+			query = query as PaginationMetaDto;
+			const users = await createPaginationQuery({
+				repository: this.userRepository,
+				dto: query,
+			});
+			const [data, totalItem] = await users.getManyAndCount();
+			return new UserPaginatedDto(
+				data,
+				totalItem,
+				query.page,
+				query.limit,
+			);
+		} else {
+			query = query as FindManyOptions<User>;
+			return await this.userRepository.find(query);
+		}
 	}
 
 	async findOne(

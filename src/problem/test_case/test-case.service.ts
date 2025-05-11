@@ -53,7 +53,7 @@ export class TestCaseService {
 		);
 		if (runCodeResult.exit_status != RunCodeExitStatusEnum.SUCCESS) {
 			throw new BadRequestException(
-				`Test case failed at input:\n>>>\n${input}\n>>>\noutput:\n>>>\n${runCodeResult.output}\n>>>`,
+				`Test case failed at input:\n>>>\n${input}\n>>>\nused time: ${runCodeResult.used_time}ms\noutput:\n>>>\n${runCodeResult.output}\n>>>`,
 			);
 		}
 		return runCodeResult.output;
@@ -84,7 +84,7 @@ export class TestCaseService {
 		return allTestCases;
 	}
 
-	async findOne(option: FindOneOptions): Promise<TestCase> {
+	async findOne(option: FindOneOptions<TestCase>): Promise<TestCase> {
 		const testCase = await this.testCaseRepository.findOne(option);
 		if (!testCase) {
 			throw new NotFoundException('Test case not found');
