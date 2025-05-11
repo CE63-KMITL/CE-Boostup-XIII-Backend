@@ -1,161 +1,300 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  ParseUUIDPipe,
-  HttpStatus,
-  Patch,
-  Delete,
-  HttpCode,
-  UseGuards
-} from "@nestjs/common";
-import { UserService } from "./user.service";
-import { CreateUserDto } from "./dtos/create-user.dto";
-import { UpdateUserDto } from "./dtos/update-user.dto";
-import { UserResponseDto } from "./dtos/user-response.dto";
-import { ApiResponse, ApiTags } from "@nestjs/swagger";
-import { ModifyScoreDto } from "./score/dtos/modify-score.dto";
-import { UserScoreResponseDto } from "./score/dtos/score-response.dto";
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles/roles.guard'
-import {Roles} from '../auth/roles/roles.decorator'
-import { Role } from '../shared/enum/role.enum'; 
-@Controller("user")
-@ApiTags("User")
+	Body,
+	Controller,
+	Delete,
+	Get,
+	HttpCode,
+	HttpStatus,
+	Param,
+	ParseFilePipeBuilder,
+	ParseIntPipe,
+	ParseUUIDPipe,
+	Patch,
+	Post,
+	Query,
+	Request,
+	UploadedFile,
+	UseInterceptors,
+} from '@nestjs/common';
+import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
+
+import { AllowRole } from '../auth/decorators/auth.decorator';
+import { Role } from '../shared/enum/role.enum';
+import { UpdateUserDto } from './dtos/update-user.dto';
+import {
+	UserFrontDataResponseDto,
+	UserPaginatedDto,
+	UserResponseDto,
+} from './dtos/user-response.dto';
+import { ModifyScoreDto } from './score/dtos/modify-score.dto';
+import { UserScoreResponseDto } from './score/dtos/score-response.dto';
+import { UserService } from './user.service';
+
+import { FileInterceptor } from '@nestjs/platform-express';
+import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
+import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
+import { UserQueryDto } from './dtos/user-query.dto';
+import { UserSaveCodeDto } from './dtos/user-request.dto';
+
+@Controller('user')
+@ApiTags('User')
 export class UserController {
 	constructor(private readonly userService: UserService) {}
 
+	//-------------------------------------------------------
+	// Public Endpoints
+	//-------------------------------------------------------
+
 	@Get()
-	@HttpCode(HttpStatus.OK)
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "Get all users",
-		type: UserResponseDto,
-		isArray: true,
+		description: 'Get all users',
+		type: UserPaginatedDto,
 	})
-	async findAll(): Promise<UserResponseDto[]> {
-		return await this.userService.findAll();
+	@AllowRole(Role.DEV)
+	async findAll(
+		@Query() query: PaginationMetaDto,
+	): Promise<UserPaginatedDto> {
+		return await this.userService.findAll(query);
 	}
-	// @Post()
-	// @HttpCode(HttpStatus.CREATED)
-	// @ApiResponse({
-	// 	status: HttpStatus.CREATED,
-	// 	description: "Create a new user",
-	// 	type: UserResponseDto,
-	// })
-	// async create(@Body() user: CreateUserDto): Promise<UserResponseDto> {
-	// 	const reponseUser = await this.userService.create(user);
-	// 	return reponseUser;
-	// }
-	@Get(":id")
-	@HttpCode(HttpStatus.OK)
+
+	@Get('/search')
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "Get a user by id",
+		description: 'get user by query',
+		type: UserPaginatedDto,
+	})
+	@AllowRole(Role.MEMBER)
+	async search(@Query() query: UserQueryDto) {
+		return await this.userService.search(query);
+	}
+
+	//-------------------------------------------------------
+	// Protected Endpoints
+	//-------------------------------------------------------
+
+	@Get('data')
+	@AllowRole(Role.MEMBER)
+	@ApiResponse({
+		status: HttpStatus.OK,
+		description: 'Get user data for front-end server',
+		type: UserFrontDataResponseDto,
+	})
+	async getData(
+		@Request() req: authenticatedRequest,
+	): Promise<UserFrontDataResponseDto> {
+		return await this.userService.getData(req.user.userId);
+	}
+
+	@Get(':id')
+	@AllowRole(Role.MEMBER)
+	@ApiResponse({
+		status: HttpStatus.OK,
+		description: 'Get a user by id',
 		type: UserResponseDto,
 	})
 	async findOne(
 		@Param(
-			"id",
+			'id',
 			new ParseUUIDPipe({
-				version: "4",
+				version: '4',
 				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-			})
+			}),
 		)
-		id: string
+		id: string,
 	): Promise<UserResponseDto> {
-		const user = await this.userService.findOne(id);
-		return user;
+		const user = await this.userService.findOne({ where: { id } });
+		return new UserResponseDto(user);
 	}
 
-	@Get("score/:id")
-	@HttpCode(HttpStatus.OK)
+	@Get('score/:id')
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "Get user score by id",
+		description: 'Get user score by id',
 		type: UserScoreResponseDto,
 	})
-	async get_score(
+	async getScore(
 		@Param(
-			"id",
+			'id',
 			new ParseUUIDPipe({
-				version: "4",
+				version: '4',
 				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-			})
+			}),
 		)
-		id: string
-	): Promise<UserScoreResponseDto> 
-	{
-		const user = await this.userService.findOne(id);
-		const score_logs = await this.userService.getuser_scorelogs(id);
-		const json = { score: user.score, scoreLogs: score_logs };
+		id: string,
+	): Promise<UserScoreResponseDto> {
+		const user = await this.userService.findOne({ where: { id } });
+		const scoreLogs = await this.userService.getUserScoreLogs(id);
+		const json = { score: user.score, scoreLogs: scoreLogs };
 		return json;
 	}
 
-	@Post("score/add")
-	@HttpCode(HttpStatus.OK)
+	@Post('score/add')
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "Get user score by id",
+		description: 'Get user score by id',
 		type: UserResponseDto,
 	})
-	async addScore(@Body() modifyScoreDto: ModifyScoreDto): Promise<UserResponseDto> {
-		const modifiedBy = await this.userService.findEntityById(modifyScoreDto.modifiedById);
-
-		return this.userService.modifyScore(modifyScoreDto.userId, Math.abs(modifyScoreDto.amount), modifiedBy.id);
+	@AllowRole(Role.STAFF)
+	async addScore(
+		@Request() req: authenticatedRequest,
+		@Body() modifyScoreDto: ModifyScoreDto,
+	): Promise<UserResponseDto> {
+		console.log(req);
+		return this.userService.modifyScore(
+			modifyScoreDto.userId,
+			Math.abs(modifyScoreDto.amount),
+			req.user.userId,
+			modifyScoreDto.message,
+		);
 	}
 
-	@Post("score/subtract")
+	@Post('score/subtract')
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "Get user score by id",
+		description: 'Get user score by id',
 		type: UserResponseDto,
 	})
-	async subtractScore(@Body() modifyScoreDto: ModifyScoreDto): Promise<UserResponseDto> {
-		const modifiedBy = await this.userService.findEntityById(modifyScoreDto.modifiedById);
-		return this.userService.modifyScore(modifyScoreDto.userId, -Math.abs(modifyScoreDto.amount), modifiedBy.id);
+	@AllowRole(Role.STAFF)
+	async subtractScore(
+		@Request() req: authenticatedRequest,
+		@Body() modifyScoreDto: ModifyScoreDto,
+	): Promise<UserResponseDto> {
+		return this.userService.modifyScore(
+			modifyScoreDto.userId,
+			-Math.abs(modifyScoreDto.amount),
+			req.user.userId,
+			modifyScoreDto.message,
+		);
 	}
 
-	@Patch(":id")
-	@HttpCode(HttpStatus.OK)
+	@Patch(':id')
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "Update a user by id",
+		description: 'Update a user by id',
 		type: UserResponseDto,
 	})
 	async update(
 		@Param(
-			"id",
+			'id',
 			new ParseUUIDPipe({
-				version: "4",
+				version: '4',
 				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-			})
+			}),
 		)
 		id: string,
-		@Body() user: UpdateUserDto
+		@Body() user: UpdateUserDto,
 	): Promise<UserResponseDto> {
 		const responseUser = await this.userService.update(id, user);
 		return responseUser;
 	}
 
-	@Delete(":id")
+	@Delete(':id')
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@ApiResponse({
 		status: HttpStatus.NO_CONTENT,
-		description: "Delete a user by id",
+		description: 'Delete a user by id',
 	})
 	async delete(
 		@Param(
-			"id",
+			'id',
 			new ParseUUIDPipe({
-				version: "4",
+				version: '4',
 				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-			})
+			}),
 		)
-		id: string
+		id: string,
 	): Promise<void> {
 		await this.userService.delete(id);
+	}
+
+	@AllowRole(Role.MEMBER)
+	@Post('setProblemStatus/:id')
+	async tryProblem(
+		@Request() req: authenticatedRequest,
+		@Param('id') id: number,
+	) {
+		return this.userService.setProblemStatus(id, req.user.userId);
+	}
+
+	//-------------------------------------------------------
+	// Problem Code Endpoints
+	//-------------------------------------------------------
+
+	@Get('code/:problemId')
+	@AllowRole(Role.MEMBER)
+	@ApiResponse({
+		status: HttpStatus.OK,
+		description: 'Get saved code for a problem',
+		type: String,
+	})
+	async getCode(
+		@Request() req: authenticatedRequest,
+		@Param('problemId', ParseIntPipe) problemId: number,
+	): Promise<string | null> {
+		return await this.userService.getCode(req.user.userId, problemId);
+	}
+
+	@Post('code/:problemId')
+	@AllowRole(Role.MEMBER)
+	@ApiResponse({
+		status: HttpStatus.OK,
+		description: 'Save code for a problem',
+	})
+	async saveCode(
+		@Request() req: authenticatedRequest,
+		@Param('problemId', ParseIntPipe) problemId: number,
+		@Body() saveCodeDto: UserSaveCodeDto,
+	): Promise<void> {
+		await this.userService.saveCode(
+			req.user.userId,
+			problemId,
+			saveCodeDto.code,
+		);
+	}
+
+	//-------------------------------------------------------
+	// File Upload Endpoints
+	//-------------------------------------------------------
+
+	@Post('upload-icon')
+	@AllowRole(Role.MEMBER, Role.DEV)
+	@UseInterceptors(FileInterceptor('file'))
+	@HttpCode(HttpStatus.NO_CONTENT)
+	@ApiResponse({
+		status: HttpStatus.NO_CONTENT,
+		description: 'successfully upload file',
+	})
+	@ApiBody({
+		schema: {
+			type: 'object',
+			properties: {
+				file: {
+					type: 'string',
+					format: 'binary',
+				},
+			},
+		},
+	})
+	@ApiConsumes('multipart/form-data')
+	async uploadIcon(
+		@Request() req: authenticatedRequest,
+		@UploadedFile(
+			new ParseFilePipeBuilder()
+				.addFileTypeValidator({
+					fileType: 'image/*',
+				})
+				.addMaxSizeValidator({
+					maxSize: 100 * 1024, // limite file size = 100kb
+				})
+				.build({
+					fileIsRequired: true,
+					errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+				}),
+		)
+		file: Express.Multer.File,
+	): Promise<void> {
+		const iconBase64 = file.buffer.toString('base64');
+		this.userService.uploadIcon(req.user.userId, iconBase64);
 	}
 }

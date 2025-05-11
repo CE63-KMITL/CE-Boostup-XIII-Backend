@@ -1,59 +1,74 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
-import { House } from "src/shared/enum/house.enum";
-import { AvailableRoles, Role } from "src/shared/enum/role.enum";
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+	IsEmail,
+	IsEnum,
+	IsNotEmpty,
+	IsOptional,
+	IsString,
+	Matches,
+} from 'class-validator';
+import { House } from 'src/shared/enum/house.enum';
+import { AvailableRole, Role } from 'src/shared/enum/role.enum';
 
 export class CreateUserDto {
 	@IsString()
-	@IsNotEmpty()
-	@ApiProperty({
-		example: "john_doe",
-		description: "name",
+	@IsOptional()
+	@ApiPropertyOptional({
+		example: 'john_doe',
+		description: 'name',
 		type: String,
 	})
-	name: string;
+	name?: string;
 
 	@IsEmail()
 	@IsNotEmpty()
 	@ApiProperty({
-		example: "example@gmail.com",
-		description: "Email",
+		example: 'example@gmail.com',
+		description: 'Email',
 		type: String,
 	})
 	email: string;
 
-	@IsNotEmpty()
+	@IsOptional()
 	@IsString()
-	@ApiProperty({
-		example: "P@ssword1234",
-		description: "Password",
+	@ApiPropertyOptional({
+		example: 'P@ssword1234',
+		description: 'Password',
 		type: String,
 	})
-	password: string;
+	password?: string;
 
-	@IsNotEmpty()
+	@IsOptional()
 	@IsEnum(House, {
 		message: `House must be a valid enum value.`,
 	})
-	@ApiProperty({
-		example: House.House1,
-		description: "User house",
+	@ApiPropertyOptional({
+		example: House.BARBARIAN,
+		description: 'User house',
 		enum: House,
 		type: String,
-		default: House.NONE,
 	})
-	house: House;
+	house?: House;
 
 	@IsOptional()
-	@IsEnum(AvailableRoles, {
-		message: `Role must be a valid enum value: ${Role.DEV} or ${Role.MEMBER}`,
+	@IsEnum(AvailableRole, {
+		message: `Role must be a valid enum value: ${Role.DEV} or ${Role.STAFF} or ${Role.MEMBER}`,
 	})
 	@ApiPropertyOptional({
 		example: Role.MEMBER,
-		description: "User role",
-		enum: Role,
+		description: 'User role',
+		enum: AvailableRole,
 		type: String,
 		default: Role.MEMBER,
 	})
-	role: Role;
+	role?: Role;
+
+	@IsOptional()
+	@Matches(/^\d{8}$/, { message: 'student id should be 8-digit number ' })
+	@ApiPropertyOptional({
+		example: '67011501',
+		description: 'student id',
+		type: String,
+	})
+	studentId?: string;
 }

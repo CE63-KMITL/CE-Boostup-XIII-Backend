@@ -1,26 +1,47 @@
-import { Controller, Get, HttpCode, HttpStatus, Param } from "@nestjs/common"; // Added Param
-import { ApiResponse, ApiTags } from "@nestjs/swagger";
-import { House } from "src/shared/enum/house.enum";
-import { HouseResponseDto } from "./dtos/house-response.dto"; // Import the new DTO
-import { HouseService } from "./house.service";
+import {
+	Controller,
+	Get,
+	HttpStatus,
+	Param,
+	Patch,
+	Body,
+} from '@nestjs/common';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { House } from 'src/shared/enum/house.enum';
+import { HouseResponseDto } from './dtos/house-response.dto';
+import { HouseService } from './house.service';
+import { UserService } from 'src/user/user.service';
 
-@Controller("house")
-@ApiTags("House")
+@Controller('house')
+@ApiTags('House')
 export class HouseController {
-	// Consider renaming UserController to HouseController if appropriate
-	constructor(private readonly houseService: HouseService) {}
+	constructor(
+		private readonly houseService: HouseService,
+		private readonly userService: UserService, // ต้องเพิ่ม `private readonly` หรือ `public readonly`
+	) {}
 
-	@Get(":house")
-	@HttpCode(HttpStatus.OK)
+	@Get(':house')
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "Get all users in a specific house", // Updated description
-		type: HouseResponseDto, // Use the new DTO
-		isArray: true, // Remove isArray if HouseResponseDto represents the whole response object
+		description: 'Get all users in a specific house',
+		type: HouseResponseDto,
+		isArray: true,
 	})
-	// Add @Param('house') decorator to capture the route parameter
-	async findAll(@Param("house") house: House): Promise<string[]> {
-		// return only users id
-		return (await this.houseService.get_all_users_in_house(house)).map((user) => user.id);
+	async findAll(@Param('house') house: House): Promise<string[]> {
+		return (await this.houseService.get_all_users_in_house(house)).map(
+			(user) => user.id,
+		);
+	}
+
+	@Patch('update-house')
+	async updateHouse(
+		@Body() { email, house }: { email: string; house: House },
+	) {
+		return this.userService.updateHouseByEmail(email, house);
+	}
+
+	@Patch('remove-house')
+	async removeUserFromHouse(@Body() { email }: { email: string }) {
+		return this.userService.removeUserFromHouse(email);
 	}
 }

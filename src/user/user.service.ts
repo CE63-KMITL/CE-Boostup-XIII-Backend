@@ -1,76 +1,234 @@
-import { BadRequestException,Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { plainToInstance } from "class-transformer";
-import { House } from "src/shared/enum/house.enum";
-import { Role } from "src/shared/enum/role.enum";
-import { Repository } from "typeorm";
-import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
-import { CreateUserDto } from "./dtos/create-user.dto";
-import { UserResponseDto } from "./dtos/user-response.dto";
-import { ScoreLog } from "./score/score-log.entity";
-import { User } from "./user.entity";
-import * as bcrypt from 'bcryptjs'
+import {
+	BadRequestException,
+	forwardRef,
+	Inject,
+	Injectable,
+	InternalServerErrorException,
+	NotFoundException,
+	OnModuleInit,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcryptjs';
+
+import { ConfigService } from '@nestjs/config';
+import { ProblemStatusEnum } from 'src/problem/enum/problem-staff-status.enum';
+import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
+import { House } from 'src/shared/enum/house.enum';
+import { Role } from 'src/shared/enum/role.enum';
+import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
+import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
+import { FindManyOptions, FindOneOptions, Repository } from 'typeorm';
+import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
+import { CreateUserDto } from './dtos/create-user.dto';
+import { UserQueryDto } from './dtos/user-query.dto';
+import {
+	UserFrontDataResponseDto,
+	UserPaginatedDto,
+	UserResponseDto,
+} from './dtos/user-response.dto';
+import { ProblemStatus } from './problem_status/problem-status.entity';
+import { ScoreLog } from './score/score-log.entity';
+import { User } from './user.entity';
+import { HouseScore } from 'src/house_score/house_score.entity';
+import { HouseScoreService } from 'src/house_score/house_score.service';
+import { ProblemService } from 'src/problem/problem.service';
 
 @Injectable()
-export class UserService {
-  constructor(
+export class UserService implements OnModuleInit {
+	constructor(
 		@InjectRepository(User)
 		public readonly userRepository: Repository<User>,
 		@InjectRepository(ScoreLog)
-		private readonly scoreLogRepository: Repository<ScoreLog>
+		private readonly scoreLogRepository: Repository<ScoreLog>,
+		@InjectRepository(ProblemStatus)
+		private readonly problemStatusRepository: Repository<ProblemStatus>,
+		private readonly configService: ConfigService,
+		@InjectRepository(HouseScore)
+		private readonly HouseScoreRepo: Repository<HouseScore>,
+
+		@Inject(forwardRef(() => HouseScoreService))
+		private readonly houseScoreService: HouseScoreService,
+
+		@Inject(forwardRef(() => ProblemService))
+		private readonly problemService: ProblemService,
 	) {}
 
-  async findAll(): Promise<UserResponseDto[]> {
-    const users = await this.userRepository.find();
-    return users.map((user) => plainToInstance(UserResponseDto, user));
-  }
-  async create(user: CreateUserDto): Promise<UserResponseDto> {
-    try {
-      // เข้ารหัส password ก่อน
-      const salt = await bcrypt.genSalt(10); // หรือจะใช้ค่า default ก็ได้
-      const hashedPassword = await bcrypt.hash(user.password, salt);
-  
-      // แทนที่ password เดิม
-      user.password = hashedPassword;
-  
-      const responseUser = await this.userRepository.save(user);
-      return plainToInstance(UserResponseDto, responseUser);
-    } catch (error) {
-      if (error instanceof Error)
-        throw new BadRequestException("User already exists");
-    }
-  }
-  async findOne(id: string): Promise<UserResponseDto> {
-    const responseUser = await this.userRepository.findOne({ where: { id } });
-    if (!responseUser) throw new NotFoundException("User not found");
-    return plainToInstance(UserResponseDto, responseUser);
-  }
-  async update(
-    id: string,
-    partialEntity: QueryDeepPartialEntity<User>
-  ): Promise<UserResponseDto> {
-    if (partialEntity.score !== undefined) {
-      const score = Number(partialEntity.score);
-      if (isNaN(score) || score < 0) {
-        throw new BadRequestException("Score must be a valid number >= 0");
-      }
-    }
-	if (partialEntity.password !== undefined) {
-		const salt = await bcrypt.genSalt(10); // หรือใช้ค่าที่ตั้งไว้ใน config
-		const hashedPassword = await bcrypt.hash(partialEntity.password as string, salt);
-		partialEntity.password = hashedPassword;
+	async onModuleInit() {
+		const adminEmail = this.configService.getOrThrow<string>(
+			GLOBAL_CONFIG.ADMIN_EMAIL,
+		);
+		const salt = await bcrypt.genSalt(10);
+		const adminPass = await bcrypt.hash(
+			this.configService.getOrThrow<string>(GLOBAL_CONFIG.ADMIN_PASS),
+			salt,
+		);
+		const admin = await this.userRepository.findOne({
+			where: { email: adminEmail },
+		});
+		if (!admin) {
+			this.userRepository.save({
+				email: adminEmail,
+				password: adminPass,
+				name: 'admin',
+				role: Role.DEV,
+			});
+		}
 	}
+
+	//-------------------------------------------------------
+	// User Management
+	//-------------------------------------------------------
+	async findAll(
+		query: PaginationMetaDto,
+		pagination?: true,
+	): Promise<UserPaginatedDto>;
+
+	async findAll(
+		query: FindManyOptions<User>,
+		pagination: false,
+	): Promise<User[]>;
+
+	async findAll(
+		query: PaginationMetaDto | FindManyOptions<User>,
+		pagination = true,
+	) {
+		if (pagination) {
+			query = query as PaginationMetaDto;
+			const users = await createPaginationQuery({
+				repository: this.userRepository,
+				dto: query,
+			});
+			const [data, totalItem] = await users.getManyAndCount();
+			return new UserPaginatedDto(
+				data,
+				totalItem,
+				query.page,
+				query.limit,
+			);
+		} else {
+			query = query as FindManyOptions<User>;
+			return await this.userRepository.find(query);
+		}
+	}
+
+	async findOne(
+		option: FindOneOptions<User>,
+		throwError = false,
+	): Promise<User> {
+		const responseUser = await this.userRepository.findOne(option);
+		if (!responseUser && throwError)
+			throw new NotFoundException('User not found');
+
+		return responseUser;
+	}
+
+	async getData(id: string) {
+		return new UserFrontDataResponseDto(
+			await this.userRepository.findOne({ where: { id } }),
+		);
+	}
+
+	async search(query: UserQueryDto) {
+		const {
+			limit,
+			page,
+			email,
+			name,
+			orderByScore,
+			house,
+			role,
+			studentId,
+		} = query;
+		const users = await createPaginationQuery({
+			repository: this.userRepository,
+			dto: { limit, page },
+		});
+		if (!!name)
+			users.where('LOWER(entity.name) LIKE LOWER(:name)', {
+				name: `%${name}%`,
+			});
+
+		if (!!email)
+			users.andWhere('LOWER(entity.email) LIKE LOWER(:email)', {
+				email: `%${email}%`,
+			});
+
+		if (orderByScore !== undefined) {
+			users.orderBy('entity.score', orderByScore ? 'DESC' : 'ASC');
+		}
+
+		if (!!house) users.andWhere('entity.house  = :house', { house });
+
+		if (!!studentId)
+			users.andWhere('entity.studentId = :studentId', {
+				studentId: `%${studentId}%`,
+			});
+
+		users.andWhere('entity.role = :role', { role });
+
+		const [data, totalItem] = await users.getManyAndCount();
+		return new UserPaginatedDto(data, totalItem, page, limit);
+	}
+
+	async generateHashedPassword(password: string): Promise<string> {
+		const salt = await bcrypt.genSalt(10);
+		const hashedPassword = await bcrypt.hash(password, salt);
+		return hashedPassword;
+	}
+
+	async create(user: CreateUserDto): Promise<UserResponseDto> {
+		const existUser = await this.findOne(
+			{
+				where: { email: user.email },
+			},
+			false,
+		);
+
+		if (existUser) {
+			throw new BadRequestException('User already exists');
+		}
+
+		if (user.password) {
+			user.password = await this.generateHashedPassword(user.password);
+		}
+
+		try {
+			return await this.userRepository.save(user);
+		} catch (error) {
+			console.log(error);
+			throw new InternalServerErrorException('Error creating user');
+		}
+	}
+
+	async update(
+		id: string,
+		partialEntity: QueryDeepPartialEntity<User>,
+	): Promise<UserResponseDto> {
+		if (partialEntity.score !== undefined) {
+			const score = Number(partialEntity.score);
+			if (isNaN(score) || score < 0) {
+				throw new BadRequestException(
+					'Score must be a valid number >= 0',
+				);
+			}
+		}
+
+		if (partialEntity.password) {
+			partialEntity.password = await this.generateHashedPassword(
+				String(partialEntity.password),
+			);
+		}
+
 		try {
 			await this.userRepository.update(id, partialEntity);
-			const responseUser = await this.userRepository.findOne({ where: { id } });
+			const responseUser = await this.userRepository.findOne({
+				where: { id },
+			});
+			if (!responseUser) throw new NotFoundException('User not found');
 
-			if (!responseUser) {
-				throw new NotFoundException("User not found");
-			}
-
-			return plainToInstance(UserResponseDto, responseUser);
+			return new UserResponseDto(responseUser);
 		} catch (error) {
-			throw new InternalServerErrorException("Error updating user");
+			throw new InternalServerErrorException('Error updating user');
 		}
 	}
 
@@ -78,81 +236,238 @@ export class UserService {
 		try {
 			await this.userRepository.delete(id);
 		} catch (error) {
-			if (error instanceof Error) throw new NotFoundException("User not found");
+			throw new NotFoundException('User not found');
 		}
 	}
 
-	async get_house(id: string): Promise<House> {
+	async uploadIcon(id: string, iconBase64: string) {
+		try {
+			await this.userRepository.update(id, { icon: iconBase64 });
+		} catch (error) {
+			throw new InternalServerErrorException('Error uploading icon');
+		}
+	}
+
+	//-------------------------------------------------------
+	// House Management
+	//-------------------------------------------------------
+	async getHouse(id: string): Promise<House> {
 		const user = await this.userRepository.findOne({ where: { id } });
-		if (!user) throw new NotFoundException("User not found");
+		if (!user) throw new NotFoundException('User not found');
 		return user.house;
 	}
 
-	async modifyScore(userId: string, amount: number, modifiedById: string): Promise<User> {
+	async findUsersByHouse(house: House): Promise<UserResponseDto[]> {
+		const response = await this.userRepository.find({ where: { house } });
+		return response.map((user) => new UserResponseDto(user));
+	}
+
+	async updateHouseByEmail(
+		email: string,
+		house: House,
+	): Promise<UserResponseDto> {
+		if (!Object.values(House).includes(house)) {
+			throw new BadRequestException(
+				`House '${house}' is not a valid house.`,
+			);
+		}
+
+		const user = await this.userRepository.findOne({ where: { email } });
+		if (!user) {
+			throw new NotFoundException(
+				`User with email '${email}' not found`,
+			);
+		}
+
+		user.house = house;
+		const updatedUser = await this.userRepository.save(user);
+
+		return new UserResponseDto(updatedUser);
+	}
+
+	async removeUserFromHouse(email: string): Promise<UserResponseDto> {
+		const user = await this.userRepository.findOne({ where: { email } });
+		if (!user) {
+			throw new NotFoundException(
+				`User with email '${email}' not found`,
+			);
+		}
+
+		user.house = null;
+		const updatedUser = await this.userRepository.save(user);
+
+		return new UserResponseDto(updatedUser);
+	}
+	//-------------------------------------------------------
+	// Score Management
+	//-------------------------------------------------------
+	async modifyScore(
+		userId: string,
+		amount: number,
+		modifiedById: string,
+		message: string,
+	): Promise<UserResponseDto> {
 		const user = await this.userRepository.findOneOrFail({
 			where: { id: userId },
 		});
-		const result = await this.findEntityById(modifiedById);
-		if (result.role !== Role.DEV) {
-			throw new BadRequestException("Only dev can modify score");
-		}
+		const modifiedBy = await this.findOne({
+			where: { id: modifiedById },
+		});
 
 		user.score += amount;
 		if (user.score < 0) user.score = 0;
 
+		this.houseScoreService.changeScore(user.house, amount);
+
 		const scoreLog = new ScoreLog();
 		scoreLog.amount = amount;
 		scoreLog.user = user;
-		scoreLog.modifiedBy = result;
-
+		scoreLog.modifiedBy = modifiedBy;
+		scoreLog.message = message;
 		await this.scoreLogRepository.save(scoreLog);
+		const response = await this.userRepository.save(user);
+		const house = await this.HouseScoreRepo.findOneBy({ id: user.house });
+		if (!house) throw new NotFoundException('House not found');
 
-		return this.userRepository.save(user);
-	}
-
-	async findEntityById(id: string): Promise<User> {
-		const user = await this.userRepository.findOne({ where: { id } });
-		if (!user) throw new NotFoundException("User not found");
-		return user;
-	}
-
-	// async getuser_scorelogs(id: string): Promise<ScoreLog[]> {
-	// 	const user = await this.userRepository.findOne({
-	// 		where: { id },
-	// 		relations: ["scoreLogs","scoreLogs.modifiedBy"],
-	// 	});
-	// 	if (!user || !user.scoreLogs) {
-	// 		return [];
-	// 	}
-	// 	return user.scoreLogs;
-	// }
-
-	async getuser_scorelogs(id: string): Promise<ScoreLog[]> {
-		const user = await this.userRepository
-			.createQueryBuilder("user")
-			.leftJoinAndSelect("user.scoreLogs", "scoreLogs")
-			.leftJoinAndSelect("scoreLogs.user", "scoreLogUser")
-			.leftJoinAndSelect("scoreLogs.modifiedBy", "modifiedByUser")
-			.select([
-				"user.id",
-				"scoreLogs.id",
-				"scoreLogs.amount",
-				"scoreLogs.date",
-				"modifiedByUser.id",
-				"modifiedByUser.name",
-				// "modifiedByUser.studentId",
-				// "modifiedByUser.icon",
-			])
-			.where("user.id = :id", { id })
-			.getOne();
-	
-		if (!user || !user.scoreLogs) {
-			return [];
+		house.value += amount;
+		if (house.value < 0) {
+			house.value = 0;
 		}
+
+		await this.HouseScoreRepo.update(
+			{ id: user.house },
+			{ value: house.value },
+		);
+		return new UserResponseDto(response);
+	}
+
+	async getUserScoreLogs(id: string): Promise<ScoreLog[]> {
+		const user = await this.userRepository
+			.createQueryBuilder('user')
+			.leftJoinAndSelect('user.scoreLogs', 'scoreLogs')
+			.leftJoinAndSelect('scoreLogs.user', 'scoreLogUser')
+			.leftJoinAndSelect('scoreLogs.modifiedBy', 'modifiedByUser')
+			.select([
+				'user.id',
+				'scoreLogs.id',
+				'scoreLogs.amount',
+				'scoreLogs.date',
+				'modifiedByUser.id',
+				'modifiedByUser.name',
+				'modifiedByUser.studentId',
+				'modifiedByUser.icon',
+			])
+			.where('user.id = :id', { id })
+			.getOne();
+
+		if (!user || !user.scoreLogs) return [];
 		return user.scoreLogs;
 	}
 
-	async findUsersByHouse(house: House): Promise<User[]> {
-		return this.userRepository.find({ where: { house } });
+	//-------------------------------------------------------
+	// Problem Status Management
+	//-------------------------------------------------------
+	async findOneProblemStatus(
+		userId: string,
+		problemId: number,
+		throwError = false,
+	): Promise<ProblemStatus | null> {
+		const problemStatus = await this.problemStatusRepository.findOne({
+			where: { userId, problemId },
+		});
+
+		if (!problemStatus && throwError) {
+			throw new NotFoundException(`Problem status not found`);
+		}
+
+		return problemStatus;
+	}
+
+	async setProblemStatus(
+		problemId: number,
+		userId: string,
+	): Promise<ProblemStatus> {
+		const userProblem = await this.findOneProblemStatus(
+			userId,
+			problemId,
+		);
+		userProblem.status = ProblemStatusEnum.IN_PROGRESS;
+		await this.problemStatusRepository.save(userProblem);
+		return userProblem;
+	}
+
+	async updateProblemStatus(
+		problemId: number,
+		userId: string,
+		status: ProblemStatusEnum,
+		code: string,
+		difficulty: number,
+	): Promise<void> {
+		const userProblem = await this.problemStatusRepository.findOne({
+			where: { userId, problemId },
+		});
+		if (!userProblem) {
+			await this.problemStatusRepository.save({
+				problemId,
+				userId,
+				code,
+				status,
+				lastSubmitted: new Date(),
+			});
+		} else {
+			await this.problemStatusRepository.update(userProblem, {
+				code,
+				status:
+					userProblem.status === ProblemStatusEnum.DONE
+						? ProblemStatusEnum.DONE
+						: status,
+				lastSubmitted: new Date(),
+			});
+		}
+		if (
+			status === ProblemStatusEnum.DONE &&
+			userProblem?.status !== ProblemStatusEnum.DONE
+		) {
+			//change this to actual logic to calculate score
+			const score = this.problemService.calScore(difficulty);
+
+			this.modifyScore(userId, score, userId, 'แก้โจทย์');
+		}
+	}
+
+	//-------------------------------------------------------
+	// Problem Code Methods
+	//-------------------------------------------------------
+
+	async getCode(userId: string, problemId: number): Promise<string | null> {
+		const problemStatus = await this.findOneProblemStatus(
+			userId,
+			problemId,
+		);
+		return problemStatus?.code || problemStatus?.problem.defaultCode;
+	}
+
+	async saveCode(
+		userId: string,
+		problemId: number,
+		code: string,
+	): Promise<void> {
+		let problemStatus = await this.findOneProblemStatus(
+			userId,
+			problemId,
+		);
+
+		if (!problemStatus) {
+			problemStatus = this.problemStatusRepository.create({
+				userId,
+				problemId,
+				code,
+				status: ProblemStatusEnum.IN_PROGRESS,
+			});
+		} else {
+			problemStatus.code = code;
+		}
+
+		await this.problemStatusRepository.save(problemStatus);
 	}
 }

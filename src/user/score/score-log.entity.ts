@@ -1,5 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "../user.entity";
+import { IsString } from "class-validator";
 
 @Entity()
 export class ScoreLog {
@@ -17,8 +18,10 @@ export class ScoreLog {
 	user: User;
 
 	@ManyToOne(() => User, { nullable: false })
-    @JoinColumn({ name: "modifiedBy" })
-    modifiedBy: User;
+	@JoinColumn({ name: "modifiedBy" })
+	modifiedBy: User;
 
-	
+	@IsString()
+	@Column({ nullable: false })
+	message: string;
 }

@@ -1,35 +1,56 @@
-import { ValidationPipe } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { NestFactory } from "@nestjs/core";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { AppModule } from "./app.module";
-import { GLOBAL_CONFIG } from "./shared/constants/global-config.constant";
+import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AppModule } from './app.module';
+import { GLOBAL_CONFIG } from './shared/constants/global-config.constant';
 
 async function bootstrap() {
 	const configService = new ConfigService();
 
 	const app = await NestFactory.create(AppModule);
 
-	if (process.env.FRONT_HOST == "") process.env.FRONT_HOST = "http://localhost:3001";
+	if (!process.env.FRONT_HOST || process.env.FRONT_HOST == '')
+		process.env.FRONT_HOST =
+			'http://localhost:3001 http://localhost:3003';
 
-	console.log(process.env.FRONT_HOST);
+	console.log('Allowed', process.env.FRONT_HOST);
 
 	app.enableCors({
-		origin: process.env.FRONT_HOST,
-		methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
-		allowedHeaders: "Content-Type, Accept, Authorization",
+		origin: process.env.FRONT_HOST.split(' ').filter(
+			(origin) => origin.length > 0,
+		),
+		methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+		allowedHeaders: 'Content-Type, Accept, Authorization',
 		credentials: true,
 	});
 
 	const config = new DocumentBuilder()
-		.setTitle("boost up api")
-		.setDescription("This is the api for the boost up app")
-		.setVersion("1.0")
+		.setTitle('CE-Boostup-XIII-Backend (API)')
+		.setVersion('1.0')
+		.addBearerAuth(
+			{
+				type: 'http',
+				scheme: 'bearer',
+				bearerFormat: 'JWT',
+				in: 'header',
+			},
+			'access-token',
+		)
 		.build();
 
 	const documentFactory = SwaggerModule.createDocument(app, config);
-	SwaggerModule.setup("docs", app, documentFactory);
-	app.useGlobalPipes(new ValidationPipe());
+	SwaggerModule.setup('docs', app, documentFactory);
+	app.useGlobalPipes(
+		new ValidationPipe({
+			disableErrorMessages: !configService.getOrThrow<boolean>(
+				GLOBAL_CONFIG.IS_DEVELOPMENT,
+			),
+			transform: true,
+			whitelist: true,
+			forbidNonWhitelisted: true,
+		}),
+	);
 	await app.listen(configService.get<string>(GLOBAL_CONFIG.PORT) ?? 3000);
 }
 bootstrap();

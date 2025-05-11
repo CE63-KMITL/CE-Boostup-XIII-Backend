@@ -1,19 +1,25 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+	Entity,
+	PrimaryGeneratedColumn,
+	Column,
+	CreateDateColumn,
+	UpdateDateColumn,
+} from 'typeorm';
 
-@Entity("houseScore")
+@Entity('houseScore')
 export class HouseScore {
-  @PrimaryGeneratedColumn()
-  id: number; // Primary Key
+	@PrimaryGeneratedColumn('uuid')
+	id: string;
 
-  @Column()
-  name: String;
+	@Column({ unique: true, nullable: false })
+	name: String;
 
-  @Column('int')
-  value: number; 
+	@Column({ type: 'int', default: 0 })
+	value: number;
 
-  @CreateDateColumn()
-  createdAt: Date; 
+	@CreateDateColumn({ type: 'timestamp', nullable: false })
+	createdAt: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date; 
+	@UpdateDateColumn({ type: 'timestamp', nullable: false })
+	updatedAt: Date;
 }

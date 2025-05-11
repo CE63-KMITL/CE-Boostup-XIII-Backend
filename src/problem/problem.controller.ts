@@ -1,41 +1,219 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
-import { CreateProblemDto, UpdateProblemDto } from "./dto/problem.dto";
-import { Problem } from "./problem.entity";
-import { ProblemService } from "./problem.service";
+import {
+	Body,
+	Controller,
+	Delete,
+	Get,
+	HttpStatus,
+	Param,
+	ParseIntPipe,
+	Patch,
+	Post,
+	Query,
+	Req,
+} from '@nestjs/common';
+import {
+	ApiCreatedResponse,
+	ApiNoContentResponse,
+	ApiOkResponse,
+	ApiResponse,
+	ApiTags,
+} from '@nestjs/swagger';
+import { AllowRole } from 'src/auth/decorators/auth.decorator';
+import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
+import { Role } from 'src/shared/enum/role.enum';
+import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
+import { CreateProblemDto } from './dto/problem-create.dto';
+import { ProblemSearchQueryDto } from './dto/problem-query.dto';
+import {
+	ProblemPaginatedDto,
+	ProblemResponseDto,
+	ProblemSearchedPaginatedDto,
+} from './dto/problem-respond.dto';
+import { UpdateProblemDto } from './dto/problem-update.dto';
+import { ProblemService } from './problem.service';
+import { ProblemSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
+import {
+	ProblemSubmissionResponseDto,
+	RunDraftCodeResponseDto,
+} from './dto/code-submission-dto/problem-submission-response.dto';
+import { RejectProblemDTO } from './dto/problem-reject.dto';
+import { ProblemRunCodeRequest } from './dto/problem-request.dto';
+import { RunCodeResponseDto } from 'src/run_code/dtos/run-code-response.dto';
 
-@Controller("problem")
-@ApiTags("Problem")
+@Controller('problem')
+@ApiTags('Problem')
 export class ProblemController {
 	constructor(private readonly problemService: ProblemService) {}
 
-	@ApiCreatedResponse({ type: Problem })
+	@ApiCreatedResponse({ type: ProblemResponseDto })
+	@AllowRole(Role.STAFF)
 	@Post()
-	async create(@Body() createProblemDto: CreateProblemDto) {
-		return this.problemService.create(createProblemDto);
+	async create(
+		@Body() createProblemRequest: CreateProblemDto,
+		@Req() req: authenticatedRequest,
+	): Promise<ProblemResponseDto> {
+		const userId = req.user.userId;
+		return new ProblemResponseDto(
+			await this.problemService.create(createProblemRequest, userId),
+		);
 	}
 
-	@ApiOkResponse({ type: Problem, isArray: true })
+	@ApiOkResponse({
+		type: ProblemPaginatedDto,
+	})
+	@AllowRole(Role.DEV)
 	@Get()
-	async findAll() {
-		return this.problemService.findAll();
+	async findAll(
+		@Query() query: PaginationMetaDto,
+	): Promise<ProblemPaginatedDto> {
+		return this.problemService.findAll(query);
 	}
 
-	@ApiOkResponse({ type: Problem })
-	@Get(":id")
-	async findOne(@Param("id") id: string) {
-		return this.problemService.findOne(+id);
+	/*
+	-------------------------------------------------------
+	Search Problems
+	-------------------------------------------------------
+	*/
+	@ApiOkResponse({
+		type: ProblemSearchedPaginatedDto,
+	})
+	@AllowRole()
+	@Get('search')
+	async search(
+		@Query() query: ProblemSearchQueryDto,
+		@Req() req: authenticatedRequest,
+	): Promise<ProblemSearchedPaginatedDto> {
+		return this.problemService.search(query, req.user);
 	}
 
-	@ApiOkResponse({ type: Problem })
-	@Patch(":id")
-	async update(@Param("id") id: string, @Body() updateProblemDto: UpdateProblemDto) {
-		return this.problemService.update(+id, updateProblemDto);
+	@ApiOkResponse({ type: ProblemResponseDto })
+	@AllowRole(Role.MEMBER)
+	@Get(':id')
+	async findOne(@Param('id') id: number): Promise<ProblemResponseDto> {
+		return new ProblemResponseDto(await this.problemService.findOne(id));
 	}
 
-	@ApiOkResponse({ type: Problem })
-	@Delete(":id")
-	async remove(@Param("id") id: string) {
-		return this.problemService.remove(+id);
+	@ApiOkResponse({ type: String })
+	@Get('detail/:id')
+	async getDetail(@Param('id') id: number) {
+		return this.problemService.getDetail(id);
+	}
+
+	@ApiOkResponse({ type: ProblemResponseDto })
+	@AllowRole(Role.STAFF)
+	@Patch(':id')
+	async update(
+		@Param('id', ParseIntPipe) id: number,
+		@Body() updateProblemRequest: UpdateProblemDto,
+		@Req() req: authenticatedRequest,
+	): Promise<ProblemResponseDto> {
+		return new ProblemResponseDto(
+			await this.problemService.update(
+				id,
+				updateProblemRequest,
+				req.user,
+			),
+		);
+	}
+
+	@ApiNoContentResponse({
+		description: 'delete problem',
+	})
+	@AllowRole(Role.DEV)
+	@Delete(':id')
+	async remove(@Param('id', ParseIntPipe) id: number) {
+		this.problemService.remove(id);
+	}
+
+	@AllowRole(Role.STAFF)
+	@Post('approve/:id')
+	async approve(
+		@Param('id', ParseIntPipe) id: number,
+		@Req() req: authenticatedRequest,
+	) {
+		this.problemService.approve(id, req.user);
+	}
+
+	@Post('run-code/:id')
+	async runCode(
+		@Param('id', ParseIntPipe) id: number,
+		@Req() req: authenticatedRequest,
+		@Body() body: ProblemRunCodeRequest,
+	) {
+		return new RunCodeResponseDto(
+			await this.problemService.runCode(
+				id,
+				req.user.userId,
+				body.input,
+			),
+		);
+	}
+
+	@AllowRole(Role.MEMBER)
+	@Post('submission/:problemId')
+	@ApiResponse({ type: ProblemSubmissionResponseDto, isArray: true })
+	async submission(
+		@Param(
+			'problemId',
+			new ParseIntPipe({
+				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+			}),
+		)
+		problemId: number,
+		@Req() req: authenticatedRequest,
+		@Body() problemSubmission: ProblemSubmissionDto,
+	): Promise<ProblemSubmissionResponseDto[]> {
+		return await this.problemService.submission(
+			problemSubmission,
+			req.user.userId,
+			problemId,
+		);
+	}
+
+	@AllowRole(Role.STAFF)
+	@Get('run-draft-code/:problemId')
+	@ApiResponse({
+		type: RunDraftCodeResponseDto,
+		status: HttpStatus.OK,
+		isArray: true,
+	})
+	async runDraftCode(
+		@Param(
+			'problemId',
+			new ParseIntPipe({
+				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+			}),
+		)
+		problemId: number,
+	): Promise<RunDraftCodeResponseDto[]> {
+		return await this.problemService.runDraftCode(problemId);
+	}
+
+	@AllowRole(Role.STAFF)
+	@Post('review/:id')
+	async requestReviewProblem(
+		@Param('id', ParseIntPipe) id: number,
+		@Req() req: authenticatedRequest,
+	): Promise<void> {
+		this.problemService.requestReviewProblem(id, req.user);
+	}
+
+	@AllowRole(Role.STAFF)
+	@Post('archive/:id')
+	async archiveProblem(
+		@Param('id', ParseIntPipe) id: number,
+		@Req() req: authenticatedRequest,
+	): Promise<void> {
+		this.problemService.archiveProblem(id, req.user);
+	}
+
+	@AllowRole(Role.STAFF)
+	@Post('archive/:id')
+	async rejectProblem(
+		@Param('id', ParseIntPipe) id: number,
+		message: RejectProblemDTO,
+		@Req() req: authenticatedRequest,
+	): Promise<RejectProblemDTO> {
+		return this.problemService.rejectProblem(id, message, req.user);
 	}
 }
