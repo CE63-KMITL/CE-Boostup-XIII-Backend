@@ -4,6 +4,8 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { GLOBAL_CONFIG } from './shared/constants/global-config.constant';
+import { join } from 'path';
+import * as multer from 'multer';
 
 async function bootstrap() {
 	const configService = new ConfigService();
@@ -51,6 +53,7 @@ async function bootstrap() {
 			forbidNonWhitelisted: true,
 		}),
 	);
+	app.use('/uploads', multer({ dest: './uploads/' }).single('file'));
 	await app.listen(configService.get<string>(GLOBAL_CONFIG.PORT) ?? 3000);
 }
 bootstrap();

@@ -21,7 +21,7 @@ import { HouseScoreModule } from './house_score/house_score.module';
 import { DevUserModule } from './user/dev/user.module.dev';
 import { DevAuthModule } from './auth/dev/auth.module.dev';
 import { RewardModule } from './reward/reward.module';
-
+import { CSVModule } from './csv/csv.module';
 const imports = [
 	UserModule,
 	ProblemModule,
@@ -32,6 +32,7 @@ const imports = [
 	HouseScoreModule,
 	AuthModule,
 	RewardModule,
+	CSVModule,
 	ThrottlerModule.forRoot([
 		{
 			ttl: 10000,

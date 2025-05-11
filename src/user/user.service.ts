@@ -200,6 +200,26 @@ export class UserService implements OnModuleInit {
 		}
 	}
 
+	// async createMultipleUsers(
+	// 	users: CreateUserDto[],
+	// ): Promise<UserResponseDto[]> {
+	// 	const createdUsers = [];
+	// 	for (const user of users) {
+	// 		const createdUser = await this.create(user);
+	// 		createdUsers.push(createdUser);
+	// 	}
+	// 	return createdUsers;
+	// }
+
+	// private async findOne(options: any): Promise<User | undefined> {
+	// 	return this.userRepository.findOne(options);
+	// }
+
+	// private async generateHashedPassword(password: string): Promise<string> {
+	// 	// ใช้ bcrypt หรือฟังก์ชันแฮชที่คุณต้องการ
+	// 	return password;  // ใช้ตัวอย่าง
+	// }
+
 	async update(
 		id: string,
 		partialEntity: QueryDeepPartialEntity<User>,
