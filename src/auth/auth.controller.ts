@@ -1,3 +1,4 @@
+
 import {
 	Body,
 	Controller,
@@ -59,6 +60,7 @@ export class AuthController {
 	@ApiOperation({
 		summary: 'Activate an account',
 	})
+
 	@ApiResponse({
 		status: HttpStatus.CREATED,
 		description: 'Account opened successfully.',
@@ -69,6 +71,7 @@ export class AuthController {
 		description:
 			'Bad Request - Invalid input data or email already exists',
 	})
+
 	@HttpCode(HttpStatus.CREATED)
 	async openAccount(@Body() body: OpenAccountDto): Promise<AuthResponseDto> {
 		return await this.authService.openAccount(body);
@@ -137,5 +140,6 @@ export class AuthController {
 		return {
 			role: req.user.role,
 		};
+
 	}
 }
