@@ -9,11 +9,11 @@ import { CSVService } from './csv.service';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 
-@Controller('csv')
+@Controller('upload')
 export class CSVController {
 	constructor(private readonly csvService: CSVService) {}
 
-	@Post('upload')
+	@Post('senior')
 	@UseInterceptors(
 		FileInterceptor('file', {
 			storage: diskStorage({
@@ -31,7 +31,29 @@ export class CSVController {
 			}),
 		}),
 	)
-	async uploadCSV(@UploadedFile() file: Express.Multer.File) {
+	async uploadCSV_older(@UploadedFile() file: Express.Multer.File) {
 		return this.csvService.createUsersFromFile(file.path);
+	}
+
+	@Post('junior')
+	@UseInterceptors(
+		FileInterceptor('file', {
+			storage: diskStorage({
+				destination: './uploads',
+				filename: (req, file, cb) => {
+					const uniqueSuffix =
+						Date.now() +
+						'-' +
+						Math.round(Math.random() * 1e9);
+					cb(
+						null,
+						`${uniqueSuffix}${extname(file.originalname)}`,
+					);
+				},
+			}),
+		}),
+	)
+	async uploadCSV_younger(@UploadedFile() file: Express.Multer.File) {
+		return this.csvService.createJuniorMembersFromXLSX(file.path);
 	}
 }
