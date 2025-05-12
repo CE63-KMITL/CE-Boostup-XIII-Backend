@@ -68,6 +68,9 @@ importers:
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
+      iconv-lite:
+        specifier: ^0.6.3
+        version: 0.6.3
       joi:
         specifier: ^17.13.3
         version: 17.13.3
@@ -7075,7 +7078,6 @@ snapshots:
   iconv-lite@0.6.3:
     dependencies:
       safer-buffer: 2.1.2
-    optional: true
 
   ieee754@1.2.1: {}
 
