@@ -36,8 +36,6 @@ import {
 import { ProblemStatus } from 'src/user/problem_status/problem-status.entity';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
 import { TestCaseService } from './test_case/test-case.service';
-import { TestCase } from './test_case/test-case.entity';
-import { CreateTestCaseDto } from './test_case/dto/create-test-case.dto';
 
 @Injectable()
 export class ProblemService {
@@ -76,26 +74,23 @@ export class ProblemService {
 			where: { id: userId },
 		});
 
-		const testCasesResult = await Promise.all(
-			createProblemRequest.testCases.map(async (testCase) => {
-				const expectOutput =
-					await this.testCaseService.getExpectedOutput(
-						createProblemRequest.solutionCode,
-						testCase.input,
-						createProblemRequest.timeLimit,
-					);
-				return {
-					...testCase,
-					expectOutput,
-				};
-			}),
-		);
-
 		const problem = this.problemsRepository.create({
 			...createProblemRequest,
 			author: author,
-			testCases: testCasesResult,
+			testCases: [],
 		});
+
+		problem.testCases = await Promise.all(
+			createProblemRequest.testCases.map(async (testCase) => {
+				try {
+					return await this.testCaseService.create(
+						problem.id,
+						testCase,
+					);
+				} catch (error) {}
+			}),
+		);
+
 		return this.problemsRepository.save(problem);
 	}
 
@@ -117,14 +112,12 @@ export class ProblemService {
 	async findOne(id: number): Promise<Problem> {
 		const problem = await this.problemsRepository.findOne({
 			where: { id },
-			relations: {
-				author: true,
-				testCases: true,
-			},
+			relations: ['author', 'testCases'],
 		});
 		if (!problem) {
 			throw new NotFoundException(`Problem with ID ${id} not found`);
 		}
+
 		return problem;
 	}
 
@@ -178,7 +171,6 @@ export class ProblemService {
 		}
 
 		if (tags && tags.length > 0) {
-			console.log(tags);
 			searchProblems.andWhere('entity.tags && ARRAY[:...tags]', {
 				tags,
 			});
@@ -332,6 +324,20 @@ export class ProblemService {
 			updateProblemRequest.solutionCode.trim() ==
 				problem.solutionCode.trim();
 
+		if (updateProblemRequest.title) {
+			const existProblem = await this.problemsRepository.findOneBy({
+				title: updateProblemRequest.title,
+			});
+
+			if (problem.id !== existProblem.id) {
+				throw new BadRequestException(
+					'The problem title already exists.',
+				);
+			}
+		}
+
+		Object.assign(problem, updateProblemRequest);
+
 		if (!sameTestCase || !sameSolutionCode) {
 			importantChanged = true;
 
@@ -344,21 +350,31 @@ export class ProblemService {
 
 			if (problem.testCases && problem.testCases.length > 0) {
 				await Promise.all(
-					problem.testCases.map((testCase) =>
-						this.testCaseService.remove(testCase.id),
-					),
+					problem.testCases.map(async (testCase) => {
+						try {
+							await this.testCaseService.remove(
+								testCase.id,
+							);
+						} catch (e) {}
+					}),
 				);
 			}
 
 			const newTestCases = await Promise.all(
-				updateProblemRequest.testCases.map((testCase) => {
-					try {
-						return this.testCaseService.create(
-							problem.id,
-							testCase,
-						);
-					} catch (e) {}
-				}),
+				updateProblemRequest.testCases.map(
+					async (testCase, index) => {
+						try {
+							return await this.testCaseService.create(
+								problem.id,
+								testCase,
+							);
+						} catch (e) {
+							throw new BadRequestException(
+								`============\nError at Test case ${index}\n============\n\n${e}`,
+							);
+						}
+					},
+				),
 			);
 
 			problem.testCases = newTestCases;

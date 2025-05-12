@@ -36,8 +36,11 @@ export class TestCaseService {
 		if (!(problem instanceof Problem)) {
 			problem = await this.problemService.findOne(problem);
 		}
+
 		if (problem.testCases.some((testCase) => testCase.input === input)) {
-			throw new BadRequestException('Test case already exist');
+			throw new BadRequestException(
+				`Test case ${input} already exist`,
+			);
 		}
 	}
 
@@ -65,11 +68,17 @@ export class TestCaseService {
 		const problem = await this.problemService.findOne(problemId);
 
 		await this.checkTestCaseExist(problem, input);
-		const expectOutput = await this.getExpectedOutput(
-			problem.solutionCode,
-			createTestCaseDto.input,
-			problem.timeLimit,
-		);
+		let expectOutput;
+
+		try {
+			expectOutput = await this.getExpectedOutput(
+				problem.solutionCode,
+				createTestCaseDto.input,
+				problem.timeLimit,
+			);
+		} catch (error) {
+			throw error;
+		}
 
 		return await this.testCaseRepository.save({
 			input,
@@ -128,6 +137,11 @@ export class TestCaseService {
 	}
 
 	async remove(id: string): Promise<void> {
-		await this.testCaseRepository.delete(id);
+		if (!id) throw new BadRequestException("id can't be empty");
+		try {
+			await this.testCaseRepository.delete(id);
+		} catch (error) {
+			throw new NotFoundException('Test case not found');
+		}
 	}
 }

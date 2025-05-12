@@ -77,15 +77,7 @@ export class UserResponseDto {
 	updatedAt: Date;
 
 	constructor(user: User) {
-		this.id = user.id;
-		this.name = user.name;
-		this.email = user.email;
-		this.house = user.house;
-		this.role = user.role;
-		this.score = user.score;
-		this.icon = user.icon;
-		this.createdAt = user.createdAt;
-		this.updatedAt = user.updatedAt;
+		Object.assign(this, user);
 	}
 }
 
@@ -109,6 +101,12 @@ export class UserFrontDataResponseDto extends Filter(UserResponseDto, [
 ]) {}
 
 export class UserSmallResponseDto extends Filter(UserResponseDto, [
+	'name',
+	'icon',
+]) {}
+
+export class UserMediumResponseDto extends Filter(UserResponseDto, [
+	'id',
 	'name',
 	'icon',
 ]) {}
