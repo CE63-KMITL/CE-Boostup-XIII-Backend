@@ -32,6 +32,6 @@ export class CSVController {
 		}),
 	)
 	async uploadCSV(@UploadedFile() file: Express.Multer.File) {
-		return await this.csvService.createUsersFromCSV(file.path);
+		return this.csvService.createUsersFromFile(file.path);
 	}
 }
