@@ -38,6 +38,7 @@ import { RejectProblemDTO } from './dto/problem-reject.dto';
 import { TestCaseService } from './test_case/test-case.service';
 import { TestCase } from './test_case/test-case.entity';
 import { CreateTestCaseDto } from './test_case/dto/create-test-case.dto';
+import { ProblemAllowMode } from './enum/problem-allow-mode.enum';
 
 @Injectable()
 export class ProblemService {
@@ -479,10 +480,62 @@ export class ProblemService {
 		problemId: number,
 	) {
 		const { code } = problemSubmission;
+		const codeString = JSON.parse(code) ?? code;
 		const problem = await this.findOne(problemId);
 		const { testCases, timeLimit } = problem;
 		if (testCases.length === 0)
 			throw new BadRequestException('no test case for this problem');
+		//check disallow function
+		if (problem.functions) {
+			const hasAllowed = problem.functions.some((func) =>
+				new RegExp(`\\b${func}\\s*\\(`).test(codeString),
+			);
+			if (
+				problem.functionMode === ProblemAllowMode.DISALLOWED &&
+				hasAllowed
+			) {
+				throw new BadRequestException(
+					`Your code contains disallowed functions ${problem.functions.join(
+						', ',
+					)}`,
+				);
+			} else if (
+				problem.functionMode === ProblemAllowMode.ALLOWED &&
+				!hasAllowed
+			) {
+				throw new BadRequestException(
+					`Your code does not contain allowed functions ${problem.functions.join(
+						', ',
+					)}`,
+				);
+			}
+		}
+		if (problem.headers) {
+			const hasAllowed = problem.headers.some((header) =>
+				new RegExp(`#include\\s*[<"]${header}[>"]`, 'g').test(
+					codeString,
+				),
+			);
+			if (
+				problem.headerMode === ProblemAllowMode.DISALLOWED &&
+				hasAllowed
+			) {
+				throw new BadRequestException(
+					`Your code contains disallowed headers ${problem.headers.join(
+						', ',
+					)}`,
+				);
+			} else if (
+				problem.headerMode === ProblemAllowMode.ALLOWED &&
+				!hasAllowed
+			) {
+				throw new BadRequestException(
+					`Your code should contains headers ${problem.headers.join(
+						', ',
+					)}`,
+				);
+			}
+		}
 		const runCodeResponse = await Promise.all(
 			testCases.map((testCase) =>
 				this.runCodeService.runCode(
