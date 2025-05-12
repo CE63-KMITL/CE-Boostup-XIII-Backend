@@ -17,11 +17,11 @@ import {
 	CreateTestCaseDto,
 	UpdateTestCaseDto,
 } from './dto/create-test-case.dto';
-import { AllowRole } from 'src/auth/decorators/auth.decorator';
 import { Role } from 'src/shared/enum/role.enum';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 import { TestCaseResponseDto } from './dto/test-case-response.dto';
 import { ApiResponse } from '@nestjs/swagger';
+import { AllowRole } from 'src/shared/decorators/auth.decorator';
 
 @Controller('test-case')
 export class TestCaseController {

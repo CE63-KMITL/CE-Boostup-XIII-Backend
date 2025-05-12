@@ -23,6 +23,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
 	protected async handleRequest(
 		requestProps: ThrottlerRequest,
 	): Promise<boolean> {
+		console.log(requestProps);
 		const { context } = requestProps;
 		const req = context.switchToHttp().getRequest();
 		// 50 requests per 1 minutes

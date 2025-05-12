@@ -10,8 +10,8 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Role } from 'src/shared/enum/role.enum';
-import { AllowRole } from '../auth/decorators/auth.decorator';
 import { HouseScoreService } from './house_score.service';
+import { AllowRole } from 'src/shared/decorators/auth.decorator';
 
 @ApiTags('House Score')
 @Controller('houseScores')

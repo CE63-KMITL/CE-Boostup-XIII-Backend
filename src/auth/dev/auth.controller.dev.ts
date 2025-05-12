@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { AllowRole } from 'src/shared/decorators/auth.decorator';
 import { Role } from 'src/shared/enum/role.enum';
-import { AllowRole } from '../decorators/auth.decorator';
 
 @ApiTags('Auth (DEV)')
 @Controller('dev/auth/')

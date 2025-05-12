@@ -26,11 +26,11 @@ export class RunCodeRequestDto {
 
 	@ApiProperty({
 		description: 'Timeout for the code execution in milliseconds',
-		example: 1000,
+		example: 100,
 	})
 	@IsNumber()
 	@IsOptional()
-	timeout: number;
+	timeout: number = 100;
 
 	@ApiProperty({
 		description: 'The mode for the function execution',

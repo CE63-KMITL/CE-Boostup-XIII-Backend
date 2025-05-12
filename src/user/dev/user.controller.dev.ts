@@ -10,14 +10,12 @@ import { ApiTags } from '@nestjs/swagger';
 import { Role } from 'src/shared/enum/role.enum';
 import { CreateUserDto } from '../dtos/create-user.dto';
 import { UserService } from '../user.service';
-import { AllowRole } from 'src/auth/decorators/auth.decorator';
+import { AllowRole } from 'src/shared/decorators/auth.decorator';
 
 @ApiTags('User (DEV)')
 @Controller('dev/user/')
 export class DevUserController {
-	constructor(
-		private readonly userService: UserService,
-	) {}
+	constructor(private readonly userService: UserService) {}
 
 	@Post('create')
 	@AllowRole(Role.DEV)

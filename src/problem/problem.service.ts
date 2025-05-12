@@ -5,7 +5,6 @@ import {
 	Inject,
 	Injectable,
 	NotFoundException,
-	UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { jwtPayloadDto } from 'src/auth/dto/jwt-payload.dto';
@@ -138,7 +137,7 @@ export class ProblemService {
 		}
 
 		if (problem.author.id !== user.userId) {
-			throw new UnauthorizedException(
+			throw new ForbiddenException(
 				'Must be the owner of the problem to update.',
 			);
 		}
@@ -555,33 +554,41 @@ export class ProblemService {
 	//-------------------------------------------------------
 	// Problem Status Management
 	//-------------------------------------------------------
-	async requestReviewProblem(
-		id: number,
-		user: jwtPayloadDto,
-	): Promise<void> {
+	async requestReviewProblem(id: number, user: jwtPayloadDto) {
+		const problem = await this.findOne(id);
+
+		if (user.userId !== problem.author.id)
+			throw new ForbiddenException("You're not the author");
+
 		await this.problemsRepository.update(id, {
 			devStatus: ProblemStaffStatusEnum.NEED_REVIEW,
 		});
+
+		return 'Success';
 	}
 
-	async approve(id: number, user: jwtPayloadDto): Promise<void> {
+	async approve(id: number, user: jwtPayloadDto) {
 		await this.problemsRepository.update(id, {
 			devStatus: ProblemStaffStatusEnum.PUBLISHED,
 		});
+
+		return 'Success';
 	}
 
 	async rejectProblem(
 		id: number,
 		message: RejectProblemDTO,
 		user: jwtPayloadDto,
-	): Promise<void> {
+	) {
 		await this.problemsRepository.update(id, {
 			devStatus: ProblemStaffStatusEnum.REJECTED,
 			rejectedMessage: message.message,
 		});
+
+		return 'Success';
 	}
 
-	async archiveProblem(id: number, user: jwtPayloadDto): Promise<void> {
+	async archiveProblem(id: number, user: jwtPayloadDto) {
 		const problem = await this.findOne(id);
 
 		if (user.userId !== problem.author.id)
@@ -590,6 +597,8 @@ export class ProblemService {
 		await this.problemsRepository.update(id, {
 			devStatus: ProblemStaffStatusEnum.ARCHIVED,
 		});
+
+		return 'Success';
 	}
 
 	//-------------------------------------------------------

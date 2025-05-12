@@ -16,12 +16,10 @@ import {
 	ApiResponse,
 	ApiTags,
 } from '@nestjs/swagger';
-import { AllowRole } from 'src/auth/decorators/auth.decorator';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 import { Role } from 'src/shared/enum/role.enum';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { CreateProblemDto } from './dto/problem-create.dto';
-import { ProblemSearchQueryDto } from './dto/problem-query.dto';
 import {
 	ProblemPaginatedDto,
 	ProblemResponseDto,
@@ -36,6 +34,8 @@ import { RunCodeResponseDto } from 'src/run_code/dtos/run-code-response.dto';
 import { Throttle } from '@nestjs/throttler';
 import { THROTTLE_RUNCODE } from 'src/shared/configs/throttle.config';
 import { UpdateProblemDto } from './dto/problem-update.dto';
+import { ProblemSearchQueryDto } from './dto/problem-query.dto';
+import { AllowRole } from 'src/shared/decorators/auth.decorator';
 
 @Controller('problem')
 @ApiTags('Problem')
@@ -86,19 +86,6 @@ export class ProblemController {
 		);
 	}
 
-	@ApiOkResponse({ type: ProblemResponseDto })
-	@AllowRole(Role.MEMBER)
-	@Get(':id')
-	async findOne(@Param('id') id: number): Promise<ProblemResponseDto> {
-		return new ProblemResponseDto(await this.problemService.findOne(id));
-	}
-
-	@ApiOkResponse({ type: String })
-	@Get('detail/:id')
-	async getDetail(@Param('id') id: number) {
-		return this.problemService.getDetail(id);
-	}
-
 	//-------------------------------------------------------
 	// Problem Search
 	//-------------------------------------------------------
@@ -114,13 +101,29 @@ export class ProblemController {
 		return this.problemService.search(query, req.user);
 	}
 
+	//-------------------------------------------------------
+	// Problem Data
+	//-------------------------------------------------------
+
+	@ApiOkResponse({ type: ProblemResponseDto })
+	@AllowRole(Role.MEMBER)
+	@Get(':id')
+	async findOne(@Param('id') id: number): Promise<ProblemResponseDto> {
+		return new ProblemResponseDto(await this.problemService.findOne(id));
+	}
+
+	@ApiOkResponse({ type: String })
+	@Get('detail/:id')
+	async getDetail(@Param('id') id: number) {
+		return this.problemService.getDetail(id);
+	}
 
 	//-------------------------------------------------------
 	// Code Execution
 	//-------------------------------------------------------
 	@Post('run-code/:id')
 	@Throttle({
-		THROTTLE_RUNCODE,
+		default: THROTTLE_RUNCODE,
 	})
 	async runCode(
 		@Param('id', ParseIntPipe) id: number,
@@ -140,7 +143,7 @@ export class ProblemController {
 	@Post('submission/:problemId')
 	@ApiResponse({ type: ProblemSubmissionResponseDto, isArray: true })
 	@Throttle({
-		THROTTLE_RUNCODE,
+		default: THROTTLE_RUNCODE,
 	})
 	async submission(
 		@Param(
@@ -163,13 +166,14 @@ export class ProblemController {
 	//-------------------------------------------------------
 	// Problem Review/Approval
 	//-------------------------------------------------------
+	@ApiResponse({ status: HttpStatus.OK })
 	@AllowRole(Role.STAFF)
 	@Post('review/:id')
 	async requestReviewProblem(
 		@Param('id', ParseIntPipe) id: number,
 		@Req() req: authenticatedRequest,
-	): Promise<void> {
-		this.problemService.requestReviewProblem(id, req.user);
+	) {
+		return await this.problemService.requestReviewProblem(id, req.user);
 	}
 
 	@AllowRole(Role.STAFF)
@@ -178,7 +182,7 @@ export class ProblemController {
 		@Param('id', ParseIntPipe) id: number,
 		@Req() req: authenticatedRequest,
 	) {
-		this.problemService.approve(id, req.user);
+		return await this.problemService.approve(id, req.user);
 	}
 
 	@AllowRole(Role.STAFF)
@@ -187,8 +191,8 @@ export class ProblemController {
 		@Param('id', ParseIntPipe) id: number,
 		@Body() message: RejectProblemDTO,
 		@Req() req: authenticatedRequest,
-	): Promise<void> {
-		await this.problemService.rejectProblem(id, message, req.user);
+	) {
+		return await this.problemService.rejectProblem(id, message, req.user);
 	}
 
 	@AllowRole(Role.STAFF)
@@ -196,7 +200,7 @@ export class ProblemController {
 	async archiveProblem(
 		@Param('id', ParseIntPipe) id: number,
 		@Req() req: authenticatedRequest,
-	): Promise<void> {
-		this.problemService.archiveProblem(id, req.user);
+	) {
+		return await this.problemService.archiveProblem(id, req.user);
 	}
 }
