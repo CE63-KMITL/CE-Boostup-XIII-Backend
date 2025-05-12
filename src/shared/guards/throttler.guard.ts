@@ -14,6 +14,9 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
 		);
 	}
 	protected getTracker(req: Record<string, any>): Promise<string> {
+		if (req.user && req.user.userId) {
+			return req.user.userId;
+		}
 		if (this.isLimitedPath(req as Request)) return req.body.email;
 		return req.ip;
 	}

@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+	IsArray,
+	IsEnum,
+	IsNumber,
+	IsOptional,
+	IsString,
+} from 'class-validator';
+import { ProblemAllowMode } from 'src/problem/enum/problem-allow-mode.enum';
 
 export class RunCodeRequestDto {
 	@ApiProperty({
@@ -24,6 +31,42 @@ export class RunCodeRequestDto {
 	@IsNumber()
 	@IsOptional()
 	timeout: number;
+
+	@ApiProperty({
+		description: 'The mode for the function execution',
+		example: ProblemAllowMode.ALLOWED,
+		enum: ProblemAllowMode,
+	})
+	@IsOptional()
+	@IsEnum(ProblemAllowMode)
+	functionMode: ProblemAllowMode;
+
+	@ApiProperty({
+		description: 'The mode for the header execution',
+		example: ProblemAllowMode.ALLOWED,
+		enum: ProblemAllowMode,
+	})
+	@IsOptional()
+	@IsEnum(ProblemAllowMode)
+	headerMode: ProblemAllowMode;
+
+	@ApiProperty({
+		description: 'The headers to be used in the code execution',
+		example: ['stdio.h'],
+	})
+	@IsOptional()
+	@IsArray()
+	@IsString({ each: true })
+	headers: string[];
+
+	@ApiProperty({
+		description: 'The functions to be used in the code execution',
+		example: ['sum', 'map'],
+	})
+	@IsOptional()
+	@IsArray()
+	@IsString({ each: true })
+	functions: string[];
 }
 
 export class RunCodeTestCasesRequestDto {
@@ -50,4 +93,40 @@ export class RunCodeTestCasesRequestDto {
 	@IsNumber()
 	@IsOptional()
 	timeout: number;
+
+	@ApiProperty({
+		description: 'The mode for the function execution',
+		example: ProblemAllowMode.ALLOWED,
+		enum: ProblemAllowMode,
+	})
+	@IsOptional()
+	@IsEnum(ProblemAllowMode)
+	functionMode: ProblemAllowMode;
+
+	@ApiProperty({
+		description: 'The mode for the header execution',
+		example: ProblemAllowMode.ALLOWED,
+		enum: ProblemAllowMode,
+	})
+	@IsOptional()
+	@IsEnum(ProblemAllowMode)
+	headerMode: ProblemAllowMode;
+
+	@ApiProperty({
+		description: 'The headers to be used in the code execution',
+		example: ['stdio.h'],
+	})
+	@IsOptional()
+	@IsArray()
+	@IsString({ each: true })
+	headers: string[];
+
+	@ApiProperty({
+		description: 'The functions to be used in the code execution',
+		example: ['sum', 'map'],
+	})
+	@IsOptional()
+	@IsArray()
+	@IsString({ each: true })
+	functions: string[];
 }

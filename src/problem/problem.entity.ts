@@ -13,7 +13,6 @@ import { ScoreValue } from './type/score-value.type';
 import { TestCase } from 'src/problem/test_case/test-case.entity';
 import { ProblemAllowMode } from './enum/problem-allow-mode.enum';
 
-// TODO: Add test cases to Problem
 @Entity()
 export class Problem {
 	@PrimaryGeneratedColumn('increment')
@@ -87,6 +86,13 @@ export class Problem {
 
 	@Column('text', { array: true, nullable: true, default: [] })
 	tags: string[];
+
+	@Column('text', { array: true, nullable: true, default: [] })
+	@Column({
+		nullable: true,
+		type: 'text',
+	})
+	rejectedMessage?: string;
 
 	@OneToMany(() => TestCase, (TestCase) => TestCase.problem)
 	testCases: TestCase[];

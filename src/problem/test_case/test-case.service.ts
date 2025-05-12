@@ -18,7 +18,6 @@ import { Role } from 'src/shared/enum/role.enum';
 import { TestCaseResponseDto } from './dto/test-case-response.dto';
 import { RunCodeService } from 'src/run_code/run-code.service';
 import { Problem } from '../problem.entity';
-import { RunCodeExitStatusEnum } from 'src/run_code/enum/run-code-exit-status.enum';
 
 @Injectable()
 export class TestCaseService {
@@ -44,24 +43,6 @@ export class TestCaseService {
 		}
 	}
 
-	async getExpectedOutput(
-		solutionCode: string,
-		input: string,
-		timeLimit: number,
-	) {
-		const runCodeResult = await this.runCodeService.runCode(
-			input,
-			solutionCode,
-			timeLimit,
-		);
-		if (runCodeResult.exit_status != RunCodeExitStatusEnum.SUCCESS) {
-			throw new BadRequestException(
-				`Test case failed at input:\n>>>\n${input}\n>>>\nused time: ${runCodeResult.used_time}ms\noutput:\n>>>\n${runCodeResult.output}\n>>>`,
-			);
-		}
-		return runCodeResult.output;
-	}
-
 	async create(problemId: number, createTestCaseDto: CreateTestCaseDto) {
 		const { isHiddenTestcase, input } = createTestCaseDto;
 
@@ -71,11 +52,15 @@ export class TestCaseService {
 		let expectOutput;
 
 		try {
-			expectOutput = await this.getExpectedOutput(
-				problem.solutionCode,
-				createTestCaseDto.input,
-				problem.timeLimit,
-			);
+			expectOutput = await this.runCodeService.runCode({
+				input,
+				code: problem.solutionCode,
+				timeout: problem.timeLimit,
+				functionMode: problem.functionMode,
+				headerMode: problem.headerMode,
+				headers: problem.headers,
+				functions: problem.functions,
+			});
 		} catch (error) {
 			throw error;
 		}

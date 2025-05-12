@@ -29,16 +29,10 @@ import {
 import { Problem } from './problem.entity';
 import { ProblemSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
 import { RunCodeService } from 'src/run_code/run-code.service';
-import {
-	ProblemSubmissionResponseDto,
-	RunDraftCodeResponseDto,
-} from './dto/code-submission-dto/problem-submission-response.dto';
+import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
 import { ProblemStatus } from 'src/user/problem_status/problem-status.entity';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
 import { TestCaseService } from './test_case/test-case.service';
-import { TestCase } from './test_case/test-case.entity';
-import { CreateTestCaseDto } from './test_case/dto/create-test-case.dto';
-import { ProblemAllowMode } from './enum/problem-allow-mode.enum';
 
 @Injectable()
 export class ProblemService {
@@ -57,7 +51,7 @@ export class ProblemService {
 	) {}
 
 	//-------------------------------------------------------
-	// Problem Management
+	// Problem Management (CRUD)
 	//-------------------------------------------------------
 	async create(
 		createProblemRequest: CreateProblemDto,
@@ -129,6 +123,200 @@ export class ProblemService {
 		return problem.description || 'No detail available';
 	}
 
+	async update(
+		id: number,
+		updateProblemRequest: UpdateProblemDto,
+		user: jwtPayloadDto,
+	): Promise<Problem> {
+		const problem = await this.problemsRepository.findOne({
+			where: { id: id },
+			relations: ['author', 'testCases'],
+		});
+
+		if (!problem) {
+			throw new NotFoundException(`Problem with ID ${id} not found`);
+		}
+
+		if (problem.author.id !== user.userId) {
+			throw new UnauthorizedException(
+				'Must be the owner of the problem to update.',
+			);
+		}
+
+		const originalDifficulty = problem.difficulty;
+		let importantChanged = false;
+
+		//-------------------------------------------------------
+		// Handle testcase or solution code update
+		//-------------------------------------------------------
+
+		const sameTestCase =
+			JSON.stringify(updateProblemRequest.testCases) ==
+			JSON.stringify(problem.testCases);
+
+		const sameSolutionCode =
+			updateProblemRequest.solutionCode &&
+			updateProblemRequest.solutionCode.trim() ==
+				problem.solutionCode.trim();
+
+		if (updateProblemRequest.title) {
+			const existProblem = await this.problemsRepository.findOneBy({
+				title: updateProblemRequest.title,
+			});
+
+			if (problem.id !== existProblem.id) {
+				throw new BadRequestException(
+					'The problem title already exists.',
+				);
+			}
+		}
+
+		Object.assign(problem, updateProblemRequest);
+
+		if (!sameTestCase || !sameSolutionCode) {
+			importantChanged = true;
+
+			problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
+
+			problem.timeLimit =
+				updateProblemRequest.timeLimit ?? problem.timeLimit;
+			problem.solutionCode =
+				updateProblemRequest.solutionCode ?? problem.solutionCode;
+
+			await this.runCodeService.checkAllowCode({
+				codeString: problem.solutionCode,
+				functions: problem.functions,
+				functionMode: problem.functionMode,
+				headerMode: problem.headerMode,
+				headers: problem.headers,
+			});
+
+			if (problem.testCases && problem.testCases.length > 0) {
+				await Promise.all(
+					problem.testCases.map(async (testCase) => {
+						try {
+							await this.testCaseService.remove(
+								testCase.id,
+							);
+						} catch (e) {}
+					}),
+				);
+			}
+
+			const newTestCases = await Promise.all(
+				updateProblemRequest.testCases.map(
+					async (testCase, index) => {
+						try {
+							return await this.testCaseService.create(
+								problem.id,
+								testCase,
+							);
+						} catch (e) {
+							throw new BadRequestException(
+								`============\nError at Test case ${index}\n============\n\n${e}`,
+							);
+						}
+					},
+				),
+			);
+
+			problem.testCases = newTestCases;
+
+			const users = await this.userService.findAll(
+				{
+					where: {
+						problemStatus: {
+							problemId: problem.id,
+							status: ProblemStatusEnum.DONE,
+						},
+					},
+					relations: ['problemStatus'],
+				},
+				false,
+			);
+
+			for (const user of users) {
+				await this.userService.updateProblemStatus(
+					problem.id,
+					user.id,
+					ProblemStatusEnum.IN_PROGRESS,
+					user.problemStatus[0].code,
+					problem.difficulty,
+				);
+
+				const scoreToRemove = this.calScore(originalDifficulty);
+
+				await this.userService.modifyScore(
+					user.id,
+					-scoreToRemove,
+					problem.author.id,
+					`โจทย์มีการแก้ไข : ${problem.title}`,
+				);
+
+				await this.submission(
+					new ProblemSubmissionDto({
+						code: user.problemStatus[0].code,
+					}),
+					user.id,
+					problem.id,
+				);
+			}
+		}
+
+		//-------------------------------------------------------
+		// Handle difficulty update (only if solution code didn't change)
+		//-------------------------------------------------------
+		if (
+			!importantChanged &&
+			updateProblemRequest.difficulty &&
+			updateProblemRequest.difficulty !== originalDifficulty
+		) {
+			const newDifficulty = updateProblemRequest.difficulty;
+
+			const users = await this.userService.findAll(
+				{
+					where: {
+						problemStatus: {
+							problemId: problem.id,
+							status: ProblemStatusEnum.DONE,
+						},
+					},
+					relations: ['problemStatus'],
+				},
+				false,
+			);
+
+			for (const user of users) {
+				const scoreToRemove = this.calScore(originalDifficulty);
+				await this.userService.modifyScore(
+					user.id,
+					-scoreToRemove,
+					problem.author.id,
+					`โจทย์มีการปรับความยาก : ${problem.title}`,
+				);
+
+				const scoreToAdd = this.calScore(newDifficulty);
+				await this.userService.modifyScore(
+					user.id,
+					scoreToAdd,
+					problem.author.id,
+					`โจทย์มีการปรับความยาก : ${problem.title}`,
+				);
+			}
+
+			problem.difficulty = newDifficulty;
+		}
+
+		return await this.problemsRepository.save(problem);
+	}
+
+	async remove(id: number): Promise<void> {
+		await this.problemsRepository.delete(id);
+	}
+
+	//-------------------------------------------------------
+	// Problem Search
+	//-------------------------------------------------------
 	async search(
 		query: ProblemSearchQueryDto,
 		user: jwtPayloadDto,
@@ -291,205 +479,26 @@ export class ProblemService {
 		return result;
 	}
 
-	async update(
-		id: number,
-		updateProblemRequest: UpdateProblemDto,
-		user: jwtPayloadDto,
-	): Promise<Problem> {
-		const problem = await this.problemsRepository.findOne({
-			where: { id: id },
-			relations: ['author', 'testCases'],
-		});
+	//-------------------------------------------------------
+	// Code Execution
+	//-------------------------------------------------------
+	async runCode(problem: Problem | number, userId: string, input: string) {
+		if (typeof problem === 'number')
+			problem = await this.findOne(problem);
 
-		if (!problem) {
-			throw new NotFoundException(`Problem with ID ${id} not found`);
-		}
-
-		if (problem.author.id !== user.userId) {
-			throw new UnauthorizedException(
-				'Must be the owner of the problem to update.',
-			);
-		}
-
-		const originalDifficulty = problem.difficulty;
-		let importantChanged = false;
-
-		//-------------------------------------------------------
-		// Handle testcase or solution code update
-		//-------------------------------------------------------
-
-		const sameTestCase =
-			JSON.stringify(updateProblemRequest.testCases) ==
-			JSON.stringify(problem.testCases);
-
-		const sameSolutionCode =
-			updateProblemRequest.solutionCode &&
-			updateProblemRequest.solutionCode.trim() ==
-				problem.solutionCode.trim();
-
-		if (updateProblemRequest.title) {
-			const existProblem = await this.problemsRepository.findOneBy({
-				title: updateProblemRequest.title,
-			});
-
-			if (problem.id !== existProblem.id) {
-				throw new BadRequestException(
-					'The problem title already exists.',
-				);
-			}
-		}
-
-		Object.assign(problem, updateProblemRequest);
-
-		if (!sameTestCase || !sameSolutionCode) {
-			importantChanged = true;
-
-			problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
-
-			problem.timeLimit =
-				updateProblemRequest.timeLimit ?? problem.timeLimit;
-			problem.solutionCode =
-				updateProblemRequest.solutionCode ?? problem.solutionCode;
-
-			if (problem.testCases && problem.testCases.length > 0) {
-				await Promise.all(
-					problem.testCases.map(async (testCase) => {
-						try {
-							await this.testCaseService.remove(
-								testCase.id,
-							);
-						} catch (e) {}
-					}),
-				);
-			}
-
-			const newTestCases = await Promise.all(
-				updateProblemRequest.testCases.map(
-					async (testCase, index) => {
-						try {
-							return await this.testCaseService.create(
-								problem.id,
-								testCase,
-							);
-						} catch (e) {
-							throw new BadRequestException(
-								`============\nError at Test case ${index}\n============\n\n${e}`,
-							);
-						}
-					},
-				),
-			);
-
-			problem.testCases = newTestCases;
-
-			const users = await this.userService.findAll(
-				{
-					where: {
-						problemStatus: {
-							problemId: problem.id,
-							status: ProblemStatusEnum.DONE,
-						},
-					},
-					relations: ['problemStatus'],
-				},
-				false,
-			);
-
-			for (const user of users) {
-				await this.userService.updateProblemStatus(
-					problem.id,
-					user.id,
-					ProblemStatusEnum.IN_PROGRESS,
-					user.problemStatus[0].code,
-					problem.difficulty,
-				);
-
-				const scoreToRemove = this.calScore(originalDifficulty);
-
-				await this.userService.modifyScore(
-					user.id,
-					-scoreToRemove,
-					problem.author.id,
-					`โจทย์มีการแก้ไข : ${problem.title}`,
-				);
-
-				await this.submission(
-					new ProblemSubmissionDto({
-						code: user.problemStatus[0].code,
-					}),
-					user.id,
-					problem.id,
-				);
-			}
-		}
-
-		//-------------------------------------------------------
-		// Handle difficulty update (only if solution code didn't change)
-		//-------------------------------------------------------
-		if (
-			!importantChanged &&
-			updateProblemRequest.difficulty &&
-			updateProblemRequest.difficulty !== originalDifficulty
-		) {
-			const newDifficulty = updateProblemRequest.difficulty;
-
-			const users = await this.userService.findAll(
-				{
-					where: {
-						problemStatus: {
-							problemId: problem.id,
-							status: ProblemStatusEnum.DONE,
-						},
-					},
-					relations: ['problemStatus'],
-				},
-				false,
-			);
-
-			for (const user of users) {
-				const scoreToRemove = this.calScore(originalDifficulty);
-				await this.userService.modifyScore(
-					user.id,
-					-scoreToRemove,
-					problem.author.id,
-					`โจทย์มีการปรับความยาก : ${problem.title}`,
-				);
-
-				const scoreToAdd = this.calScore(newDifficulty);
-				await this.userService.modifyScore(
-					user.id,
-					scoreToAdd,
-					problem.author.id,
-					`โจทย์มีการปรับความยาก : ${problem.title}`,
-				);
-			}
-
-			problem.difficulty = newDifficulty;
-		}
-
-		return await this.problemsRepository.save(problem);
-	}
-
-	async remove(id: number): Promise<void> {
-		await this.problemsRepository.delete(id);
-	}
-
-	async approve(id: number, user: jwtPayloadDto): Promise<void> {
-		await this.problemsRepository.update(id, {
-			devStatus: ProblemStaffStatusEnum.PUBLISHED,
-		});
-	}
-
-	async runCode(problemId: number, userId: string, input: string) {
-		const problem = await this.findOne(problemId);
 		const userCode = (
-			await this.userService.findOneProblemStatus(userId, problemId)
+			await this.userService.findOneProblemStatus(userId, problem.id)
 		).code;
-		return await this.runCodeService.runCode(
+
+		return await this.runCodeService.runCode({
 			input,
-			userCode,
-			problem.timeLimit,
-		);
+			code: userCode,
+			timeout: problem.timeLimit,
+			functionMode: problem.functionMode,
+			headerMode: problem.headerMode,
+			headers: problem.headers,
+			functions: problem.functions,
+		});
 	}
 
 	async submission(
@@ -500,75 +509,26 @@ export class ProblemService {
 		const { code } = problemSubmission;
 		const codeString = JSON.parse(code) ?? code;
 		const problem = await this.findOne(problemId);
-		const { testCases, timeLimit } = problem;
+		const { testCases } = problem;
+
 		if (testCases.length === 0)
 			throw new BadRequestException('no test case for this problem');
-		//check disallow function
-		if (problem.functions) {
-			const hasAllowed = problem.functions.some((func) =>
-				new RegExp(`\\b${func}\\s*\\(`).test(codeString),
-			);
-			if (
-				problem.functionMode === ProblemAllowMode.DISALLOWED &&
-				hasAllowed
-			) {
-				throw new BadRequestException(
-					`Your code contains disallowed functions ${problem.functions.join(
-						', ',
-					)}`,
-				);
-			} else if (
-				problem.functionMode === ProblemAllowMode.ALLOWED &&
-				!hasAllowed
-			) {
-				throw new BadRequestException(
-					`Your code does not contain allowed functions ${problem.functions.join(
-						', ',
-					)}`,
-				);
-			}
-		}
-		if (problem.headers) {
-			const hasAllowed = problem.headers.some((header) =>
-				new RegExp(`#include\\s*[<"]${header}[>"]`, 'g').test(
-					codeString,
-				),
-			);
-			if (
-				problem.headerMode === ProblemAllowMode.DISALLOWED &&
-				hasAllowed
-			) {
-				throw new BadRequestException(
-					`Your code contains disallowed headers ${problem.headers.join(
-						', ',
-					)}`,
-				);
-			} else if (
-				problem.headerMode === ProblemAllowMode.ALLOWED &&
-				!hasAllowed
-			) {
-				throw new BadRequestException(
-					`Your code should contains headers ${problem.headers.join(
-						', ',
-					)}`,
-				);
-			}
-		}
+
+		this.checkAllowCode(problem, codeString);
+
 		const runCodeResponse = await Promise.all(
 			testCases.map((testCase) =>
-				this.runCodeService.runCode(
-					testCase.input,
-					code,
-					timeLimit,
-				),
+				this.runCode(problem, userId, testCase.input),
 			),
 		);
+
 		const response = runCodeResponse.map((result, i) => {
 			return new ProblemSubmissionResponseDto(
 				testCases[i].isHiddenTestcase ? undefined : result,
 				result.output === testCases[i].expectOutput,
 			);
 		});
+
 		await this.userService.updateProblemStatus(
 			problemId,
 			userId,
@@ -578,27 +538,18 @@ export class ProblemService {
 			JSON.stringify(code),
 			problem.difficulty,
 		);
+
 		return response;
 	}
 
-	async runDraftCode(problemId: number) {
-		const problem = await this.findOne(problemId);
-		const testCases = problem.testCases;
-		if (testCases.length === 0) {
-			throw new BadRequestException('problem has no test case');
-		}
-		const result = await Promise.all(
-			testCases.map((testCase) => {
-				return this.runCodeService.runCode(
-					testCase.input,
-					JSON.parse(problem.solutionCode),
-					problem.timeLimit,
-				);
-			}),
-		);
-		return result.map(
-			(d, i) => new RunDraftCodeResponseDto(d, testCases[i].input),
-		);
+	checkAllowCode(problem: Problem, codeString: string) {
+		return this.runCodeService.checkAllowCode({
+			codeString,
+			functions: problem.functions,
+			functionMode: problem.functionMode,
+			headerMode: problem.headerMode,
+			headers: problem.headers,
+		});
 	}
 
 	//-------------------------------------------------------
@@ -613,9 +564,9 @@ export class ProblemService {
 		});
 	}
 
-	async archiveProblem(id: number, user: jwtPayloadDto): Promise<void> {
+	async approve(id: number, user: jwtPayloadDto): Promise<void> {
 		await this.problemsRepository.update(id, {
-			devStatus: ProblemStaffStatusEnum.ARCHIVED,
+			devStatus: ProblemStaffStatusEnum.PUBLISHED,
 		});
 	}
 
@@ -623,11 +574,22 @@ export class ProblemService {
 		id: number,
 		message: RejectProblemDTO,
 		user: jwtPayloadDto,
-	): Promise<RejectProblemDTO> {
+	): Promise<void> {
+		await this.problemsRepository.update(id, {
+			devStatus: ProblemStaffStatusEnum.REJECTED,
+			rejectedMessage: message.message,
+		});
+	}
+
+	async archiveProblem(id: number, user: jwtPayloadDto): Promise<void> {
+		const problem = await this.findOne(id);
+
+		if (user.userId !== problem.author.id)
+			throw new ForbiddenException("You're not the author");
+
 		await this.problemsRepository.update(id, {
 			devStatus: ProblemStaffStatusEnum.ARCHIVED,
 		});
-		return message;
 	}
 
 	//-------------------------------------------------------

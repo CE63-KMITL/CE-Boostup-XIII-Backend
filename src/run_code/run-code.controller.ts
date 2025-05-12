@@ -8,6 +8,8 @@ import { RunCodeService } from './run-code.service';
 import { RunCodeResponseDto } from './dtos/run-code-response.dto';
 import { AllowRole } from 'src/auth/decorators/auth.decorator';
 import { Role } from 'src/shared/enum/role.enum';
+import { Throttle } from '@nestjs/throttler';
+import { THROTTLE_RUNCODE } from 'src/shared/configs/throttle.config';
 
 @Controller('run-code')
 @ApiTags('Run Code')
@@ -22,8 +24,11 @@ export class RunCodeController {
 		type: RunCodeResponseDto,
 	})
 	@AllowRole(Role.MEMBER)
+	@Throttle({
+		THROTTLE_RUNCODE,
+	})
 	runCode(@Body() body: RunCodeRequestDto): Promise<RunCodeResponseDto> {
-		return this.runCodeService.runCode(body.input, body.code, 100);
+		return this.runCodeService.runCode(body);
 	}
 
 	@Post('/test-cases')
@@ -35,17 +40,12 @@ export class RunCodeController {
 		isArray: true,
 	})
 	@AllowRole(Role.STAFF)
+	@Throttle({
+		THROTTLE_RUNCODE,
+	})
 	runCodeTestCases(
 		@Body() body: RunCodeTestCasesRequestDto,
 	): Promise<RunCodeResponseDto[]> {
-		const result = [];
-
-		for (const input of body.inputs) {
-			result.push(
-				this.runCodeService.runCode(input, body.code, body.timeout),
-			);
-		}
-
-		return Promise.all(result);
+		return this.runCodeService.runCodeMultipleInputs(body);
 	}
 }
