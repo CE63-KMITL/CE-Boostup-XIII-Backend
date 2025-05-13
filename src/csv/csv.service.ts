@@ -6,7 +6,7 @@ import * as iconv from 'iconv-lite';
 import * as xlsx from 'xlsx';
 import { UserService } from '../user/user.service';
 import { Role } from 'src/shared/enum/role.enum';
-
+import { House } from 'src/shared/enum/house.enum';
 @Injectable()
 export class CSVService {
 	constructor(private readonly userService: UserService) {}
@@ -81,32 +81,44 @@ export class CSVService {
 
 	async createJuniorMembersFromXLSX(filePath: string): Promise<any[]> {
 		const workbook = xlsx.readFile(filePath);
-		const sheet = workbook.Sheets['Register1'];
+		const created: any[] = [];
 
-		if (!sheet) {
-			throw new Error('Sheet "Register1" not found in file.');
-		}
+		for (const sheetName of workbook.SheetNames) {
+			const sheet = workbook.Sheets[sheetName];
+			const sheetData =
+				xlsx.utils.sheet_to_json<Record<string, any>>(sheet);
 
-		const sheetData =
-			xlsx.utils.sheet_to_json<Record<string, any>>(sheet);
-		const users = sheetData.map((row) => ({
-			name: row['ชื่อเล่น'] || row['name'],
-			email: row['Email'],
-			role: Role.MEMBER,
-		}));
+			const houseEnumValue =
+				House[sheetName.toUpperCase() as keyof typeof House];
 
-		const created = [];
-		for (const user of users) {
-			try {
-				const createdUser = await this.userService.create(user);
-				created.push(createdUser);
-			} catch (error) {
-				console.error(
-					`Failed to create ${user.email}:`,
-					error.message,
+			if (!houseEnumValue) {
+				console.warn(
+					`Sheet "${sheetName}" does not match any house enum. Skipped.`,
 				);
+				continue;
+			}
+
+			const users = sheetData.map((row) => ({
+				name: row['ชื่อเล่น'] || row['name'],
+				email: `${row['เลขนศ']}@junior1.com`,
+				role: Role.MEMBER,
+				house: houseEnumValue,
+			}));
+
+			for (const user of users) {
+				try {
+					const createdUser =
+						await this.userService.create(user);
+					created.push(createdUser);
+				} catch (error) {
+					console.error(
+						`Failed to create ${user.email}:`,
+						error.message,
+					);
+				}
 			}
 		}
+
 		return created;
 	}
 }
