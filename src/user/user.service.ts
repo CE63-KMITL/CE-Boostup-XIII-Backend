@@ -317,8 +317,6 @@ export class UserService implements OnModuleInit {
 		user.score += amount;
 		if (user.score < 0) user.score = 0;
 
-		this.houseScoreService.changeScore(user.house, amount);
-
 		const scoreLog = new ScoreLog();
 		scoreLog.amount = amount;
 		scoreLog.user = user;
