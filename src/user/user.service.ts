@@ -444,7 +444,10 @@ export class UserService implements OnModuleInit {
 			userId,
 			problemId,
 		);
-		return problemStatus?.code || problemStatus?.problem.defaultCode;
+
+		const problem = await this.problemService.findOne(problemId);
+
+		return problemStatus?.code || problem.defaultCode;
 	}
 
 	async saveCode(

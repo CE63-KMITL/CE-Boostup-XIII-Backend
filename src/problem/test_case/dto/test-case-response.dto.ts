@@ -1,13 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TestCase } from '../test-case.entity';
+import { TestCase } from '../test-case.object';
 
 export class TestCaseResponseDto {
-	@ApiProperty({
-		example: '92d62009-a247-40e9-a901-928c8a9b5a40',
-		description: 'id of test case',
-	})
-	id: string;
-
 	@ApiProperty({
 		example: 'abc',
 		description: 'test case input',
@@ -28,9 +22,6 @@ export class TestCaseResponseDto {
 	isHiddenTestcase: boolean;
 
 	constructor(testCase: TestCase) {
-		this.id = testCase.id;
-		this.input = testCase.input;
-		this.expectOutput = testCase.expectOutput;
-		this.isHiddenTestcase = testCase.isHiddenTestcase;
+		Object.assign(this, testCase);
 	}
 }

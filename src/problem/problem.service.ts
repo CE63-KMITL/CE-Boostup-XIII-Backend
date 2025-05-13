@@ -5,7 +5,6 @@ import {
 	Inject,
 	Injectable,
 	NotFoundException,
-	UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { jwtPayloadDto } from 'src/auth/dto/jwt-payload.dto';
@@ -20,7 +19,7 @@ import {
 	ProblemPaginatedDto,
 	ProblemSearchedDto,
 	ProblemSearchedPaginatedDto,
-} from './dto/problem-respond.dto';
+} from './dto/problem-response.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
 import {
 	ProblemStaffStatusEnum,
@@ -29,17 +28,14 @@ import {
 import { Problem } from './problem.entity';
 import { ProblemSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
 import { RunCodeService } from 'src/run_code/run-code.service';
-import {
-	ProblemSubmissionResponseDto,
-	RunDraftCodeResponseDto,
-} from './dto/code-submission-dto/problem-submission-response.dto';
+import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
 import { ProblemStatus } from 'src/user/problem_status/problem-status.entity';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
-import { TestCaseService } from './test_case/test-case.service';
-import { TestCase } from './test_case/test-case.entity';
-import { CreateTestCaseDto } from './test_case/dto/create-test-case.dto';
-import { ProblemAllowMode } from './enum/problem-allow-mode.enum';
+import { RunCodeExitStatusEnum } from 'src/run_code/enum/run-code-exit-status.enum';
 
+//-------------------------------------------------------
+// Class Definition
+//-------------------------------------------------------
 @Injectable()
 export class ProblemService {
 	constructor(
@@ -51,13 +47,10 @@ export class ProblemService {
 
 		@Inject(forwardRef(() => RunCodeService))
 		private readonly runCodeService: RunCodeService,
-
-		@Inject(forwardRef(() => TestCaseService))
-		private readonly testCaseService: TestCaseService,
 	) {}
 
 	//-------------------------------------------------------
-	// Problem Management
+	// Problem Management (CRUD)
 	//-------------------------------------------------------
 	async create(
 		createProblemRequest: CreateProblemDto,
@@ -77,26 +70,15 @@ export class ProblemService {
 			where: { id: userId },
 		});
 
-		const testCasesResult = await Promise.all(
-			createProblemRequest.testCases.map(async (testCase) => {
-				const expectOutput =
-					await this.testCaseService.getExpectedOutput(
-						createProblemRequest.solutionCode,
-						testCase.input,
-						createProblemRequest.timeLimit,
-					);
-				return {
-					...testCase,
-					expectOutput,
-				};
-			}),
-		);
-
 		const problem = this.problemsRepository.create({
 			...createProblemRequest,
 			author: author,
-			testCases: testCasesResult,
+			testCases: [],
 		});
+
+		await this.checkSameTestCase(problem);
+		await this.fillExpectOutput(problem);
+
 		return this.problemsRepository.save(problem);
 	}
 
@@ -118,14 +100,12 @@ export class ProblemService {
 	async findOne(id: number): Promise<Problem> {
 		const problem = await this.problemsRepository.findOne({
 			where: { id },
-			relations: {
-				author: true,
-				testCases: true,
-			},
+			relations: ['author'],
 		});
 		if (!problem) {
 			throw new NotFoundException(`Problem with ID ${id} not found`);
 		}
+
 		return problem;
 	}
 
@@ -134,185 +114,19 @@ export class ProblemService {
 		return problem.description || 'No detail available';
 	}
 
-	async search(
-		query: ProblemSearchQueryDto,
-		user: jwtPayloadDto,
-	): Promise<ProblemSearchedPaginatedDto> {
-		const {
-			page,
-			searchText,
-			difficultySortBy,
-			maxDifficulty,
-			minDifficulty,
-			idReverse,
-			limit,
-			status,
-			tags,
-			staff,
-			author,
-		} = query;
-
-		const result = new ProblemSearchedPaginatedDto([], 0, page, limit);
-
-		const { role, userId } = user;
-
-		const searchProblems = await createPaginationQuery<Problem>({
-			repository: this.problemsRepository,
-			dto: { page, limit },
-		});
-
-		searchProblems.leftJoinAndSelect('entity.author', 'author');
-
-		if (!!author) {
-			searchProblems.andWhere('author.name ILIKE :author', {
-				author: `%${author}%`,
-			});
-		}
-
-		if (searchText) {
-			searchProblems.andWhere(
-				'(LOWER(author.name) LIKE LOWER(:term) OR LOWER(entity.title) LIKE LOWER(:term))',
-				{
-					term: `%${searchText}%`,
-				},
-			);
-		}
-
-		if (tags && tags.length > 0) {
-			console.log(tags);
-			searchProblems.andWhere('entity.tags && ARRAY[:...tags]', {
-				tags,
-			});
-		}
-
-		if (minDifficulty || maxDifficulty) {
-			if (minDifficulty && maxDifficulty) {
-				searchProblems.andWhere(
-					'entity.difficulty BETWEEN :minDifficulty AND :maxDifficulty',
-					{
-						minDifficulty: Number(minDifficulty),
-						maxDifficulty: Number(maxDifficulty),
-					},
-				);
-			} else if (minDifficulty) {
-				searchProblems.andWhere(
-					'entity.difficulty >= :minDifficulty',
-					{
-						minDifficulty: Number(minDifficulty),
-					},
-				);
-			} else if (maxDifficulty) {
-				searchProblems.andWhere(
-					'entity.difficulty <= :maxDifficulty',
-					{
-						maxDifficulty: Number(maxDifficulty),
-					},
-				);
-			}
-		}
-
-		if (difficultySortBy) {
-			searchProblems.addOrderBy('entity.difficulty', difficultySortBy);
-		} else {
-			searchProblems.orderBy('entity.id', idReverse ? 'DESC' : 'ASC');
-		}
-
-		let userProblemStatus: ProblemStatus[] = [];
-
-		if (!!staff) {
-			if (role !== Role.STAFF && role !== Role.DEV) {
-				throw new ForbiddenException('You do not have permission.');
-			}
-
-			if (!!status) {
-				searchProblems.andWhere('entity.devStatus = :devStatus', {
-					devStatus: status,
-				});
-			}
-		} else {
-			searchProblems.andWhere('entity.devStatus = :devStatus', {
-				devStatus: ProblemStaffStatusEnum.PUBLISHED,
-			});
-
-			const userData = await this.userService.findOne({
-				where: { id: userId },
-				relations: { problemStatus: true },
-			});
-
-			if (!userData) return result;
-
-			userProblemStatus = userData.problemStatus;
-
-			if (!!status) {
-				if (status === ProblemStatusEnum.NOT_STARTED) {
-					if (userProblemStatus.length != 0) {
-						const ids = userProblemStatus.map(
-							(problem) => problem.problemId,
-						);
-						searchProblems.andWhere(
-							'entity.id NOT IN (:...ids)',
-							{
-								ids,
-							},
-						);
-					}
-				} else {
-					if (userProblemStatus.length === 0) return result;
-
-					userProblemStatus = userProblemStatus.filter(
-						(problem) =>
-							ProblemStatusEnum[problem.status] === status,
-					);
-
-					if (userProblemStatus.length === 0) return result;
-
-					userProblemStatus.map((problem) =>
-						searchProblems.andWhere('entity.id = :id', {
-							id: problem.problemId,
-						}),
-					);
-				}
-			}
-		}
-
-		const [data, totalItem] = await searchProblems.getManyAndCount();
-		result.data = data.map((d) => {
-			let status;
-
-			if (staff) {
-				status = d.devStatus;
-			} else {
-				const getUserProblemStatus = userProblemStatus.find(
-					(userProblem) => userProblem.problemId === d.id,
-				);
-				status =
-					getUserProblemStatus?.status ??
-					ProblemStatusEnum.NOT_STARTED;
-			}
-
-			return new ProblemSearchedDto(d, status);
-		});
-		result.totalItem = totalItem;
-		result.updateTotalPage();
-		return result;
-	}
-
 	async update(
 		id: number,
 		updateProblemRequest: UpdateProblemDto,
 		user: jwtPayloadDto,
 	): Promise<Problem> {
-		const problem = await this.problemsRepository.findOne({
-			where: { id: id },
-			relations: ['author', 'testCases'],
-		});
+		const problem = await this.findOne(id);
 
 		if (!problem) {
 			throw new NotFoundException(`Problem with ID ${id} not found`);
 		}
 
 		if (problem.author.id !== user.userId) {
-			throw new UnauthorizedException(
+			throw new ForbiddenException(
 				'Must be the owner of the problem to update.',
 			);
 		}
@@ -333,6 +147,20 @@ export class ProblemService {
 			updateProblemRequest.solutionCode.trim() ==
 				problem.solutionCode.trim();
 
+		if (updateProblemRequest.title) {
+			const existProblem = await this.problemsRepository.findOneBy({
+				title: updateProblemRequest.title,
+			});
+
+			if (problem.id !== existProblem.id) {
+				throw new BadRequestException(
+					'The problem title already exists.',
+				);
+			}
+		}
+
+		Object.assign(problem, updateProblemRequest);
+
 		if (!sameTestCase || !sameSolutionCode) {
 			importantChanged = true;
 
@@ -343,26 +171,8 @@ export class ProblemService {
 			problem.solutionCode =
 				updateProblemRequest.solutionCode ?? problem.solutionCode;
 
-			if (problem.testCases && problem.testCases.length > 0) {
-				await Promise.all(
-					problem.testCases.map((testCase) =>
-						this.testCaseService.remove(testCase.id),
-					),
-				);
-			}
-
-			const newTestCases = await Promise.all(
-				updateProblemRequest.testCases.map((testCase) => {
-					try {
-						return this.testCaseService.create(
-							problem.id,
-							testCase,
-						);
-					} catch (e) {}
-				}),
-			);
-
-			problem.testCases = newTestCases;
+			await this.checkSameTestCase(problem);
+			await this.fillExpectOutput(problem);
 
 			const users = await this.userService.findAll(
 				{
@@ -456,22 +266,195 @@ export class ProblemService {
 		await this.problemsRepository.delete(id);
 	}
 
-	async approve(id: number, user: jwtPayloadDto): Promise<void> {
-		await this.problemsRepository.update(id, {
-			devStatus: ProblemStaffStatusEnum.PUBLISHED,
+	//-------------------------------------------------------
+	// Problem Search
+	//-------------------------------------------------------
+	async search(
+		query: ProblemSearchQueryDto,
+		user: jwtPayloadDto,
+	): Promise<ProblemSearchedPaginatedDto> {
+		const {
+			page,
+			searchText,
+			difficultySortBy,
+			maxDifficulty,
+			minDifficulty,
+			idReverse,
+			limit,
+			status,
+			tags,
+			staff,
+			author,
+		} = query;
+
+		const result = new ProblemSearchedPaginatedDto([], 0, page, limit);
+
+		const { role, userId } = user;
+
+		const searchProblems = await createPaginationQuery<Problem>({
+			repository: this.problemsRepository,
+			dto: { page, limit },
 		});
+
+		searchProblems.leftJoinAndSelect('entity.author', 'author');
+
+		if (!!author) {
+			searchProblems.andWhere('author.name ILIKE :author', {
+				author: `%${author}%`,
+			});
+		}
+
+		if (searchText) {
+			searchProblems.andWhere(
+				'(LOWER(author.name) LIKE LOWER(:term) OR LOWER(entity.title) LIKE LOWER(:term))',
+				{
+					term: `%${searchText}%`,
+				},
+			);
+		}
+
+		if (tags && tags.length > 0) {
+			searchProblems.andWhere('entity.tags && ARRAY[:...tags]', {
+				tags,
+			});
+		}
+
+		if (minDifficulty || maxDifficulty) {
+			if (minDifficulty && maxDifficulty) {
+				searchProblems.andWhere(
+					'entity.difficulty BETWEEN :minDifficulty AND :maxDifficulty',
+					{
+						minDifficulty: Number(minDifficulty),
+						maxDifficulty: Number(maxDifficulty),
+					},
+				);
+			} else if (minDifficulty) {
+				searchProblems.andWhere(
+					'entity.difficulty >= :minDifficulty',
+					{
+						minDifficulty: Number(minDifficulty),
+					},
+				);
+			} else if (maxDifficulty) {
+				searchProblems.andWhere(
+					'entity.difficulty <= :maxDifficulty',
+					{
+						maxDifficulty: Number(maxDifficulty),
+					},
+				);
+			}
+		}
+
+		if (difficultySortBy) {
+			searchProblems.addOrderBy('entity.difficulty', difficultySortBy);
+		} else {
+			searchProblems.orderBy('entity.id', idReverse ? 'DESC' : 'ASC');
+		}
+
+		let userProblemStatus: ProblemStatus[] = [];
+
+		if (!!staff) {
+			if (role !== Role.STAFF && role !== Role.DEV) {
+				throw new ForbiddenException('You do not have permission.');
+			}
+
+			if (!!status) {
+				searchProblems.andWhere('entity.devStatus = :devStatus', {
+					devStatus: status,
+				});
+			}
+		} else {
+			searchProblems.andWhere('entity.devStatus = :devStatus', {
+				devStatus: ProblemStaffStatusEnum.PUBLISHED,
+			});
+
+			const userData = await this.userService.findOne({
+				where: { id: userId },
+				relations: { problemStatus: true },
+			});
+
+			if (!userData) return result;
+
+			userProblemStatus = userData.problemStatus;
+
+			if (!!status) {
+				if (status === ProblemStatusEnum.NOT_STARTED) {
+					if (userProblemStatus.length != 0) {
+						const ids = userProblemStatus.map(
+							(problem) => problem.problemId,
+						);
+						searchProblems.andWhere(
+							'entity.id NOT IN (:...ids)',
+							{
+								ids,
+							},
+						);
+					}
+				} else {
+					if (userProblemStatus.length === 0) return result;
+
+					console.log(userProblemStatus);
+
+					userProblemStatus = userProblemStatus.filter(
+						(problem) => problem.status == status,
+					);
+
+					console.log(userProblemStatus, status);
+
+					if (userProblemStatus.length === 0) return result;
+
+					const ids = userProblemStatus.map(
+						(problem) => problem.problemId,
+					);
+					searchProblems.andWhere('entity.id IN (:...ids)', {
+						ids,
+					});
+				}
+			}
+		}
+
+		const [data, totalItem] = await searchProblems.getManyAndCount();
+		result.data = data.map((d) => {
+			let status;
+
+			if (staff) {
+				status = d.devStatus;
+			} else {
+				const getUserProblemStatus = userProblemStatus.find(
+					(userProblem) => userProblem.problemId === d.id,
+				);
+				status =
+					getUserProblemStatus?.status ??
+					ProblemStatusEnum.NOT_STARTED;
+			}
+
+			return new ProblemSearchedDto(d, status);
+		});
+		result.totalItem = totalItem;
+		result.updateTotalPage();
+		return result;
 	}
 
-	async runCode(problemId: number, userId: string, input: string) {
-		const problem = await this.findOne(problemId);
+	//-------------------------------------------------------
+	// Code Execution
+	//-------------------------------------------------------
+	async runCode(problem: Problem | number, userId: string, input: string) {
+		if (typeof problem === 'number')
+			problem = await this.findOne(problem);
+
 		const userCode = (
-			await this.userService.findOneProblemStatus(userId, problemId)
+			await this.userService.findOneProblemStatus(userId, problem.id)
 		).code;
-		return await this.runCodeService.runCode(
+
+		return await this.runCodeService.runCode({
 			input,
-			userCode,
-			problem.timeLimit,
-		);
+			code: userCode,
+			timeout: problem.timeLimit,
+			functionMode: problem.functionMode,
+			headerMode: problem.headerMode,
+			headers: problem.headers,
+			functions: problem.functions,
+		});
 	}
 
 	async submission(
@@ -482,75 +465,26 @@ export class ProblemService {
 		const { code } = problemSubmission;
 		const codeString = JSON.parse(code) ?? code;
 		const problem = await this.findOne(problemId);
-		const { testCases, timeLimit } = problem;
+		const { testCases } = problem;
+
 		if (testCases.length === 0)
 			throw new BadRequestException('no test case for this problem');
-		//check disallow function
-		if (problem.functions) {
-			const hasAllowed = problem.functions.some((func) =>
-				new RegExp(`\\b${func}\\s*\\(`).test(codeString),
-			);
-			if (
-				problem.functionMode === ProblemAllowMode.DISALLOWED &&
-				hasAllowed
-			) {
-				throw new BadRequestException(
-					`Your code contains disallowed functions ${problem.functions.join(
-						', ',
-					)}`,
-				);
-			} else if (
-				problem.functionMode === ProblemAllowMode.ALLOWED &&
-				!hasAllowed
-			) {
-				throw new BadRequestException(
-					`Your code does not contain allowed functions ${problem.functions.join(
-						', ',
-					)}`,
-				);
-			}
-		}
-		if (problem.headers) {
-			const hasAllowed = problem.headers.some((header) =>
-				new RegExp(`#include\\s*[<"]${header}[>"]`, 'g').test(
-					codeString,
-				),
-			);
-			if (
-				problem.headerMode === ProblemAllowMode.DISALLOWED &&
-				hasAllowed
-			) {
-				throw new BadRequestException(
-					`Your code contains disallowed headers ${problem.headers.join(
-						', ',
-					)}`,
-				);
-			} else if (
-				problem.headerMode === ProblemAllowMode.ALLOWED &&
-				!hasAllowed
-			) {
-				throw new BadRequestException(
-					`Your code should contains headers ${problem.headers.join(
-						', ',
-					)}`,
-				);
-			}
-		}
+
+		this.checkAllowCode(problem, codeString);
+
 		const runCodeResponse = await Promise.all(
 			testCases.map((testCase) =>
-				this.runCodeService.runCode(
-					testCase.input,
-					code,
-					timeLimit,
-				),
+				this.runCode(problem, userId, testCase.input),
 			),
 		);
+
 		const response = runCodeResponse.map((result, i) => {
 			return new ProblemSubmissionResponseDto(
 				testCases[i].isHiddenTestcase ? undefined : result,
 				result.output === testCases[i].expectOutput,
 			);
 		});
+
 		await this.userService.updateProblemStatus(
 			problemId,
 			userId,
@@ -560,64 +494,112 @@ export class ProblemService {
 			JSON.stringify(code),
 			problem.difficulty,
 		);
+
 		return response;
 	}
 
-	async runDraftCode(problemId: number) {
-		const problem = await this.findOne(problemId);
-		const testCases = problem.testCases;
-		if (testCases.length === 0) {
-			throw new BadRequestException('problem has no test case');
-		}
-		const result = await Promise.all(
-			testCases.map((testCase) => {
-				return this.runCodeService.runCode(
-					testCase.input,
-					JSON.parse(problem.solutionCode),
-					problem.timeLimit,
-				);
-			}),
-		);
-		return result.map(
-			(d, i) => new RunDraftCodeResponseDto(d, testCases[i].input),
-		);
+	checkAllowCode(problem: Problem, codeString: string) {
+		return this.runCodeService.checkAllowCode({
+			codeString,
+			functions: problem.functions,
+			functionMode: problem.functionMode,
+			headerMode: problem.headerMode,
+			headers: problem.headers,
+		});
 	}
 
 	//-------------------------------------------------------
 	// Problem Status Management
 	//-------------------------------------------------------
-	async requestReviewProblem(
-		id: number,
-		user: jwtPayloadDto,
-	): Promise<void> {
+	async requestReviewProblem(id: number, user: jwtPayloadDto) {
+		const problem = await this.findOne(id);
+
+		if (user.userId !== problem.author.id)
+			throw new ForbiddenException("You're not the author");
+
 		await this.problemsRepository.update(id, {
 			devStatus: ProblemStaffStatusEnum.NEED_REVIEW,
 		});
+
+		return 'Success';
 	}
 
-	async archiveProblem(id: number, user: jwtPayloadDto): Promise<void> {
+	async approve(id: number, user: jwtPayloadDto) {
 		await this.problemsRepository.update(id, {
-			devStatus: ProblemStaffStatusEnum.ARCHIVED,
+			devStatus: ProblemStaffStatusEnum.PUBLISHED,
 		});
+
+		return 'Success';
 	}
 
 	async rejectProblem(
 		id: number,
 		message: RejectProblemDTO,
 		user: jwtPayloadDto,
-	): Promise<RejectProblemDTO> {
+	) {
+		await this.problemsRepository.update(id, {
+			devStatus: ProblemStaffStatusEnum.REJECTED,
+			rejectedMessage: message.message,
+		});
+
+		return 'Success';
+	}
+
+	async archiveProblem(id: number, user: jwtPayloadDto) {
+		const problem = await this.findOne(id);
+
+		if (user.userId !== problem.author.id)
+			throw new ForbiddenException("You're not the author");
+
 		await this.problemsRepository.update(id, {
 			devStatus: ProblemStaffStatusEnum.ARCHIVED,
 		});
-		return message;
+
+		return 'Success';
 	}
 
 	//-------------------------------------------------------
-	// Scoring
+	// Helper Methods
 	//-------------------------------------------------------
 	calScore(difficulty: number): number {
 		return difficulty <= 3
 			? difficulty
 			: (difficulty * (difficulty - 1)) / 2;
+	}
+
+	async fillExpectOutput(problem: Problem) {
+		const expectOutput = await this.runCodeService.runCodeMultipleInputs({
+			inputs: problem.testCases.map((testCase) => testCase.input),
+			code: problem.solutionCode,
+			timeout: problem.timeLimit,
+			functionMode: problem.functionMode,
+			headerMode: problem.headerMode,
+			headers: problem.headers,
+			functions: problem.functions,
+		});
+		problem.testCases.forEach((testCase, i) => {
+			if (
+				expectOutput[i].exit_status != RunCodeExitStatusEnum.SUCCESS
+			) {
+				throw new BadRequestException(
+					`Test case ${[i + 1]} have input :\n>>>>>>>>>>>>>\n${testCase.input}\n>>>>>>>>>>>>>\n\nhas error:\n>>>>>>>>>>>>>\n${expectOutput[i].output}\n>>>>>>>>>>>>>\n`,
+				);
+			}
+			testCase.expectOutput = expectOutput[i].output;
+		});
+	}
+
+	async checkSameTestCase(problem: Problem) {
+		const checkingTestCases = [];
+
+		for (const testCase of problem.testCases) {
+			if (!checkingTestCases.find((t) => t.input === testCase.input)) {
+				checkingTestCases.push(testCase);
+			} else {
+				throw new BadRequestException(
+					`Test case that have input :\n\n${testCase.input}\n\nhas duplicate`,
+				);
+			}
+		}
 	}
 }

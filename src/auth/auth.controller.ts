@@ -1,4 +1,3 @@
-
 import {
 	Body,
 	Controller,
@@ -17,16 +16,15 @@ import {
 	ApiResponse,
 	ApiTags,
 } from '@nestjs/swagger';
-import { Role } from '../shared/enum/role.enum';
 import { AuthService } from './auth.service';
-import { AllowRole } from './decorators/auth.decorator';
 import { LoginDto } from './dto/login.dto';
 import { OpenAccountDto } from './dto/open-account.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { RolesGuard } from './roles/roles.guard';
 import { authenticatedRequest } from './interfaces/authenticated-request.interface';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
+import { Throttle } from '@nestjs/throttler';
+import { RolesGuard } from 'src/shared/guards/roles.guard';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -52,6 +50,13 @@ export class AuthController {
 		description: 'mail send',
 	})
 	@HttpCode(HttpStatus.NO_CONTENT)
+	@Throttle({
+		default: {
+			ttl: 60 * 1000,
+			limit: 1,
+			blockDuration: 60 * 1000,
+		},
+	})
 	async requestOpenAccount(@Body() body: { email: string }): Promise<void> {
 		await this.authService.requestOpenAccount(body.email);
 	}
@@ -60,7 +65,6 @@ export class AuthController {
 	@ApiOperation({
 		summary: 'Activate an account',
 	})
-
 	@ApiResponse({
 		status: HttpStatus.CREATED,
 		description: 'Account opened successfully.',
@@ -71,7 +75,6 @@ export class AuthController {
 		description:
 			'Bad Request - Invalid input data or email already exists',
 	})
-
 	@HttpCode(HttpStatus.CREATED)
 	async openAccount(@Body() body: OpenAccountDto): Promise<AuthResponseDto> {
 		return await this.authService.openAccount(body);
@@ -140,6 +143,5 @@ export class AuthController {
 		return {
 			role: req.user.role,
 		};
-
 	}
 }

@@ -10,9 +10,9 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtStrategy } from './jwt.strategy';
-import { RolesGuard } from './roles/roles.guard';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from 'src/mail/mail.module';
+import { RolesGuard } from 'src/shared/guards/roles.guard';
 
 @Module({
 	imports: [
