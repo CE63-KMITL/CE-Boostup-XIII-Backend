@@ -24,7 +24,7 @@ import {
 	ProblemPaginatedDto,
 	ProblemResponseDto,
 	ProblemSearchedPaginatedDto,
-} from './dto/problem-respond.dto';
+} from './dto/problem-response.dto';
 import { ProblemService } from './problem.service';
 import { ProblemSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
 import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
