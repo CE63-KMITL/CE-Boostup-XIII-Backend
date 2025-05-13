@@ -5,12 +5,11 @@ import {
 	Entity,
 	JoinColumn,
 	ManyToOne,
-	OneToMany,
 	PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ProblemStaffStatusEnum } from './enum/problem-staff-status.enum';
 import { ScoreValue } from './type/score-value.type';
-import { TestCase } from 'src/problem/test_case/test-case.entity';
+import { TestCase } from 'src/problem/test_case/test-case.object';
 import { ProblemAllowMode } from './enum/problem-allow-mode.enum';
 
 @Entity()
@@ -94,7 +93,7 @@ export class Problem {
 	})
 	rejectedMessage?: string;
 
-	@OneToMany(() => TestCase, (TestCase) => TestCase.problem)
+	@Column('json', { nullable: false, default: [] })
 	testCases: TestCase[];
 
 	constructor(problem: Partial<Problem>) {

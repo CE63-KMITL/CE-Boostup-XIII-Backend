@@ -65,8 +65,8 @@ export class RunCodeService {
 		headerMode = ProblemAllowMode.DISALLOWED,
 		headers = [],
 		functions = [],
-	}) {
-		await this.checkAllowCode({
+	}): Promise<RunCodeResponseDto[]> {
+		this.checkAllowCode({
 			codeString: code,
 			functions,
 			headers,

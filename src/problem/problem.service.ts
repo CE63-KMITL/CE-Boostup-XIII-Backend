@@ -31,8 +31,11 @@ import { RunCodeService } from 'src/run_code/run-code.service';
 import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
 import { ProblemStatus } from 'src/user/problem_status/problem-status.entity';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
-import { TestCaseService } from './test_case/test-case.service';
+import { RunCodeExitStatusEnum } from 'src/run_code/enum/run-code-exit-status.enum';
 
+//-------------------------------------------------------
+// Class Definition
+//-------------------------------------------------------
 @Injectable()
 export class ProblemService {
 	constructor(
@@ -44,9 +47,6 @@ export class ProblemService {
 
 		@Inject(forwardRef(() => RunCodeService))
 		private readonly runCodeService: RunCodeService,
-
-		@Inject(forwardRef(() => TestCaseService))
-		private readonly testCaseService: TestCaseService,
 	) {}
 
 	//-------------------------------------------------------
@@ -76,16 +76,8 @@ export class ProblemService {
 			testCases: [],
 		});
 
-		problem.testCases = await Promise.all(
-			createProblemRequest.testCases.map(async (testCase) => {
-				try {
-					return await this.testCaseService.create(
-						problem.id,
-						testCase,
-					);
-				} catch (error) {}
-			}),
-		);
+		await this.checkSameTestCase(problem);
+		await this.fillExpectOutput(problem);
 
 		return this.problemsRepository.save(problem);
 	}
@@ -108,7 +100,7 @@ export class ProblemService {
 	async findOne(id: number): Promise<Problem> {
 		const problem = await this.problemsRepository.findOne({
 			where: { id },
-			relations: ['author', 'testCases'],
+			relations: ['author'],
 		});
 		if (!problem) {
 			throw new NotFoundException(`Problem with ID ${id} not found`);
@@ -127,10 +119,7 @@ export class ProblemService {
 		updateProblemRequest: UpdateProblemDto,
 		user: jwtPayloadDto,
 	): Promise<Problem> {
-		const problem = await this.problemsRepository.findOne({
-			where: { id: id },
-			relations: ['author', 'testCases'],
-		});
+		const problem = await this.findOne(id);
 
 		if (!problem) {
 			throw new NotFoundException(`Problem with ID ${id} not found`);
@@ -182,62 +171,8 @@ export class ProblemService {
 			problem.solutionCode =
 				updateProblemRequest.solutionCode ?? problem.solutionCode;
 
-			await this.runCodeService.checkAllowCode({
-				codeString: problem.solutionCode,
-				functions: problem.functions,
-				functionMode: problem.functionMode,
-				headerMode: problem.headerMode,
-				headers: problem.headers,
-			});
-
-			const cleanedTestCase = [];
-
-			for (const testCase of updateProblemRequest.testCases) {
-				if (
-					!cleanedTestCase.find(
-						(t) => t.input === testCase.input,
-					)
-				) {
-					cleanedTestCase.push(testCase);
-				}
-			}
-
-			updateProblemRequest.testCases = cleanedTestCase;
-			console.log(updateProblemRequest.testCases);
-			console.log(problem.testCases);
-
-			if (problem.testCases && problem.testCases.length > 0) {
-				await Promise.all(
-					problem.testCases.map(async (testCase) => {
-						try {
-							await this.testCaseService.remove(
-								testCase.id,
-							);
-						} catch (e) {}
-					}),
-				);
-			}
-
-			const newTestCases = await Promise.all(
-				updateProblemRequest.testCases.map(
-					async (testCase, index) => {
-						try {
-							return await this.testCaseService.create(
-								problem.id,
-								testCase,
-							);
-						} catch (e) {
-							throw new BadRequestException(
-								`============\nError at Test case ${index + 1}\n============\n\n${e}`,
-							);
-						}
-					},
-				),
-			);
-
-			console.log(newTestCases);
-
-			problem.testCases = newTestCases;
+			await this.checkSameTestCase(problem);
+			await this.fillExpectOutput(problem);
 
 			const users = await this.userService.findAll(
 				{
@@ -624,11 +559,47 @@ export class ProblemService {
 	}
 
 	//-------------------------------------------------------
-	// Scoring
+	// Helper Methods
 	//-------------------------------------------------------
 	calScore(difficulty: number): number {
 		return difficulty <= 3
 			? difficulty
 			: (difficulty * (difficulty - 1)) / 2;
+	}
+
+	async fillExpectOutput(problem: Problem) {
+		const expectOutput = await this.runCodeService.runCodeMultipleInputs({
+			inputs: problem.testCases.map((testCase) => testCase.input),
+			code: problem.solutionCode,
+			timeout: problem.timeLimit,
+			functionMode: problem.functionMode,
+			headerMode: problem.headerMode,
+			headers: problem.headers,
+			functions: problem.functions,
+		});
+		problem.testCases.forEach((testCase, i) => {
+			if (
+				expectOutput[i].exit_status != RunCodeExitStatusEnum.SUCCESS
+			) {
+				throw new BadRequestException(
+					`Test case ${[i + 1]} have input :\n>>>>>>>>>>>>>\n${testCase.input}\n>>>>>>>>>>>>>\n\nhas error:\n>>>>>>>>>>>>>\n${expectOutput[i].output}\n>>>>>>>>>>>>>\n`,
+				);
+			}
+			testCase.expectOutput = expectOutput[i].output;
+		});
+	}
+
+	async checkSameTestCase(problem: Problem) {
+		const checkingTestCases = [];
+
+		for (const testCase of problem.testCases) {
+			if (!checkingTestCases.find((t) => t.input === testCase.input)) {
+				checkingTestCases.push(testCase);
+			} else {
+				throw new BadRequestException(
+					`Test case that have input :\n\n${testCase.input}\n\nhas duplicate`,
+				);
+			}
+		}
 	}
 }

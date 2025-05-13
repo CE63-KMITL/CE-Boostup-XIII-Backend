@@ -94,9 +94,6 @@ export class ProblemResponseDto {
 	constructor(problem: Problem) {
 		Object.assign(this, problem);
 		this.author = new UserMediumResponseDto(problem.author);
-		this.testCases = problem.testCases.map(
-			(testCase) => new TestCaseResponseDto(testCase),
-		);
 	}
 }
 

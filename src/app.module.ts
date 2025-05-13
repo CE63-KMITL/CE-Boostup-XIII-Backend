@@ -15,7 +15,6 @@ import { dotenvConfig } from './shared/configs/dotenv.config';
 import { GLOBAL_CONFIG } from './shared/constants/global-config.constant';
 import { UserModule } from './user/user.module';
 import { BullModule } from '@nestjs/bullmq';
-import { TestCaseModule } from './problem/test_case/test-case.module';
 import { HouseScoreModule } from './house_score/house_score.module';
 import { DevUserModule } from './user/dev/user.module.dev';
 import { DevAuthModule } from './auth/dev/auth.module.dev';
@@ -24,7 +23,6 @@ import { RewardModule } from './reward/reward.module';
 const imports = [
 	UserModule,
 	ProblemModule,
-	TestCaseModule,
 	MailModule,
 	RunCodeModule,
 	HouseModule,
