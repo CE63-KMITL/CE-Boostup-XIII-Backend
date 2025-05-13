@@ -19,7 +19,7 @@ import {
 	ProblemPaginatedDto,
 	ProblemSearchedDto,
 	ProblemSearchedPaginatedDto,
-} from './dto/problem-respond.dto';
+} from './dto/problem-response.dto';
 import { UpdateProblemDto } from './dto/problem-update.dto';
 import {
 	ProblemStaffStatusEnum,
