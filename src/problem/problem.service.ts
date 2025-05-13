@@ -597,7 +597,7 @@ export class ProblemService {
 				checkingTestCases.push(testCase);
 			} else {
 				throw new BadRequestException(
-					`Test case that have input :\n\n${testCase.input}\n\nhas duplicate`,
+					`Have duplicate test case that have input :\n\n>>>>>>>>>>>>>\n${testCase.input}\n>>>>>>>>>>>>>`,
 				);
 			}
 		}
