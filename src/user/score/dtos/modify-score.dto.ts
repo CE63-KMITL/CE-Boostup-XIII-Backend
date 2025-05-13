@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsOptional } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class ModifyScoreDto {
 	@Expose()
@@ -9,6 +9,7 @@ export class ModifyScoreDto {
 		description: 'User uuid',
 		type: String,
 	})
+	@IsString()
 	userId: string;
 
 	@Expose()
@@ -17,6 +18,7 @@ export class ModifyScoreDto {
 		description: 'Amount of score to add or subtract',
 		type: Number,
 	})
+	@IsNumber()
 	amount: number;
 
 	@Expose()
