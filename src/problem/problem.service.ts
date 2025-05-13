@@ -590,16 +590,18 @@ export class ProblemService {
 	}
 
 	async checkSameTestCase(problem: Problem) {
-		const checkingTestCases = [];
+		const clearedTestCases = [];
 
 		for (const testCase of problem.testCases) {
-			if (!checkingTestCases.find((t) => t.input === testCase.input)) {
-				checkingTestCases.push(testCase);
+			if (!clearedTestCases.find((t) => t.input === testCase.input)) {
+				clearedTestCases.push(testCase);
 			} else {
-				throw new BadRequestException(
-					`Have duplicate test case that have input :\n\n>>>>>>>>>>>>>\n${testCase.input}\n>>>>>>>>>>>>>`,
-				);
+				// throw new BadRequestException(
+				// 	`Have duplicate test case that have input :\n\n>>>>>>>>>>>>>\n${testCase.input}\n>>>>>>>>>>>>>`,
+				// );
 			}
 		}
+
+		problem.testCases = clearedTestCases;
 	}
 }
