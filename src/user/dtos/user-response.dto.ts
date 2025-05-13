@@ -98,6 +98,9 @@ export class UserFrontDataResponseDto extends Filter(UserResponseDto, [
 	'role',
 	'icon',
 	'name',
+	'studentId',
+	'score',
+	'house',
 ]) {}
 
 export class UserSmallResponseDto extends Filter(UserResponseDto, [
