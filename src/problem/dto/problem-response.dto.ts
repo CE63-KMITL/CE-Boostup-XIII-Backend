@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from 'src/shared/pagination/dto/paginated-response.dto';
 import {
-	UserResponseDto,
+	UserMediumResponseDto,
 	UserSmallResponseDto,
 } from 'src/user/dtos/user-response.dto';
 import {
@@ -11,6 +11,7 @@ import {
 import { Problem } from '../problem.entity';
 import { ScoreValue } from '../type/score-value.type';
 import { Filter } from 'src/shared/dto.extension';
+import { TestCaseResponseDto } from '../test_case/dto/test-case-response.dto';
 
 export class ProblemResponseDto {
 	@ApiProperty({
@@ -64,10 +65,25 @@ export class ProblemResponseDto {
 	tags?: string[];
 
 	@ApiProperty({
-		description: 'author of problem',
-		type: UserResponseDto,
+		example: [
+			{
+				id: '92d62009-a247-40e9-a901-928c8a9b5a40',
+				input: 'abc',
+				expectOutput: 'abc',
+				isHiddenTestcase: true,
+			},
+		],
+		description: 'test cases of problem',
+		type: TestCaseResponseDto,
+		isArray: true,
 	})
-	author: UserResponseDto;
+	testCases: TestCaseResponseDto[];
+
+	@ApiProperty({
+		description: 'author of problem',
+		type: UserMediumResponseDto,
+	})
+	author: UserMediumResponseDto;
 
 	@ApiPropertyOptional({ example: ['string.h'] })
 	disallowHeaders?: string[];
@@ -77,7 +93,7 @@ export class ProblemResponseDto {
 
 	constructor(problem: Problem) {
 		Object.assign(this, problem);
-		this.author = new UserResponseDto(problem.author);
+		this.author = new UserMediumResponseDto(problem.author);
 	}
 }
 

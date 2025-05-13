@@ -18,7 +18,6 @@ import {
 } from '@nestjs/common';
 import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { AllowRole } from '../auth/decorators/auth.decorator';
 import { Role } from '../shared/enum/role.enum';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import {
@@ -35,6 +34,7 @@ import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { UserQueryDto } from './dtos/user-query.dto';
 import { UserSaveCodeDto } from './dtos/user-request.dto';
+import { AllowRole } from 'src/shared/decorators/auth.decorator';
 
 @Controller('user')
 @ApiTags('User')

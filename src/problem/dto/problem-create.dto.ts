@@ -7,8 +7,8 @@ import {
 	IsOptional,
 	IsString,
 } from 'class-validator';
-import { CreateTestCaseDto } from '../test_case/dto/create-test-case.dto';
 import { ProblemAllowMode } from '../enum/problem-allow-mode.enum';
+import { TestCase } from '../test_case/test-case.object';
 
 export class CreateProblemDto {
 	@ApiProperty({ example: 'Sample Problem Title' })
@@ -97,10 +97,9 @@ export class CreateProblemDto {
 				isHiddenTestcase: true,
 			},
 		],
-		type: CreateTestCaseDto,
 		isArray: true,
+		type: TestCase,
 	})
 	@IsArray()
-	@IsNotEmpty()
-	testCases: CreateTestCaseDto[];
+	testCases: TestCase[];
 }
