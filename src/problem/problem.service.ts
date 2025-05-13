@@ -190,6 +190,22 @@ export class ProblemService {
 				headers: problem.headers,
 			});
 
+			const cleanedTestCase = [];
+
+			for (const testCase of updateProblemRequest.testCases) {
+				if (
+					!cleanedTestCase.find(
+						(t) => t.input === testCase.input,
+					)
+				) {
+					cleanedTestCase.push(testCase);
+				}
+			}
+
+			updateProblemRequest.testCases = cleanedTestCase;
+			console.log(updateProblemRequest.testCases);
+			console.log(problem.testCases);
+
 			if (problem.testCases && problem.testCases.length > 0) {
 				await Promise.all(
 					problem.testCases.map(async (testCase) => {
@@ -212,12 +228,14 @@ export class ProblemService {
 							);
 						} catch (e) {
 							throw new BadRequestException(
-								`============\nError at Test case ${index}\n============\n\n${e}`,
+								`============\nError at Test case ${index + 1}\n============\n\n${e}`,
 							);
 						}
 					},
 				),
 			);
+
+			console.log(newTestCases);
 
 			problem.testCases = newTestCases;
 
@@ -440,18 +458,22 @@ export class ProblemService {
 				} else {
 					if (userProblemStatus.length === 0) return result;
 
+					console.log(userProblemStatus);
+
 					userProblemStatus = userProblemStatus.filter(
-						(problem) =>
-							ProblemStatusEnum[problem.status] === status,
+						(problem) => problem.status == status,
 					);
+
+					console.log(userProblemStatus, status);
 
 					if (userProblemStatus.length === 0) return result;
 
-					userProblemStatus.map((problem) =>
-						searchProblems.andWhere('entity.id = :id', {
-							id: problem.problemId,
-						}),
+					const ids = userProblemStatus.map(
+						(problem) => problem.problemId,
 					);
+					searchProblems.andWhere('entity.id IN (:...ids)', {
+						ids,
+					});
 				}
 			}
 		}

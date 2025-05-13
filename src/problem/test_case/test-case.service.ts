@@ -38,7 +38,7 @@ export class TestCaseService {
 
 		if (problem.testCases.some((testCase) => testCase.input === input)) {
 			throw new BadRequestException(
-				`Test case ${input} already exist`,
+				`Test case that have input :\n\n${input}\n\nalready exist`,
 			);
 		}
 	}
@@ -50,7 +50,6 @@ export class TestCaseService {
 
 		await this.checkTestCaseExist(problem, input);
 		let expectOutput;
-
 		try {
 			expectOutput = await this.runCodeService.runCode({
 				input,
