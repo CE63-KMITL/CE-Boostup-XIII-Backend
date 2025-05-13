@@ -140,7 +140,6 @@ export class UserController {
 		@Request() req: authenticatedRequest,
 		@Body() modifyScoreDto: ModifyScoreDto,
 	): Promise<UserResponseDto> {
-		console.log(req);
 		return this.userService.modifyScore(
 			modifyScoreDto.userId,
 			Math.abs(modifyScoreDto.amount),
