@@ -132,20 +132,6 @@ export class ProblemService {
 		}
 
 		const originalDifficulty = problem.difficulty;
-		let importantChanged = false;
-
-		//-------------------------------------------------------
-		// Handle testcase or solution code update
-		//-------------------------------------------------------
-
-		const sameTestCase =
-			JSON.stringify(updateProblemRequest.testCases) ==
-			JSON.stringify(problem.testCases);
-
-		const sameSolutionCode =
-			updateProblemRequest.solutionCode &&
-			updateProblemRequest.solutionCode.trim() ==
-				problem.solutionCode.trim();
 
 		if (updateProblemRequest.title) {
 			const existProblem = await this.problemsRepository.findOneBy({
@@ -159,11 +145,34 @@ export class ProblemService {
 			}
 		}
 
+		let importantChanged =
+			JSON.stringify(updateProblemRequest.testCases) !=
+			JSON.stringify(problem.testCases);
+
+		importantChanged =
+			importantChanged ||
+			(updateProblemRequest.solutionCode &&
+				updateProblemRequest.solutionCode.trim() !=
+					problem.solutionCode.trim());
+
+		importantChanged =
+			importantChanged ||
+			updateProblemRequest?.headerMode !== problem.headerMode ||
+			updateProblemRequest?.functionMode !== problem.functionMode;
+
+		importantChanged =
+			importantChanged ||
+			JSON.stringify(updateProblemRequest.headers) !=
+				JSON.stringify(problem.headers);
+
+		importantChanged =
+			importantChanged ||
+			JSON.stringify(updateProblemRequest.functions) !=
+				JSON.stringify(problem.functions);
+
 		Object.assign(problem, updateProblemRequest);
 
-		if (!sameTestCase || !sameSolutionCode) {
-			importantChanged = true;
-
+		if (importantChanged) {
 			problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
 
 			problem.timeLimit =

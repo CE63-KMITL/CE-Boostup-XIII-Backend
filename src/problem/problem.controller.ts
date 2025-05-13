@@ -125,6 +125,7 @@ export class ProblemController {
 	@Throttle({
 		default: THROTTLE_RUNCODE,
 	})
+	@AllowRole(Role.MEMBER)
 	async runCode(
 		@Param('id', ParseIntPipe) id: number,
 		@Req() req: authenticatedRequest,
