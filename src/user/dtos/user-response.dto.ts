@@ -97,6 +97,7 @@ export class UserResponseDto {
 		this.house = user.house;
 		this.role = user.role;
 		this.score = user.score;
+		this.icon = user.icon;
 		this.createdAt = user.createdAt;
 		this.updatedAt = user.updatedAt;
 	}
