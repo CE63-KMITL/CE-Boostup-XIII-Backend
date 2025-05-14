@@ -60,7 +60,7 @@ export class UserController {
 	@AllowRole(Role.MEMBER)
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: 'Get current authenticated user data',
+		description: 'Get current user data',
 		type: UserResponseDto,
 	})
 	async getCurrentUser(
@@ -77,7 +77,7 @@ export class UserController {
 	@AllowRole(Role.MEMBER)
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: 'Get current authenticated user score log',
+		description: 'Get current user score log',
 		type: UserScoreResponseDto,
 	})
 	async getCurrentUserScoreLog(
