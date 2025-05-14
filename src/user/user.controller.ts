@@ -83,6 +83,7 @@ export class UserController {
 	async getData(
 		@Request() req: authenticatedRequest,
 	): Promise<UserFrontDataResponseDto> {
+		console.log(req.user);
 		return await this.userService.getData(req.user.userId);
 	}
 

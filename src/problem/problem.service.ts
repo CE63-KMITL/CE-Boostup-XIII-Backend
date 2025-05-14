@@ -138,7 +138,7 @@ export class ProblemService {
 				title: updateProblemRequest.title,
 			});
 
-			if (problem.id !== existProblem.id) {
+			if (existProblem && problem.id !== existProblem.id) {
 				throw new BadRequestException(
 					'The problem title already exists.',
 				);
