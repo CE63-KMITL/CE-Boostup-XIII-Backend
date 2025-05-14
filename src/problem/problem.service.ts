@@ -402,13 +402,9 @@ export class ProblemService {
 				} else {
 					if (userProblemStatus.length === 0) return result;
 
-					console.log(userProblemStatus);
-
 					userProblemStatus = userProblemStatus.filter(
 						(problem) => problem.status == status,
 					);
-
-					console.log(userProblemStatus, status);
 
 					if (userProblemStatus.length === 0) return result;
 
