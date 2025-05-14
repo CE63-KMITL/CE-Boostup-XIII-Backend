@@ -12,9 +12,7 @@ const API_ROUTES = {
 	USER_ADD_SCORE: '/user/score/add',
 	PROBLEM_CREATE: '/problem',
 	PROBLEM_UPDATE_BY_ID: (problemId: string | number) =>
-		`/problem/${problemId}`, // Allow number for ID
-	// TEST_CASE_CREATE_FOR_PROBLEM: (problemId: string | number) => `/problem/${problemId}/test-case`, // Endpoint is 404 Not Found
-	// According to your Swagger/OAS, test cases are part of CreateProblemDto and UpdateProblemDto
+		`/problem/${problemId}`,
 };
 
 const USER_ROLES = {
@@ -40,14 +38,12 @@ interface UserResponse extends ApiResponse {
 }
 
 interface ProblemResponse extends ApiResponse {
-	id: string | number; // Problem ID might be a number based on logs (e.g., "11")
+	id: string | number;
 }
 
-// Define a basic structure for a TestCase based on UpdateProblemDto requirements
 interface TestCaseDto {
 	input: string;
-	expectOutput: string; // OAS schema shows "expectOutput", not "expectedOutput" or "isHiddenTestcase"
-	// isHidden?: boolean; // OAS schema for UpdateProblemDto does not show isHidden for testCases
+	expectOutput: string;
 }
 
 async function callApi<T = ApiResponse>(
@@ -257,29 +253,9 @@ async function createProblem(
 	return problem;
 }
 
-// This function is not used as the endpoint /problem/:id/test-case seems to be incorrect (404)
-// Test cases are now part of the CreateProblemDto and UpdateProblemDto
-/*
-async function addTestCaseToProblem(
-    problemId: string | number,
-    input: string,
-    expectOutput: string,
-    isHidden: boolean,
-    authorToken: string,
-): Promise<void> {
-    console.log(`Adding test case to problem ID: ${problemId}`);
-    await callApi(
-        API_ROUTES.TEST_CASE_CREATE_FOR_PROBLEM(problemId),
-        { input, expectOutput, isHiddenTestcase: isHidden },
-        authorToken,
-    );
-    console.log(`Test case added to problem ID: ${problemId}`);
-}
-*/
-
 async function updateProblemDetails(
 	problemId: string | number,
-	updateData: any, // Should match UpdateProblemDto structure
+	updateData: any,
 	authorToken: string,
 ): Promise<void> {
 	console.log(`Updating problem ID: ${problemId}`);
@@ -395,7 +371,7 @@ async function updateProblemDetails(
 		}
 
 		console.log('\n--- Creating Problems ---');
-		const createdProblems: ProblemResponse[] = []; // Store full problem response
+		const createdProblems: ProblemResponse[] = [];
 		const numProblemsToCreate = 10;
 
 		for (let i = 0; i < numProblemsToCreate; i++) {
@@ -409,14 +385,12 @@ async function updateProblemDetails(
 				);
 			}
 
-			// Generate test cases for CreateProblemDto
 			const testCasesForCreation: TestCaseDto[] = [];
-			const numTestCases = Math.floor(Math.random() * 2) + 1; // 1 to 2 test cases
+			const numTestCases = Math.floor(Math.random() * 2) + 1;
 			for (let k = 1; k <= numTestCases; k++) {
 				testCasesForCreation.push({
 					input: `Input for T${k} of P_New${i + 1}`,
 					expectOutput: `Expected Output for T${k} of P_New${i + 1}`,
-					// isHidden: k > (numTestCases - 1), // isHidden not in CreateProblemDto.testCases based on UpdateProblemDto error
 				});
 			}
 
@@ -429,7 +403,7 @@ async function updateProblemDetails(
 					'#include <stdio.h>\n\nint main() {\n\tprintf("Hello, World!");\n\treturn 0;\n}',
 				solutionCode:
 					'#include <stdio.h>\n\nint main() {\n\tprintf("Hello, World! Solution");\n\treturn 0;\n}',
-				testCases: testCasesForCreation, // Include test cases in creation
+				testCases: testCasesForCreation,
 			};
 
 			let authorToken: string | undefined;
@@ -452,8 +426,6 @@ async function updateProblemDetails(
 					authorToken,
 				);
 				createdProblems.push(createdProblem);
-
-				// No need to call addTestCaseToProblem separately if testCases are part of CreateProblemDto
 			} catch (error) {
 				console.error(
 					`Failed to create problem "${problemData.title}": ${(error as Error).message}`,
@@ -487,14 +459,12 @@ async function updateProblemDetails(
 				continue;
 			}
 
-			// Generate test cases for UpdateProblemDto
 			const testCasesForUpdate: TestCaseDto[] = [];
-			const numUpdateTestCases = Math.floor(Math.random() * 2) + 1; // 1 to 2 test cases
+			const numUpdateTestCases = Math.floor(Math.random() * 2) + 1;
 			for (let k = 1; k <= numUpdateTestCases; k++) {
 				testCasesForUpdate.push({
 					input: `Updated Input for T${k} of P_Update${problemToUpdate.id}`,
 					expectOutput: `Updated Expected Output for T${k} of P_Update${problemToUpdate.id}`,
-					// isHidden: k > (numUpdateTestCases - 1), // isHidden not in UpdateProblemDto.testCases
 				});
 			}
 
@@ -503,11 +473,9 @@ async function updateProblemDetails(
 					title: `Updated - Problem Title ${problemToUpdate.id} ${Date.now()}`,
 					description:
 						"This problem's description has been updated by the seeding script.",
-					// These fields are required by UpdateProblemDto based on the error message
 					solutionCode: `#include <stdio.h>\n\nint main() {\n\tprintf("Updated Hello, World! Solution for ${problemToUpdate.id}");\n\treturn 0;\n}`,
-					difficulty: Math.floor(Math.random() * 4) + 1, // Random 1-4
-					testCases: testCasesForUpdate, // testCases must be an array
-					// tags: problemToUpdate.tags || [], // Optional, include if you want to update or ensure they persist
+					difficulty: Math.floor(Math.random() * 4) + 1,
+					testCases: testCasesForUpdate,
 				};
 				await updateProblemDetails(
 					problemToUpdate.id,
