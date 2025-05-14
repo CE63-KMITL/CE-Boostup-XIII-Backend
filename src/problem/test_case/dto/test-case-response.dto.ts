@@ -22,6 +22,19 @@ export class TestCaseResponseDto {
 	isHiddenTestcase: boolean;
 
 	constructor(testCase: TestCase) {
-		Object.assign(this, testCase);
+		this.input = testCase.input;
+		this.expectOutput = testCase.expectOutput;
+		this.isHiddenTestcase = testCase.isHiddenTestcase;
+	}
+}
+
+export class TestCaseFilteredResponseDto extends TestCaseResponseDto {
+	constructor(testCase: TestCase) {
+		super(testCase);
+
+		if (testCase.isHiddenTestcase) {
+			delete this.input;
+			delete this.expectOutput;
+		}
 	}
 }

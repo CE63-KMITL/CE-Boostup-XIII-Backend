@@ -21,12 +21,13 @@ import { Role } from 'src/shared/enum/role.enum';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { CreateProblemDto } from './dto/problem-create.dto';
 import {
+	ProblemCodeResponseDto,
 	ProblemPaginatedDto,
 	ProblemResponseDto,
 	ProblemSearchedPaginatedDto,
 } from './dto/problem-response.dto';
 import { ProblemService } from './problem.service';
-import { ProblemSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
+import { ProblemRequestSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
 import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
 import { ProblemRunCodeRequest } from './dto/problem-request.dto';
@@ -112,6 +113,15 @@ export class ProblemController {
 		return new ProblemResponseDto(await this.problemService.findOne(id));
 	}
 
+	@ApiOkResponse({ type: ProblemResponseDto })
+	@AllowRole(Role.MEMBER)
+	@Get('code/:id')
+	async code(@Param('id') id: number): Promise<ProblemCodeResponseDto> {
+		return new ProblemCodeResponseDto(
+			await this.problemService.findOne(id),
+		);
+	}
+
 	@ApiOkResponse({ type: String })
 	@Get('detail/:id')
 	async getDetail(@Param('id') id: number) {
@@ -128,15 +138,10 @@ export class ProblemController {
 	@AllowRole(Role.MEMBER)
 	async runCode(
 		@Param('id', ParseIntPipe) id: number,
-		@Req() req: authenticatedRequest,
 		@Body() body: ProblemRunCodeRequest,
 	) {
 		return new RunCodeResponseDto(
-			await this.problemService.runCode(
-				id,
-				req.user.userId,
-				body.input,
-			),
+			await this.problemService.runCode(id, body.input, body.code),
 		);
 	}
 
@@ -155,7 +160,7 @@ export class ProblemController {
 		)
 		problemId: number,
 		@Req() req: authenticatedRequest,
-		@Body() problemSubmission: ProblemSubmissionDto,
+		@Body() problemSubmission: ProblemRequestSubmissionDto,
 	): Promise<ProblemSubmissionResponseDto[]> {
 		return await this.problemService.submission(
 			problemSubmission,

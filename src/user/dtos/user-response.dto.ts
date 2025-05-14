@@ -77,7 +77,16 @@ export class UserResponseDto {
 	updatedAt: Date;
 
 	constructor(user: User) {
-		Object.assign(this, user);
+		this.id = user.id;
+		this.name = user.name;
+		this.email = user.email;
+		this.house = user.house;
+		this.role = user.role;
+		this.score = user.score;
+		this.studentId = user.studentId;
+		this.icon = user.icon;
+		this.createdAt = user.createdAt;
+		this.updatedAt = user.updatedAt;
 	}
 }
 

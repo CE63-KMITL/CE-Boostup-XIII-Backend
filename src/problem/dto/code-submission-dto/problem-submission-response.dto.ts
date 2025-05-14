@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { TestCase } from 'src/problem/test_case/test-case.object';
 import { RunCodeResponseDto } from 'src/run_code/dtos/run-code-response.dto';
 
 export class ProblemSubmissionResponseDto extends RunCodeResponseDto {
@@ -8,9 +9,9 @@ export class ProblemSubmissionResponseDto extends RunCodeResponseDto {
 	})
 	isPass: boolean;
 
-	constructor(runCodeDto: RunCodeResponseDto, isPass: boolean) {
+	constructor(testCaseDto: TestCase, runCodeDto: RunCodeResponseDto) {
 		super(runCodeDto);
-		this.isPass = isPass;
+		this.isPass = testCaseDto.expectOutput === this.output;
 	}
 }
 

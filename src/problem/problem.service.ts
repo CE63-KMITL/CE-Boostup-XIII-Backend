@@ -28,10 +28,10 @@ import {
 import { Problem } from './problem.entity';
 import { ProblemSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
 import { RunCodeService } from 'src/run_code/run-code.service';
-import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
 import { ProblemStatus } from 'src/user/problem_status/problem-status.entity';
 import { RejectProblemDTO } from './dto/problem-reject.dto';
 import { RunCodeExitStatusEnum } from 'src/run_code/enum/run-code-exit-status.enum';
+import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
 
 //-------------------------------------------------------
 // Class Definition
@@ -447,13 +447,9 @@ export class ProblemService {
 	//-------------------------------------------------------
 	// Code Execution
 	//-------------------------------------------------------
-	async runCode(problem: Problem | number, userId: string, input: string) {
+	async runCode(problem: Problem | number, input: string, userCode: string) {
 		if (typeof problem === 'number')
 			problem = await this.findOne(problem);
-
-		const userCode = (
-			await this.userService.findOneProblemStatus(userId, problem.id)
-		).code;
 
 		return await this.runCodeService.runCode({
 			input,
@@ -472,26 +468,25 @@ export class ProblemService {
 		problemId: number,
 	) {
 		const { code } = problemSubmission;
-		const codeString = JSON.parse(code) ?? code;
 		const problem = await this.findOne(problemId);
 		const { testCases } = problem;
 
 		if (testCases.length === 0)
 			throw new BadRequestException('no test case for this problem');
 
-		this.checkAllowCode(problem, codeString);
-
-		const runCodeResponse = await Promise.all(
-			testCases.map((testCase) =>
-				this.runCode(problem, userId, testCase.input),
-			),
-		);
+		const runCodeResponse =
+			await this.runCodeService.runCodeMultipleInputs({
+				inputs: testCases.map((testCase) => testCase.input),
+				code,
+				timeout: problem.timeLimit,
+				functionMode: problem.functionMode,
+				headerMode: problem.headerMode,
+				headers: problem.headers,
+				functions: problem.functions,
+			});
 
 		const response = runCodeResponse.map((result, i) => {
-			return new ProblemSubmissionResponseDto(
-				testCases[i].isHiddenTestcase ? undefined : result,
-				result.output === testCases[i].expectOutput,
-			);
+			return new ProblemSubmissionResponseDto(testCases[i], result);
 		});
 
 		await this.userService.updateProblemStatus(
