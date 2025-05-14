@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 import { House } from 'src/shared/enum/house.enum';
 import { AvailableRole } from 'src/shared/enum/role.enum';
@@ -59,7 +59,7 @@ export class UserQueryDto extends PaginationMetaDto {
 	})
 	@IsOptional()
 	@IsEnum(AvailableRole)
-	role: AvailableRole = AvailableRole.MEMBER;
+	role: AvailableRole;
 
 	@ApiPropertyOptional({
 		example: '67011501',

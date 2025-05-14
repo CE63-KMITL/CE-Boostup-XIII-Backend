@@ -139,6 +139,8 @@ export class UserService implements OnModuleInit {
 			role,
 			studentId,
 		} = query;
+
+		console.log(query);
 		const users = await createPaginationQuery({
 			repository: this.userRepository,
 			dto: { limit, page },
@@ -164,7 +166,14 @@ export class UserService implements OnModuleInit {
 				studentId: `%${studentId}%`,
 			});
 
-		users.andWhere('entity.role = :role', { role });
+		if (query.role === null || query.role === undefined) {
+			users.andWhere('entity.role IN (:...roles)', {
+				roles: [Role.MEMBER, Role.STAFF],
+			});
+		} else {
+			users.andWhere('entity.role = :role', { role: query.role });
+		}
+		// If role is 'dev', no role condition is added, effectively excluding 'dev' from results
 
 		const [data, totalItem] = await users.getManyAndCount();
 		return new UserPaginatedDto(data, totalItem, page, limit);
