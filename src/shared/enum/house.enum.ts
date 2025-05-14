@@ -1,6 +1,6 @@
 export enum House {
 	BARBARIAN = 'barbarian',
-	SORCEROR = 'sorceror',
+	SORCERER = 'sorcerer',
 	ROGUE = 'rogue',
 	WIZARD = 'wizard',
 	BARD = 'bard',
