@@ -57,7 +57,7 @@ export class UserController {
 
 	@Get('me')
 	@HttpCode(HttpStatus.OK)
-	@AllowRole(Role.MEMBER) // Only authenticated users can access this
+	@AllowRole(Role.MEMBER)
 	@ApiResponse({
 		status: HttpStatus.OK,
 		description: 'Get current authenticated user data',
