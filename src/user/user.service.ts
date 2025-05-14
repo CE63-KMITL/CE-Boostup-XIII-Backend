@@ -333,7 +333,9 @@ export class UserService implements OnModuleInit {
 		scoreLog.message = message;
 		await this.scoreLogRepository.save(scoreLog);
 		const response = await this.userRepository.save(user);
-		const house = await this.HouseScoreRepo.findOneBy({ id: user.house });
+		const house = await this.HouseScoreRepo.findOneBy({
+			name: user.house,
+		});
 		if (!house) throw new NotFoundException('House not found');
 
 		house.value += amount;
@@ -342,7 +344,7 @@ export class UserService implements OnModuleInit {
 		}
 
 		await this.HouseScoreRepo.update(
-			{ id: user.house },
+			{ name: user.house },
 			{ value: house.value },
 		);
 		return new UserResponseDto(response);

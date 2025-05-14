@@ -13,12 +13,29 @@ const API_ROUTES = {
 	PROBLEM_CREATE: '/problem',
 	PROBLEM_UPDATE_BY_ID: (problemId: string | number) =>
 		`/problem/${problemId}`,
+	// TEST_CASE_CREATE_FOR_PROBLEM: (problemId: string | number) => `/problem/${problemId}/test-case`, // Endpoint is 404
 };
 
 const USER_ROLES = {
 	STAFF: 'staff',
 	MEMBER: 'member',
 };
+
+const HOUSES = [
+	// Re-enabled this constant
+	'barbarian',
+	'sorceror',
+	'rogue',
+	'wizard',
+	'bard',
+	'paladin',
+	'monk',
+	'samurai',
+	'ranger',
+	'priest',
+	'fighter',
+	'warlock',
+];
 
 const PROBLEM_TAGS = ['Basic I/O', 'If - else', 'Loop', 'Array', 'Pattern'];
 
@@ -104,7 +121,7 @@ async function callApi<T = ApiResponse>(
 				const apiMessage = (responseData as ApiResponse).message;
 				errorMessage = Array.isArray(apiMessage)
 					? apiMessage.join(', ')
-					: apiMessage;
+					: String(apiMessage);
 			}
 			console.error(
 				`API Error for ${method} ${route}:`,
@@ -158,7 +175,7 @@ async function createAndInitializeUser(
 			},
 			adminToken,
 		);
-		console.log('Create user raw response:', createUserResponse);
+		// console.log('Create user raw response:', createUserResponse);
 
 		if (!createUserResponse || !createUserResponse.id) {
 			console.error(
@@ -166,11 +183,9 @@ async function createAndInitializeUser(
 			);
 			if (
 				createUserResponse?.statusCode === 400 &&
-				(createUserResponse.message === 'User already exists' ||
-					(Array.isArray(createUserResponse.message) &&
-						createUserResponse.message.includes(
-							'User already exists',
-						)))
+				String(createUserResponse.message).includes(
+					'User already exists',
+				)
 			) {
 				console.log(
 					`User ${email} already exists, skipping creation and update.`,
@@ -183,16 +198,19 @@ async function createAndInitializeUser(
 		const userId = createUserResponse.id;
 		console.log(`User ${email} created successfully with ID: ${userId}.`);
 
+		const randomHouse = HOUSES[Math.floor(Math.random() * HOUSES.length)]; // Assign random house
 		const randomStudentId = Math.floor(
 			10000000 + Math.random() * 90000000,
 		).toString();
 
-		console.log(`Updating profile for user ID: ${userId}`);
+		console.log(
+			`Updating profile for user ID: ${userId} with house: ${randomHouse}`,
+		);
 		await callApi(
 			API_ROUTES.DEV_USER_UPDATE_BY_ID(userId),
 			{
 				name: email.split('@')[0],
-				house: null,
+				house: randomHouse, // Assign the random house string
 				studentId: randomStudentId,
 				icon: PLACEHOLDER_ICON_BASE64,
 			},
@@ -201,23 +219,52 @@ async function createAndInitializeUser(
 		console.log(`Profile updated for user ID: ${userId}.`);
 		return userId;
 	} catch (error: any) {
+		const err = error as Error & { response?: any };
 		if (
-			error.response?.statusCode === 400 &&
-			(error.response.message === 'User already exists' ||
-				(Array.isArray(error.response.message) &&
-					error.response.message.includes(
-						'User already exists',
-					)))
+			err.response?.statusCode === 400 &&
+			String(err.response.message).includes('User already exists')
 		) {
 			console.log(
 				`User ${email} already exists (caught error), skipping creation and update.`,
 			);
 			return undefined;
 		}
-		console.error(
-			`Error in createAndInitializeUser for ${email}:`,
-			error.message,
-		);
+
+		let pathOfError = '';
+		try {
+			if (err.response?.url) {
+				// For errors from fetch response
+				pathOfError = new URL(err.response.url).pathname;
+			} else if (
+				err.message?.includes(
+					API_ROUTES.DEV_USER_UPDATE_BY_ID('').split('/')[1],
+				)
+			) {
+				// Heuristic
+				pathOfError =
+					API_ROUTES.DEV_USER_UPDATE_BY_ID('temp').split(
+						'temp',
+					)[0];
+			}
+		} catch {}
+
+		if (
+			pathOfError.includes(
+				API_ROUTES.DEV_USER_UPDATE_BY_ID('').split('/update/')[0],
+			)
+		) {
+			console.error(
+				`Error updating profile for user ${email} (ID: ${err.response?.request?.url?.split('/').pop() || 'unknown'}):`,
+				err.message,
+				err.response,
+			);
+		} else {
+			console.error(
+				`Error in createAndInitializeUser for ${email}:`,
+				err.message,
+				err.response,
+			);
+		}
 		return undefined;
 	}
 }
@@ -229,12 +276,25 @@ async function addUserScore(
 	adminToken: string,
 ): Promise<void> {
 	console.log(`Adding score ${amount} to user ID: ${userId}`);
-	await callApi(
-		API_ROUTES.USER_ADD_SCORE,
-		{ userId, amount, message },
-		adminToken,
-	);
-	console.log(`Score added for user ID: ${userId}.`);
+	// Wrap in try-catch to prevent script from stopping if score addition fails due to the backend issue
+	try {
+		await callApi(
+			API_ROUTES.USER_ADD_SCORE,
+			{ userId, amount, message },
+			adminToken,
+		);
+		console.log(`Score added for user ID: ${userId}.`);
+	} catch (error: any) {
+		console.warn(
+			`Could not add score for user ID ${userId}. Error: ${error.message}. This might be due to the known backend issue with houses.`,
+		);
+		if (error.response) {
+			console.warn(
+				'Score addition API Response Data:',
+				error.response,
+			);
+		}
+	}
 }
 
 async function createProblem(
