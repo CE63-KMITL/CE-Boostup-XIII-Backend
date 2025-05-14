@@ -5,13 +5,11 @@ export function Exclude<T, K extends ReadonlyArray<keyof T>>(
 	BaseClass: Type<T>,
 	keysToExclude: K,
 ) {
-	class newClass extends OmitType(BaseClass as any, keysToExclude as any) {
-		constructor(sourceObject: Partial<T>) {
-			super();
-			for (const key of Object.keys(sourceObject) as Array<keyof T>) {
-				if (!keysToExclude.includes(key)) {
-					(this as any)[key] = sourceObject[key];
-				}
+	class newClass extends (BaseClass as any) {
+		constructor(sourceObject) {
+			super(sourceObject);
+			for (const key of keysToExclude) {
+				delete (this as any)[key];
 			}
 		}
 	}

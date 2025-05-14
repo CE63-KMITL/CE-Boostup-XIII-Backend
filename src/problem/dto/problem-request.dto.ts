@@ -56,4 +56,12 @@ export class ProblemRunCodeRequest {
 	})
 	@IsString()
 	input: string;
+
+	@ApiProperty({
+		description: 'Code to be executed',
+		example: '#include <stdio.h>\n\nint main() {\n\tprintf("Hello, World!");\n\treturn 0;\n}',
+	})
+	@IsString()
+	code: string;
 }
+

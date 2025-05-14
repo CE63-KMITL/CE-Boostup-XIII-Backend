@@ -244,8 +244,8 @@ export class UserController {
 		@Request() req: authenticatedRequest,
 		@Param('problemId', ParseIntPipe) problemId: number,
 		@Body() saveCodeDto: UserSaveCodeDto,
-	): Promise<void> {
-		await this.userService.saveCode(
+	) {
+		return await this.userService.saveCode(
 			req.user.userId,
 			problemId,
 			saveCodeDto.code,

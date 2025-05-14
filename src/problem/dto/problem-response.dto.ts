@@ -10,8 +10,11 @@ import {
 } from '../enum/problem-staff-status.enum';
 import { Problem } from '../problem.entity';
 import { ScoreValue } from '../type/score-value.type';
-import { Filter } from 'src/shared/dto.extension';
-import { TestCaseResponseDto } from '../test_case/dto/test-case-response.dto';
+import {
+	TestCaseFilteredResponseDto,
+	TestCaseResponseDto,
+} from '../test_case/dto/test-case-response.dto';
+import { Exclude, Filter } from 'src/shared/dto.extension';
 
 export class ProblemResponseDto {
 	@ApiProperty({
@@ -28,6 +31,13 @@ export class ProblemResponseDto {
 	})
 	title: string;
 
+	@ApiProperty({
+		example: 1000,
+		description: 'time limit of problem',
+		type: Number,
+	})
+	timeLimit: number;
+
 	@ApiPropertyOptional({
 		example: 'Given an integer n, the task is to find the solution to the n-queens problem,',
 		description: 'problem description',
@@ -41,6 +51,13 @@ export class ProblemResponseDto {
 		type: String,
 	})
 	defaultCode?: string;
+
+	@ApiProperty({
+		example: '#include <stdio.h>\n\nint main() {\n\tprintf("Hello, World!");\n\treturn 0;\n}',
+		description: 'solution code',
+		type: String,
+	})
+	solutionCode: string;
 
 	@ApiProperty({
 		example: '2',
@@ -64,6 +81,13 @@ export class ProblemResponseDto {
 	})
 	tags?: string[];
 
+	@ApiPropertyOptional({
+		example: 'Given an integer n, the task is to find the solution to the n-queens problem,',
+		description: 'problem rejected message',
+		type: String,
+	})
+	rejectedMessage?: string;
+
 	@ApiProperty({
 		example: [
 			{
@@ -86,14 +110,44 @@ export class ProblemResponseDto {
 	author: UserMediumResponseDto;
 
 	@ApiPropertyOptional({ example: ['string.h'] })
-	disallowHeaders?: string[];
+	disallowHeaders?: string[] = [];
 
 	@ApiPropertyOptional({ example: ['for'] })
-	disallowFunctions?: string[];
+	disallowFunctions?: string[] = [];
 
 	constructor(problem: Problem) {
-		Object.assign(this, problem);
+		this.id = problem.id;
+		this.title = problem.title;
+		this.description = problem.description;
+		this.defaultCode = problem.defaultCode;
+		this.difficulty = problem.difficulty;
+		this.devStatus = problem.devStatus;
+		this.tags = problem.tags;
+		this.rejectedMessage = problem.rejectedMessage;
+		this.testCases = problem.testCases.map(
+			(testCase) => new TestCaseResponseDto(testCase),
+		);
 		this.author = new UserMediumResponseDto(problem.author);
+		this.timeLimit = problem.timeLimit;
+		this.solutionCode = problem.solutionCode;
+	}
+}
+
+export class ProblemFilteredResponse extends Exclude(ProblemResponseDto, [
+	'devStatus',
+	'rejectedMessage',
+	'timeLimit',
+	'solutionCode',
+]) {
+	@ApiProperty({
+		description: 'author of problem',
+		type: UserSmallResponseDto,
+	})
+	author: UserSmallResponseDto;
+
+	constructor(problem: Problem) {
+		super(problem);
+		this.author = new UserSmallResponseDto(problem.author);
 	}
 }
 
@@ -129,12 +183,6 @@ export class ProblemSearchedDto extends Filter(ProblemResponseDto, [
 	})
 	status: ProblemStatusEnum | ProblemStaffStatusEnum;
 
-	@ApiProperty({
-		description: 'author of problem',
-		type: UserSmallResponseDto,
-	})
-	author: UserSmallResponseDto;
-
 	constructor(
 		problem: Problem,
 		status?: ProblemStatusEnum | ProblemStaffStatusEnum,
@@ -142,7 +190,6 @@ export class ProblemSearchedDto extends Filter(ProblemResponseDto, [
 		super(problem);
 
 		this.status = status;
-		this.author = new UserSmallResponseDto(problem.author);
 	}
 }
 
@@ -159,5 +206,33 @@ export class ProblemSearchedPaginatedDto extends PaginatedResponseDto(
 			(problem) => new ProblemSearchedDto(problem),
 		);
 		super(problemsResponse, totalItem, page, limit);
+	}
+}
+
+export class ProblemCodeResponseDto extends Exclude(ProblemFilteredResponse, [
+	'testCases',
+]) {
+	@ApiProperty({
+		example: [
+			{
+				isHiddenTestcase: true,
+			},
+			{
+				input: 'abc',
+				expectOutput: 'abc',
+				isHiddenTestcase: false,
+			},
+		],
+		description: 'test cases of problem',
+		type: TestCaseFilteredResponseDto,
+		isArray: true,
+	})
+	testCases: TestCaseFilteredResponseDto[];
+
+	constructor(problem: Problem) {
+		super(problem);
+		this.testCases = problem.testCases.map(
+			(testCase) => new TestCaseFilteredResponseDto(testCase),
+		);
 	}
 }

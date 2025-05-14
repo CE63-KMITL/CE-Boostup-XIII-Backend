@@ -24,13 +24,6 @@ export class RunCodeResponseDto {
 	exit_status: RunCodeExitStatusEnum;
 
 	@ApiProperty({
-		example: '*error message*',
-		description: 'error message',
-		type: String,
-	})
-	error_message: string;
-
-	@ApiProperty({
 		example: 0,
 		description: 'used time',
 		type: Number,
@@ -38,6 +31,9 @@ export class RunCodeResponseDto {
 	used_time: number;
 
 	constructor(runCodeResult: Partial<RunCodeResponseDto>) {
-		Object.assign(this, runCodeResult);
+		this.output = runCodeResult.output;
+		this.exit_code = runCodeResult.exit_code;
+		this.exit_status = runCodeResult.exit_status;
+		this.used_time = runCodeResult.used_time;
 	}
 }

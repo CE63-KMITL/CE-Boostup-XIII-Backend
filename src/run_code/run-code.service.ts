@@ -49,7 +49,6 @@ export class RunCodeService {
 				output: '',
 				exit_code: 1,
 				exit_status: RunCodeExitStatusEnum.CANT_CONNECT_TO_COMPILER,
-				error_message: 'Error running code',
 				used_time: -1,
 			};
 		}

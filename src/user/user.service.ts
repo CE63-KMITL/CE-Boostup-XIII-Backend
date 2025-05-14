@@ -448,11 +448,7 @@ export class UserService implements OnModuleInit {
 		return problemStatus?.code || problem.defaultCode;
 	}
 
-	async saveCode(
-		userId: string,
-		problemId: number,
-		code: string,
-	): Promise<void> {
+	async saveCode(userId: string, problemId: number, code: string) {
 		let problemStatus = await this.findOneProblemStatus(
 			userId,
 			problemId,
@@ -470,5 +466,7 @@ export class UserService implements OnModuleInit {
 		}
 
 		await this.problemStatusRepository.save(problemStatus);
+
+		return 'Success';
 	}
 }
