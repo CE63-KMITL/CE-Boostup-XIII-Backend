@@ -102,15 +102,38 @@ export class UserPaginatedDto extends PaginatedResponseDto(UserResponseDto) {
 	}
 }
 
+//-------------------------------------------------------
+// User Front Data Response DTO (Filtered Basic Data)
+//-------------------------------------------------------
 export class UserFrontDataResponseDto extends Filter(UserResponseDto, [
 	'id',
 	'role',
 	'icon',
 	'name',
 	'studentId',
-	'score',
 	'house',
 ]) {}
+
+//-------------------------------------------------------
+// User Score Data Response DTO (Includes Rank and House Info)
+//-------------------------------------------------------
+export class UserScoreDataResponseDto extends UserFrontDataResponseDto {
+	@ApiProperty({ description: 'User rank among all users' })
+	rank: number;
+
+	@ApiProperty({ description: "Rank of the user's house based on score" })
+	houseRank: number;
+
+	@ApiProperty({ description: "Total score of the user's house" })
+	houseScore: number;
+
+	constructor(data: { user: User; rank: number; houseRank: number; houseScore: number }) {
+		super(data.user);
+		this.rank = data.rank;
+		this.houseRank = data.houseRank;
+		this.houseScore = data.houseScore;
+	}
+}
 
 export class UserSmallResponseDto extends Filter(UserResponseDto, [
 	'name',

@@ -25,6 +25,7 @@ import {
 	UserFrontDataResponseDto,
 	UserPaginatedDto,
 	UserResponseDto,
+	UserScoreDataResponseDto,
 } from './dtos/user-response.dto';
 import { ProblemStatus } from './problem_status/problem-status.entity';
 import { ScoreLog } from './score/score-log.entity';
@@ -127,10 +128,46 @@ export class UserService implements OnModuleInit {
 		}
 	}
 
-	async getData(id: string) {
-		return new UserFrontDataResponseDto(
-			await this.userRepository.findOne({ where: { id } }),
+	//-------------------------------------------------------
+	// User Front Data
+	//-------------------------------------------------------
+
+	async getData(id: string): Promise<UserFrontDataResponseDto> {
+		const user = await this.findOne({ where: { id } });
+		if (!user) {
+			throw new NotFoundException('User not found');
+		}
+		return new UserFrontDataResponseDto(user);
+	}
+
+	async getScoreData(id: string): Promise<UserScoreDataResponseDto> {
+		const user = await this.findOne({ where: { id } });
+		if (!user) {
+			throw new NotFoundException('User not found');
+		}
+
+		const allUsers = await this.userRepository.find({
+			order: { score: 'DESC' },
+		});
+		const rank = allUsers.findIndex((u) => u.id === user.id) + 1;
+
+		const houseScoreResult = await this.houseScoreService.findOne(
+			user.house,
 		);
+		const houseScore = houseScoreResult.data?.value ?? 0;
+
+		const allHousesResult =
+			await this.houseScoreService.findAllSorted('DESC');
+		const allHouses = allHousesResult.data;
+		const houseRank =
+			allHouses.findIndex((h) => h.name === user.house) + 1;
+
+		return new UserScoreDataResponseDto({
+			user,
+			rank,
+			houseRank,
+			houseScore,
+		});
 	}
 
 	async search(query: UserQueryDto) {
