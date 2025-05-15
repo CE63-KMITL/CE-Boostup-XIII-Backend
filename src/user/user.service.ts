@@ -113,14 +113,18 @@ export class UserService implements OnModuleInit {
 
 	async findOne(
 		option: FindOneOptions<User>,
-		throwError = false,
+		throwError = true,
 	): Promise<User> {
 		const responseUser = await this.userRepository.findOne(option);
-		if (!responseUser && throwError)
-			throw new NotFoundException('User not found');
-		responseUser.score = parseFloat(responseUser.score as any);
-
-		return responseUser;
+		if (responseUser) {
+			responseUser.score = parseFloat(responseUser.score as any);
+			return responseUser;
+		} else {
+			if (throwError) {
+				throw new NotFoundException('User not found');
+			}
+			return null;
+		}
 	}
 
 	async getData(id: string) {
