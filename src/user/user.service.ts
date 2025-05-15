@@ -139,6 +139,7 @@ export class UserService implements OnModuleInit {
 			role,
 			studentId,
 		} = query;
+
 		const users = await createPaginationQuery({
 			repository: this.userRepository,
 			dto: { limit, page },
@@ -164,7 +165,13 @@ export class UserService implements OnModuleInit {
 				studentId: `%${studentId}%`,
 			});
 
-		users.andWhere('entity.role = :role', { role });
+		if (role === null || role === undefined) {
+			users.andWhere('entity.role IN (:...roles)', {
+				roles: [Role.MEMBER, Role.STAFF],
+			});
+		} else {
+			users.andWhere('entity.role = :role', { role });
+		}
 
 		const [data, totalItem] = await users.getManyAndCount();
 		return new UserPaginatedDto(data, totalItem, page, limit);
@@ -324,7 +331,9 @@ export class UserService implements OnModuleInit {
 		scoreLog.message = message;
 		await this.scoreLogRepository.save(scoreLog);
 		const response = await this.userRepository.save(user);
-		const house = await this.HouseScoreRepo.findOneBy({ id: user.house });
+		const house = await this.HouseScoreRepo.findOneBy({
+			name: user.house,
+		});
 		if (!house) throw new NotFoundException('House not found');
 
 		house.value += amount;
@@ -333,7 +342,7 @@ export class UserService implements OnModuleInit {
 		}
 
 		await this.HouseScoreRepo.update(
-			{ id: user.house },
+			{ name: user.house },
 			{ value: house.value },
 		);
 		return new UserResponseDto(response);

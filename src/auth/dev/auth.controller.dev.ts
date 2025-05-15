@@ -1,11 +1,22 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AllowRole } from 'src/shared/decorators/auth.decorator';
 import { Role } from 'src/shared/enum/role.enum';
+import { MailService } from 'src/mail/mail.service';
+import { UserService } from 'src/user/user.service';
+import { AutoSendMailDto } from './dtos/auto-send-mail';
+import { AuthService } from '../auth.service';
+import { IsNull } from 'typeorm'; // Added IsNull import
 
 @ApiTags('Auth (DEV)')
 @Controller('dev/auth/')
 export class DevAuthController {
+	constructor(
+		private readonly mailService: MailService,
+		private readonly userService: UserService,
+		private readonly authService: AuthService,
+	) {}
+
 	/*
 	-------------------------------------------------------
 	Test Roles Endpoint
@@ -51,5 +62,49 @@ export class DevAuthController {
 	})
 	getall() {
 		return 'everyone can see this (MEMBER or DEV)';
+	}
+
+	@Post('auto-send-mail')
+	@AllowRole(Role.DEV)
+	async autoSendMail(@Body() body: AutoSendMailDto) {
+		const users = await this.userService.findAll(
+			{ where: { role: body.role, password: IsNull() } },
+			false,
+		);
+
+		if (users.length === 0) return 'No user found';
+
+		console.log(users);
+
+		const result = [];
+
+		for (const user of users) {
+			try {
+				await this.authService.requestOpenAccount(user.email);
+				result.push({
+					email: user.email,
+					status: 'success',
+				});
+			} catch (error) {
+				result.push({
+					email: user.email,
+					status: 'fail',
+					message: error.message,
+				});
+			}
+		}
+
+		return result;
+	}
+
+	@Post('email')
+	@AllowRole(Role.DEV)
+	sentMail(@Body() body) {
+		return this.mailService.sendMail({
+			to: body?.to,
+			subject: body?.subject,
+			html: body?.html,
+			text: body?.text,
+		});
 	}
 }

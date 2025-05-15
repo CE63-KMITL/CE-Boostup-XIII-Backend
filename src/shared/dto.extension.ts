@@ -1,5 +1,5 @@
 import { Type } from '@nestjs/common';
-import { OmitType, PickType } from '@nestjs/swagger';
+import { PickType } from '@nestjs/swagger';
 
 export function Exclude<T, K extends ReadonlyArray<keyof T>>(
 	BaseClass: Type<T>,

@@ -38,7 +38,7 @@ export class CreateProblemDto {
 	})
 	@IsEnum(ProblemAllowMode)
 	@IsOptional()
-	headerMode: ProblemAllowMode;
+	headerMode: ProblemAllowMode = ProblemAllowMode.DISALLOWED;
 
 	@ApiProperty({
 		example: ['stdio.h'],
@@ -46,7 +46,7 @@ export class CreateProblemDto {
 	@IsOptional()
 	@IsArray()
 	@IsString({ each: true })
-	headers: string[];
+	headers: string[] = [];
 
 	@ApiProperty({
 		example: ProblemAllowMode.DISALLOWED,
@@ -54,7 +54,7 @@ export class CreateProblemDto {
 	})
 	@IsOptional()
 	@IsEnum(ProblemAllowMode)
-	functionMode: ProblemAllowMode;
+	functionMode: ProblemAllowMode = ProblemAllowMode.DISALLOWED;
 
 	@ApiProperty({
 		example: ['for'],
@@ -62,7 +62,7 @@ export class CreateProblemDto {
 	@IsOptional()
 	@IsArray()
 	@IsString({ each: true })
-	functions: string[];
+	functions: string[] = [];
 
 	@ApiProperty({
 		example: '#include <stdio.h>\n\nint main() {\n\tprintf("Hello, World!");\n\treturn 0;\n}',
@@ -78,7 +78,6 @@ export class CreateProblemDto {
 	solutionCode?: string;
 
 	@ApiProperty({ example: 3, description: 'Difficulty level (0.5 to 5)' })
-	@IsOptional()
 	@IsNumber()
 	difficulty?: 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5;
 

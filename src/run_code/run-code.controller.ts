@@ -28,7 +28,6 @@ export class RunCodeController {
 		default: THROTTLE_RUNCODE,
 	})
 	runCode(@Body() body: RunCodeRequestDto): Promise<RunCodeResponseDto> {
-		console.log(body);
 		if (body.timeout >= 1000) body.timeout = 1000;
 		return this.runCodeService.runCode(body);
 	}
