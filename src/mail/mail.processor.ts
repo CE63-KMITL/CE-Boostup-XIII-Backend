@@ -26,7 +26,7 @@ export class MailProcessor extends WorkerHost {
 		try {
 			await this.transporter.sendMail({
 				from: this.configService.getOrThrow<string>(
-					GLOBAL_CONFIG.MAIL_USER,
+					GLOBAL_CONFIG.MAIL_SENDER,
 				),
 				to,
 				subject,

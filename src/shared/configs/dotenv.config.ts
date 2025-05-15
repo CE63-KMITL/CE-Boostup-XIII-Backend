@@ -13,6 +13,7 @@ export const dotenvConfig = Joi.object({
 	MAIL_PORT: Joi.number().required(),
 	MAIL_USER: Joi.string().required(),
 	MAIL_PASS: Joi.string().required(),
+	MAIL_SENDER: Joi.string().required(),
 	TOKEN_KEY: Joi.string().required(),
 	JWT_ACCESS_EXPIRATION: Joi.string()
 		.required()
