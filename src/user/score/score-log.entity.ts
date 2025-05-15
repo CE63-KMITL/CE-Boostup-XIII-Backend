@@ -13,7 +13,7 @@ export class ScoreLog {
 	@PrimaryGeneratedColumn('uuid')
 	id: string;
 
-	@Column({ nullable: false, type: 'decimal' })
+	@Column({ nullable: false, type: 'double precision' })
 	amount: number;
 
 	@Column({

@@ -118,6 +118,7 @@ export class UserService implements OnModuleInit {
 		const responseUser = await this.userRepository.findOne(option);
 		if (!responseUser && throwError)
 			throw new NotFoundException('User not found');
+		responseUser.score = parseFloat(responseUser.score as any);
 
 		return responseUser;
 	}
@@ -314,14 +315,12 @@ export class UserService implements OnModuleInit {
 		modifiedById: string,
 		message: string,
 	): Promise<UserResponseDto> {
-		const user = await this.userRepository.findOneOrFail({
+		const user = await this.findOne({
 			where: { id: userId },
 		});
 		const modifiedBy = await this.findOne({
 			where: { id: modifiedById },
 		});
-
-		console.log(amount, typeof amount);
 
 		user.score += amount;
 		if (user.score < 0) user.score = 0;
