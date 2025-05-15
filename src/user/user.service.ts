@@ -425,6 +425,14 @@ export class UserService implements OnModuleInit {
 			});
 			if (status === ProblemStatusEnum.DONE) {
 				const score = this.problemService.calScore(difficulty);
+
+				console.log(
+					difficulty,
+					score,
+					typeof difficulty,
+					typeof score,
+				);
+
 				this.modifyScore(userId, score, userId, 'แก้โจทย์');
 			}
 		} else {
