@@ -24,6 +24,7 @@ import {
 	UserFrontDataResponseDto,
 	UserPaginatedDto,
 	UserResponseDto,
+	UserScoreDataResponseDto,
 } from './dtos/user-response.dto';
 import { ModifyScoreDto } from './score/dtos/modify-score.dto';
 import { UserScoreResponseDto } from './score/dtos/score-response.dto';
@@ -90,8 +91,8 @@ export class UserController {
 	@AllowRole(Role.MEMBER)
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: 'Get a user by id',
-		type: UserResponseDto,
+		description: 'Get a user detail by id',
+		type: UserScoreDataResponseDto,
 	})
 	async findOne(
 		@Param(
@@ -102,9 +103,8 @@ export class UserController {
 			}),
 		)
 		id: string,
-	): Promise<UserResponseDto> {
-		const user = await this.userService.findOne({ where: { id } });
-		return new UserResponseDto(user);
+	): Promise<UserScoreDataResponseDto> {
+		return await this.userService.getScoreData(id);
 	}
 
 	@Get('score/:id')
