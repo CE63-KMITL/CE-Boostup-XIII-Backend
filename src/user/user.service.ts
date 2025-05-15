@@ -467,38 +467,28 @@ export class UserService implements OnModuleInit {
 			});
 			if (status === ProblemStatusEnum.DONE) {
 				const score = this.problemService.calScore(difficulty);
-
-				console.log(
-					difficulty,
-					score,
-					typeof difficulty,
-					typeof score,
-				);
-
 				this.modifyScore(userId, score, userId, 'แก้โจทย์');
 			}
 		} else {
-			await this.problemStatusRepository.update(userProblem, {
-				code,
-				status:
-					userProblem.status === ProblemStatusEnum.DONE
-						? ProblemStatusEnum.DONE
-						: status,
-				lastSubmitted: new Date(),
-			});
+			await this.problemStatusRepository.update(
+				{
+					problemId: userProblem.problemId,
+					userId: userProblem.userId,
+				},
+				{
+					code,
+					status:
+						userProblem.status === ProblemStatusEnum.DONE
+							? ProblemStatusEnum.DONE
+							: status,
+					lastSubmitted: new Date(),
+				},
+			);
 			if (
 				status === ProblemStatusEnum.DONE &&
 				userProblem?.status !== ProblemStatusEnum.DONE
 			) {
 				const score = this.problemService.calScore(difficulty);
-
-				console.log(
-					difficulty,
-					score,
-					typeof difficulty,
-					typeof score,
-				);
-
 				this.modifyScore(userId, score, userId, 'แก้โจทย์');
 			}
 		}
