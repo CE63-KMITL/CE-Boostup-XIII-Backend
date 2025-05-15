@@ -41,7 +41,7 @@ export class User {
 	@OneToMany(() => ProblemStatus, (problemStatus) => problemStatus.user)
 	problemStatus: ProblemStatus[];
 
-	@Column({ nullable: false, default: 0 })
+	@Column({ nullable: false, default: 0, type: 'decimal' })
 	@IsNumber()
 	score: number;
 

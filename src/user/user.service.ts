@@ -421,6 +421,10 @@ export class UserService implements OnModuleInit {
 				status,
 				lastSubmitted: new Date(),
 			});
+			if (status === ProblemStatusEnum.DONE) {
+				const score = this.problemService.calScore(difficulty);
+				this.modifyScore(userId, score, userId, 'แก้โจทย์');
+			}
 		} else {
 			await this.problemStatusRepository.update(userProblem, {
 				code,
@@ -430,15 +434,14 @@ export class UserService implements OnModuleInit {
 						: status,
 				lastSubmitted: new Date(),
 			});
-		}
-		if (
-			status === ProblemStatusEnum.DONE &&
-			userProblem?.status !== ProblemStatusEnum.DONE
-		) {
-			//change this to actual logic to calculate score
-			const score = this.problemService.calScore(difficulty);
+			if (
+				status === ProblemStatusEnum.DONE &&
+				userProblem?.status !== ProblemStatusEnum.DONE
+			) {
+				const score = this.problemService.calScore(difficulty);
 
-			this.modifyScore(userId, score, userId, 'แก้โจทย์');
+				this.modifyScore(userId, score, userId, 'แก้โจทย์');
+			}
 		}
 	}
 
