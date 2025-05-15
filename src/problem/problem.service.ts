@@ -467,6 +467,8 @@ export class ProblemService {
 		const problem = await this.findOne(problemId);
 		const { testCases } = problem;
 
+		console.log(problem.difficulty, typeof problem.difficulty);
+
 		if (testCases.length === 0)
 			throw new BadRequestException('no test case for this problem');
 
