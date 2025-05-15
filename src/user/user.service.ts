@@ -321,6 +321,8 @@ export class UserService implements OnModuleInit {
 			where: { id: modifiedById },
 		});
 
+		console.log(amount, typeof amount);
+
 		user.score += amount;
 		if (user.score < 0) user.score = 0;
 
