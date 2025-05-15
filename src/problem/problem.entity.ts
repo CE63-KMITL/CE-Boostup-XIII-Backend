@@ -7,10 +7,10 @@ import {
 	ManyToOne,
 	PrimaryGeneratedColumn,
 } from 'typeorm';
-import { ProblemStaffStatusEnum } from './enum/problem-staff-status.enum';
-import { ScoreValue } from './type/score-value.type';
+import { ProblemStaffStatusEnum } from './enums/problem-staff-status.enum';
+import { ScoreValue } from './types/score-value.type';
 import { TestCase } from 'src/problem/test_case/test-case.object';
-import { ProblemAllowMode } from './enum/problem-allow-mode.enum';
+import { ProblemAllowMode } from './enums/problem-allow-mode.enum';
 
 @Entity()
 export class Problem {

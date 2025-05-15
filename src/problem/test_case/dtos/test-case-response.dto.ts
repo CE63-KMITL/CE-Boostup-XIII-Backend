@@ -1,13 +1,13 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TestCase } from '../test-case.object';
 
 export class TestCaseResponseDto {
-	@ApiProperty({
+	@ApiPropertyOptional({
 		example: 'abc',
 		description: 'test case input',
 		nullable: true,
 	})
-	input: string;
+	input?: string;
 
 	@ApiProperty({
 		example: 'abc',

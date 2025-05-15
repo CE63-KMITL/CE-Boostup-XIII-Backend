@@ -11,7 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 
 import { ConfigService } from '@nestjs/config';
-import { ProblemStatusEnum } from 'src/problem/enum/problem-staff-status.enum';
+import { ProblemStatusEnum } from 'src/problem/enums/problem-staff-status.enum';
 import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
 import { House } from 'src/shared/enum/house.enum';
 import { Role } from 'src/shared/enum/role.enum';

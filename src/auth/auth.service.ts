@@ -9,14 +9,14 @@ import {
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { GLOBAL_CONFIG } from '../shared/constants/global-config.constant';
-import { LoginDto } from './dto/login.dto';
-import { AuthResponseDto } from './dto/auth-response.dto';
+import { LoginDto } from './dtos/login.dto';
+import { AuthResponseDto } from './dtos/auth-response.dto';
 import { ConfigService } from '@nestjs/config';
 import { UserResponseDto } from 'src/user/dtos/user-response.dto';
-import { RegisterUserDto } from './dto/register-user.dto';
+import { RegisterUserDto } from './dtos/register-user.dto';
 import { UserService } from 'src/user/user.service';
 import { MailService } from 'src/mail/mail.service';
-import { OpenAccountDto } from './dto/open-account.dto';
+import { OpenAccountDto } from './dtos/open-account.dto';
 
 @Injectable()
 export class AuthService {

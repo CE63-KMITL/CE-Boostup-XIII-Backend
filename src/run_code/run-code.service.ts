@@ -3,7 +3,7 @@ import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
 import { RunCodeResponseDto } from './dtos/run-code-response.dto';
 import { ConfigService } from '@nestjs/config';
 import { RunCodeExitStatusEnum } from './enum/run-code-exit-status.enum';
-import { ProblemAllowMode } from 'src/problem/enum/problem-allow-mode.enum';
+import { ProblemAllowMode } from 'src/problem/enums/problem-allow-mode.enum';
 
 @Injectable()
 export class RunCodeService {
