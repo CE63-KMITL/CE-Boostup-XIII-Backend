@@ -562,9 +562,11 @@ export class ProblemService {
 	// Helper Methods
 	//-------------------------------------------------------
 	calScore(difficulty: number): number {
-		return difficulty <= 3
-			? difficulty
-			: (difficulty * (difficulty - 1)) / 2;
+		return Number(
+			difficulty <= 3
+				? difficulty
+				: (difficulty * (difficulty - 1)) / 2,
+		);
 	}
 
 	async fillExpectOutput(problem: Problem) {
