@@ -45,4 +45,5 @@ export const dotenvConfig = Joi.object({
 	OTP_LENGTH: Joi.number().required(),
 	ADMIN_EMAIL: Joi.string().required(),
 	ADMIN_PASS: Joi.string().required(),
+	FRONT_HOST: Joi.string(),
 });

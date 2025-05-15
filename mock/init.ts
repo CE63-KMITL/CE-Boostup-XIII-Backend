@@ -269,6 +269,76 @@ async function createAndInitializeUser(
 	}
 }
 
+//-------------------------------------------------------
+// Create User Without Password
+//-------------------------------------------------------
+async function createRandomRoleUserWithoutPassword(
+	adminToken: string,
+): Promise<string | undefined> {
+	const roles = Object.values(USER_ROLES);
+	const randomRole = roles[Math.floor(Math.random() * roles.length)];
+	const email = `random-${Date.now()}@example.com`;
+	const name = `Random User ${Date.now()}`;
+
+	console.log(
+		`Attempting to create user without password: ${email} with role: ${randomRole}`,
+	);
+	try {
+		const createUserResponse = await callApi<UserResponse>(
+			API_ROUTES.DEV_USER_CREATE,
+			{
+				email,
+				role: randomRole,
+				name,
+				// Password field is intentionally omitted as per request
+			},
+			adminToken,
+		);
+
+		if (!createUserResponse || !createUserResponse.id) {
+			console.error(
+				`Failed to create user without password ${email} or ID missing in response.`,
+			);
+			if (
+				createUserResponse?.statusCode === 400 &&
+				String(createUserResponse.message).includes(
+					'User already exists',
+				)
+			) {
+				console.log(
+					`User without password ${email} already exists, skipping creation.`,
+				);
+				return undefined;
+			}
+			return undefined;
+		}
+
+		const userId = createUserResponse.id;
+		console.log(
+			`User without password ${email} created successfully with ID: ${userId}.`,
+		);
+		return userId;
+	} catch (error: any) {
+		const err = error as Error & { response?: any };
+		if (
+			err.response?.statusCode === 400 &&
+			String(err.response.message).includes('User already exists')
+		) {
+			console.log(
+				`User without password ${email} already exists (caught error), skipping creation.`,
+			);
+			return undefined;
+		}
+
+		console.error(
+			`Error in createRandomRoleUserWithoutPassword for ${email}:`,
+			err.message,
+			err.response,
+		);
+		return undefined;
+	}
+}
+
 async function addUserScore(
 	userId: string,
 	amount: number,
@@ -289,10 +359,7 @@ async function addUserScore(
 			`Could not add score for user ID ${userId}. Error: ${error.message}. This might be due to the known backend issue with houses.`,
 		);
 		if (error.response) {
-			console.warn(
-				'Score addition API Response Data:',
-				error.response,
-			);
+			console.warn('Score addition API Response Data:', error.response);
 		}
 	}
 }
@@ -396,14 +463,18 @@ async function updateProblemDetails(
 				);
 			}
 		}
-
+	
+		console.log('\n--- Creating 10 Users Without Password ---');
+		const numUsersWithoutPassword = 10;
+		for (let i = 0; i < numUsersWithoutPassword; i++) {
+			await createRandomRoleUserWithoutPassword(adminToken);
+		}
+	
 		console.log('\n--- Logging in Staff Users ---');
 		let staff1Token: string | undefined, staff2Token: string | undefined;
 		if (staffUserIds.length > 0 && staffUsersData[0]) {
 			try {
-				const staff1LoginData = await loginUser(
-					staffUsersData[0].email,
-				);
+				const staff1LoginData = await loginUser(staffUsersData[0].email);
 				staff1Token = staff1LoginData.token;
 			} catch (e) {
 				console.warn(
@@ -413,9 +484,7 @@ async function updateProblemDetails(
 		}
 		if (staffUserIds.length > 1 && staffUsersData[1]) {
 			try {
-				const staff2LoginData = await loginUser(
-					staffUsersData[1].email,
-				);
+				const staff2LoginData = await loginUser(staffUsersData[1].email);
 				staff2Token = staff2LoginData.token;
 			} catch (e) {
 				console.warn(
@@ -423,13 +492,13 @@ async function updateProblemDetails(
 				);
 			}
 		}
-
+	
 		if (!staff1Token && !staff2Token) {
 			console.warn(
 				'Neither staff user could be logged in. Some subsequent operations might fail or use admin token.',
 			);
 		}
-
+	
 		console.log('\n--- Creating Problems ---');
 		const createdProblems: ProblemResponse[] = [];
 		const numProblemsToCreate = 10;

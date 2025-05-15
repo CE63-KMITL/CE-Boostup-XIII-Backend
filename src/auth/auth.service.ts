@@ -43,10 +43,12 @@ export class AuthService {
 					1000,
 		).toISOString();
 		try {
+			const targetLink = `${GLOBAL_CONFIG.FRONT_HOST}/open-account?otp=${otp}`;
+
 			await this.mailservice.sendMail({
 				to: email,
 				subject: 'your activation code',
-				html: `<h1>${otp}</h1>`,
+				html: `<h1>${otp}</h1><a href="${targetLink}">${targetLink}</a>`,
 			});
 		} catch (error) {
 			console.error(error);
