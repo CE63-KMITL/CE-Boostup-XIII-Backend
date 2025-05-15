@@ -106,16 +106,15 @@ export class AuthController {
 	}
 
 	@Post('register-open-account')
-	@HttpCode(HttpStatus.CREATED)
+	@HttpCode(HttpStatus.NO_CONTENT)
 	@ApiResponse({
-		status: HttpStatus.CREATED,
+		status: HttpStatus.NO_CONTENT,
 		description: 'Registeration successfull',
 	})
 	@ApiResponse({ status: 400, description: 'Bad Request.' })
 	async registerOpenAccount(
 		@Body() user: RegisterOpenAccountDto,
 	): Promise<void> {
-		console.log(user);
 		await this.authService.registerOpenAccount(user);
 	}
 	/*
