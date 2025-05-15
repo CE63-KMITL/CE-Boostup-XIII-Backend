@@ -11,6 +11,7 @@ import {
 import { ProblemAllowMode } from '../enums/problem-allow-mode.enum';
 import { CreateTestCase, TestCase } from '../test_case/test-case.object';
 import { Type } from 'class-transformer';
+import { ScoreValue } from '../types/score-value.type';
 
 export class CreateProblemDto {
 	@ApiProperty({ example: 'Sample Problem Title' })
@@ -75,11 +76,13 @@ export class CreateProblemDto {
 		example: '#include <stdio.h>\n\nint main() {\n\tprintf("Hello, World!");\n\treturn 0;\n}',
 	})
 	@IsString()
-	solutionCode?: string;
+	@IsNotEmpty()
+	solutionCode: string;
 
 	@ApiProperty({ example: 3, description: 'Difficulty level (0.5 to 5)' })
 	@IsNumber()
-	difficulty?: 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5;
+	@IsOptional()
+	difficulty: ScoreValue;
 
 	@ApiProperty({ example: ['Basic I/O', 'If - else'] })
 	@IsOptional()
