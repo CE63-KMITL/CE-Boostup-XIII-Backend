@@ -6,7 +6,7 @@ import {
 	IsOptional,
 	IsString,
 } from 'class-validator';
-import { ProblemAllowMode } from 'src/problem/enum/problem-allow-mode.enum';
+import { ProblemAllowMode } from 'src/problem/enums/problem-allow-mode.enum';
 
 export class RunCodeRequestDto {
 	@ApiProperty({

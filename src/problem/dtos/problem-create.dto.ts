@@ -6,9 +6,11 @@ import {
 	IsNumber,
 	IsOptional,
 	IsString,
+	ValidateNested,
 } from 'class-validator';
-import { ProblemAllowMode } from '../enum/problem-allow-mode.enum';
+import { ProblemAllowMode } from '../enums/problem-allow-mode.enum';
 import { TestCase } from '../test_case/test-case.object';
+import { Type } from 'class-transformer';
 
 export class CreateProblemDto {
 	@ApiProperty({ example: 'Sample Problem Title' })
@@ -86,20 +88,11 @@ export class CreateProblemDto {
 	tags?: string[];
 
 	@ApiProperty({
-		example: [
-			{
-				input: '',
-				isHiddenTestcase: false,
-			},
-
-			{
-				input: '1',
-				isHiddenTestcase: true,
-			},
-		],
-		isArray: true,
-		type: TestCase,
+		type: [TestCase],
+		description: 'Test cases for the problem',
 	})
+	@ValidateNested({ each: true })
 	@IsArray()
+	@Type(() => TestCase)
 	testCases: TestCase[];
 }

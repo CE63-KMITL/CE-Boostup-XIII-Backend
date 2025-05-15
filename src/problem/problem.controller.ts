@@ -19,23 +19,23 @@ import {
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 import { Role } from 'src/shared/enum/role.enum';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
-import { CreateProblemDto } from './dto/problem-create.dto';
+import { CreateProblemDto } from './dtos/problem-create.dto';
 import {
 	ProblemCodeResponseDto,
 	ProblemPaginatedDto,
 	ProblemResponseDto,
 	ProblemSearchedPaginatedDto,
-} from './dto/problem-response.dto';
+} from './dtos/problem-response.dto';
 import { ProblemService } from './problem.service';
-import { ProblemRequestSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
-import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
-import { RejectProblemDTO } from './dto/problem-reject.dto';
-import { ProblemRunCodeRequest } from './dto/problem-request.dto';
+import { ProblemRequestSubmissionDto } from './dtos/code-submission-dto/problem-submission.dto';
+import { ProblemSubmissionResponseDto } from './dtos/code-submission-dto/problem-submission-response.dto';
+import { RejectProblemDTO } from './dtos/problem-reject.dto';
+import { ProblemRunCodeRequest } from './dtos/problem-request.dto';
 import { RunCodeResponseDto } from 'src/run_code/dtos/run-code-response.dto';
 import { Throttle } from '@nestjs/throttler';
 import { THROTTLE_RUNCODE } from 'src/shared/configs/throttle.config';
-import { UpdateProblemDto } from './dto/problem-update.dto';
-import { ProblemSearchQueryDto } from './dto/problem-query.dto';
+import { UpdateProblemDto } from './dtos/problem-update.dto';
+import { ProblemSearchQueryDto } from './dtos/problem-query.dto';
 import { AllowRole } from 'src/shared/decorators/auth.decorator';
 
 @Controller('problem')

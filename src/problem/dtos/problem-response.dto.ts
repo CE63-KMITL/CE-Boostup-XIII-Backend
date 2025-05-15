@@ -7,13 +7,13 @@ import {
 import {
 	ProblemStaffStatusEnum,
 	ProblemStatusEnum,
-} from '../enum/problem-staff-status.enum';
+} from '../enums/problem-staff-status.enum';
 import { Problem } from '../problem.entity';
-import { ScoreValue } from '../type/score-value.type';
+import { ScoreValue } from '../types/score-value.type';
 import {
 	TestCaseFilteredResponseDto,
 	TestCaseResponseDto,
-} from '../test_case/dto/test-case-response.dto';
+} from '../test_case/dtos/test-case-response.dto';
 import { Exclude, Filter } from 'src/shared/dto.extension';
 
 export class ProblemResponseDto {

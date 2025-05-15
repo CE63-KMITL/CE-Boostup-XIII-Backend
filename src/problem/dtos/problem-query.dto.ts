@@ -12,8 +12,8 @@ import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto
 import {
 	ProblemStaffStatusEnum,
 	ProblemStatusEnum,
-} from '../enum/problem-staff-status.enum';
-import { SCORE_VALUES, ScoreValue } from '../type/score-value.type';
+} from '../enums/problem-staff-status.enum';
+import { SCORE_VALUES, ScoreValue } from '../types/score-value.type';
 
 enum ProblemSearchSortBy {
 	ASC = 'ASC',
