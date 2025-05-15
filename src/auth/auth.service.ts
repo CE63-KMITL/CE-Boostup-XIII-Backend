@@ -29,7 +29,7 @@ export class AuthService {
 	async requestOpenAccount(email: string): Promise<void> {
 		const user = await this.userService.findOne({ where: { email } });
 		if (!user) throw new BadRequestException('user not found');
-		if (!!user.password)
+		if (!!user.isActive)
 			throw new BadRequestException('account already opened');
 		const otp = this.generateOtp(
 			this.configService.getOrThrow<number>(GLOBAL_CONFIG.OTP_LENGTH),
@@ -62,7 +62,7 @@ export class AuthService {
 		const { email, password, name, otp } = data;
 		const user = await this.userService.findOne({ where: { email } });
 		if (!user) throw new UnauthorizedException('user not found');
-		if (!!user.password)
+		if (!!user.isActive)
 			throw new ConflictException('Email already confirm');
 		if (!user.otp) throw new BadRequestException('OTP not found');
 		if (user.otp !== otp)
@@ -73,6 +73,7 @@ export class AuthService {
 		const userResponse = await this.userService.update(user.id, {
 			password,
 			name,
+			isActive: true,
 			otp: null,
 			otpExpires: null,
 		});
@@ -109,7 +110,7 @@ export class AuthService {
 		const user = await this.userService.findOne({
 			where: { email },
 		});
-		if (!!user && !user.password)
+		if (!!user && !user.password && !user.isActive)
 			throw new ForbiddenException('Account not activated');
 		if (!user) throw new UnauthorizedException('Wrong email or password');
 		const passwordCompare = await bcrypt.compare(password, user.password);

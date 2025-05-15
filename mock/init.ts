@@ -175,6 +175,12 @@ async function createAndInitializeUser(
 			},
 			adminToken,
 		);
+		await callApi(
+			API_ROUTES.DEV_USER_UPDATE_BY_ID(createUserResponse.id),
+			{ isActive: true },
+			adminToken,
+			'POST',
+		);
 		// console.log('Create user raw response:', createUserResponse);
 
 		if (!createUserResponse || !createUserResponse.id) {

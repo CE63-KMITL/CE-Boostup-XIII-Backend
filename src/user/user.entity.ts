@@ -27,6 +27,9 @@ export class User {
 	@IsEmail()
 	email: string;
 
+	@Column({ nullable: false, default: false, type: 'boolean' })
+	isActive: boolean;
+
 	@Column({ nullable: true, enum: House, type: 'enum' })
 	house: House;
 

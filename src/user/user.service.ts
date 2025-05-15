@@ -72,6 +72,7 @@ export class UserService implements OnModuleInit {
 				password: adminPass,
 				name: 'admin',
 				role: Role.DEV,
+				isActive: true,
 			});
 		}
 	}
@@ -186,6 +187,7 @@ export class UserService implements OnModuleInit {
 			repository: this.userRepository,
 			dto: { limit, page },
 		});
+		users.andWhere('entity.isActive = true');
 		if (!!name)
 			users.where('LOWER(entity.name) LIKE LOWER(:name)', {
 				name: `%${name}%`,
