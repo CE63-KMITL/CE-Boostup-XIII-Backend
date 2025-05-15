@@ -43,7 +43,7 @@ export class AuthService {
 					1000,
 		).toISOString();
 		try {
-			const targetLink = `${GLOBAL_CONFIG.FRONT_HOST}/open-account?otp=${otp}`;
+			const targetLink = `${this.configService.getOrThrow<string>(GLOBAL_CONFIG.FRONT_HOST)}/open-account?otp=${otp}`;
 
 			await this.mailservice.sendMail({
 				to: email,
