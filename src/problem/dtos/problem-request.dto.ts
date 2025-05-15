@@ -3,7 +3,7 @@ import { IsEnum, IsOptional, IsString } from 'class-validator';
 import {
 	ProblemStaffStatusEnum,
 	ProblemStatusEnum,
-} from '../enum/problem-staff-status.enum';
+} from '../enums/problem-staff-status.enum';
 
 enum ProblemSearchSortBy {
 	ASC = 'ASC',
@@ -64,4 +64,3 @@ export class ProblemRunCodeRequest {
 	@IsString()
 	code: string;
 }
-

@@ -17,12 +17,12 @@ import {
 	ApiTags,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
-import { OpenAccountDto } from './dto/open-account.dto';
+import { LoginDto } from './dtos/login.dto';
+import { OpenAccountDto } from './dtos/open-account.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { authenticatedRequest } from './interfaces/authenticated-request.interface';
-import { AuthResponseDto } from './dto/auth-response.dto';
-import { RegisterUserDto } from './dto/register-user.dto';
+import { AuthResponseDto } from './dtos/auth-response.dto';
+import { RegisterUserDto } from './dtos/register-user.dto';
 import { Throttle } from '@nestjs/throttler';
 import { RolesGuard } from 'src/shared/guards/roles.guard';
 

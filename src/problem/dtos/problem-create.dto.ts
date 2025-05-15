@@ -8,7 +8,7 @@ import {
 	IsString,
 	ValidateNested,
 } from 'class-validator';
-import { ProblemAllowMode } from '../enum/problem-allow-mode.enum';
+import { ProblemAllowMode } from '../enums/problem-allow-mode.enum';
 import { TestCase } from '../test_case/test-case.object';
 import { Type } from 'class-transformer';
 

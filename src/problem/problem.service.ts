@@ -7,31 +7,31 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { jwtPayloadDto } from 'src/auth/dto/jwt-payload.dto';
+import { jwtPayloadDto } from 'src/auth/dtos/jwt-payload.dto';
 import { Role } from 'src/shared/enum/role.enum';
 import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
-import { CreateProblemDto } from './dto/problem-create.dto';
-import { ProblemSearchQueryDto } from './dto/problem-query.dto';
+import { CreateProblemDto } from './dtos/problem-create.dto';
+import { ProblemSearchQueryDto } from './dtos/problem-query.dto';
 import {
 	ProblemPaginatedDto,
 	ProblemSearchedDto,
 	ProblemSearchedPaginatedDto,
-} from './dto/problem-response.dto';
-import { UpdateProblemDto } from './dto/problem-update.dto';
+} from './dtos/problem-response.dto';
+import { UpdateProblemDto } from './dtos/problem-update.dto';
 import {
 	ProblemStaffStatusEnum,
 	ProblemStatusEnum,
-} from './enum/problem-staff-status.enum';
+} from './enums/problem-staff-status.enum';
 import { Problem } from './problem.entity';
-import { ProblemSubmissionDto } from './dto/code-submission-dto/problem-submission.dto';
+import { ProblemSubmissionDto } from './dtos/code-submission-dto/problem-submission.dto';
 import { RunCodeService } from 'src/run_code/run-code.service';
 import { ProblemStatus } from 'src/user/problem_status/problem-status.entity';
-import { RejectProblemDTO } from './dto/problem-reject.dto';
+import { RejectProblemDTO } from './dtos/problem-reject.dto';
 import { RunCodeExitStatusEnum } from 'src/run_code/enum/run-code-exit-status.enum';
-import { ProblemSubmissionResponseDto } from './dto/code-submission-dto/problem-submission-response.dto';
+import { ProblemSubmissionResponseDto } from './dtos/code-submission-dto/problem-submission-response.dto';
 
 //-------------------------------------------------------
 // Class Definition
