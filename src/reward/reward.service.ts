@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { Redeem } from './redeem.entity';
 import { User } from '../user/user.entity';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
 
 //Ex .env
 //REWARDS=[{"id":1,"name":"แก้วน้ำ","points":100},{"id":2,"name":"เสื้อยืด","points":250}]
@@ -22,7 +23,7 @@ export class RewardService {
 		@InjectRepository(Redeem)
 		private redeemRepo: Repository<Redeem>,
 	) {
-		this.rewards = this.configService.getOrThrow('REWARDS');
+		this.rewards = this.configService.getOrThrow(GLOBAL_CONFIG.REWARDS);
 	}
 
 	getAllRewards() {
