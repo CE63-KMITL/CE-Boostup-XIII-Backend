@@ -72,3 +72,13 @@ export class RegisterUserDto {
 	})
 	studentId?: string;
 }
+
+export class RegisterOpenAccountDto {
+	@IsEmail()
+	@IsNotEmpty()
+	@ApiProperty({
+		example: 'example@gmail.com',
+		description: 'email',
+	})
+	email: string;
+}
