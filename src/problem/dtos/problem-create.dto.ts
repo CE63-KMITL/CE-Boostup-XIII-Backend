@@ -9,7 +9,7 @@ import {
 	ValidateNested,
 } from 'class-validator';
 import { ProblemAllowMode } from '../enums/problem-allow-mode.enum';
-import { TestCase } from '../test_case/test-case.object';
+import { CreateTestCase, TestCase } from '../test_case/test-case.object';
 import { Type } from 'class-transformer';
 
 export class CreateProblemDto {
@@ -92,6 +92,6 @@ export class CreateProblemDto {
 	})
 	@ValidateNested({ each: true })
 	@IsArray()
-	@Type(() => TestCase)
-	testCases: TestCase[];
+	@Type(() => CreateTestCase)
+	testCases: CreateTestCase[];
 }
