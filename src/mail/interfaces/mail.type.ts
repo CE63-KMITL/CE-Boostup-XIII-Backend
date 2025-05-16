@@ -1,6 +1,6 @@
-export type mailType = {
+export interface MailOptions {
 	to: string;
 	subject: string;
 	html: string;
 	text?: string;
-};
+}

@@ -7,7 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Job } from 'bullmq';
 import { Transporter } from 'nodemailer';
-import { mailType } from './types/mail.type';
+import { MailOptions } from './interfaces/mail.type';
 import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
 
 @Processor('mailQueue')
@@ -21,7 +21,7 @@ export class MailProcessor extends WorkerHost {
 		super();
 	}
 
-	async process(job: Job<mailType>): Promise<void> {
+	async process(job: Job<MailOptions>): Promise<void> {
 		const { to, subject, html, text } = job.data;
 		try {
 			await this.transporter.sendMail({

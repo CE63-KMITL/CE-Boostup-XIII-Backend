@@ -1,10 +1,12 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { mailType } from './types/mail.type';
+import { MailOptions } from './interfaces/mail.type';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { readFileSync } from 'fs';
 import * as path from 'path';
 import { EmailTemplateVariables } from 'src/auth/dev/dtos/send-templated-mail.dto';
+import { ConfigService } from '@nestjs/config';
+import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
 
 @Injectable()
 export class MailService implements OnModuleInit {
@@ -12,7 +14,8 @@ export class MailService implements OnModuleInit {
 
 	constructor(
 		@InjectQueue('mailQueue')
-		private readonly mailQueue: Queue<mailType>,
+		private readonly mailQueue: Queue<MailOptions>,
+		private readonly confgiService: ConfigService,
 	) {}
 
 	async onModuleInit() {
@@ -27,7 +30,7 @@ export class MailService implements OnModuleInit {
 		}
 	}
 
-	async sendMail(mail: mailType) {
+	async sendMail(mail: MailOptions) {
 		await this.mailQueue.add(
 			'sendMail',
 			{ ...mail },
@@ -62,7 +65,7 @@ export class MailService implements OnModuleInit {
 				'ขณะนี้ระบบได้สร้างบัญชีให้คุณแล้ว!~ กรุณาเปิดใช้งานบัญชี',
 			OTPValue: otp,
 			ButtonText: 'เปิดใช้งานบัญชี!~',
-			ExpirationMessage: 'ลิงค์นี้จะหมดอายุในอีก 30 นาที',
+			ExpirationMessage: `ลิงค์นี้จะหมดอายุในอีก ${this.confgiService.getOrThrow<string>(GLOBAL_CONFIG.OTP_EXPIRY_MINUTE)} นาที`,
 			SecurityWarning: '( •̀ ω •́ )✧',
 		};
 		return this.generateEmailHtml(variables);
