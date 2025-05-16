@@ -168,7 +168,7 @@ export class AuthController {
 		description: 'mail send',
 	})
 	async requestResetPassword(@Body() body: RequestEmailDto) {
-		this.authService.requestResetPassword(body);
+		await this.authService.requestResetPassword(body);
 	}
 
 	@Patch('reset-password')
@@ -182,6 +182,6 @@ export class AuthController {
 		description: 'Password reset successfully',
 	})
 	async resetPasswordConfirm(@Body() body: ResetPasswordDto) {
-		this.authService.resetPassword(body);
+		await this.authService.resetPassword(body);
 	}
 }
