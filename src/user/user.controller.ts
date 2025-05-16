@@ -87,7 +87,7 @@ export class UserController {
 		return await this.userService.getData(req.user.userId);
 	}
 
-	@Get('score-data/:id')
+	@Get('full-data/:id')
 	@AllowRole(Role.MEMBER)
 	@ApiResponse({
 		status: HttpStatus.OK,
