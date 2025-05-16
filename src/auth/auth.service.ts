@@ -109,7 +109,7 @@ export class AuthService {
 			false,
 		);
 		if (existingUser) {
-			throw new ConflictException('Email already exists');
+			return await this.requestOpenAccount(email);
 		}
 		try {
 			const user = await this.userService.create(registerUser);
