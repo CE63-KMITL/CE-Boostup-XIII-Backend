@@ -18,16 +18,14 @@ import {
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dtos/login.dto';
-import { OpenAccountDto } from './dtos/open-account.dto';
+import { OpenAccountDto, RequestEmailDto } from './dtos/open-account.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { authenticatedRequest } from './interfaces/authenticated-request.interface';
 import { AuthResponseDto } from './dtos/auth-response.dto';
-import {
-	RegisterOpenAccountDto,
-	RegisterUserDto,
-} from './dtos/register-user.dto';
+import { RegisterUserDto } from './dtos/register-user.dto';
 import { Throttle } from '@nestjs/throttler';
 import { RolesGuard } from 'src/shared/guards/roles.guard';
+import { ResetPasswordDto } from './dtos/reset-password.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -42,11 +40,7 @@ export class AuthController {
 	@Post('request-open-account')
 	@ApiBody({
 		description: 'email',
-		schema: {
-			example: {
-				email: 'example@gmail.com',
-			},
-		},
+		type: RequestEmailDto,
 	})
 	@ApiResponse({
 		status: HttpStatus.NO_CONTENT,
@@ -60,7 +54,7 @@ export class AuthController {
 			blockDuration: 60 * 1000,
 		},
 	})
-	async requestOpenAccount(@Body() body: { email: string }): Promise<void> {
+	async requestOpenAccount(@Body() body: RequestEmailDto): Promise<void> {
 		await this.authService.requestOpenAccount(body.email);
 	}
 
@@ -112,9 +106,7 @@ export class AuthController {
 		description: 'Registeration successfull',
 	})
 	@ApiResponse({ status: 400, description: 'Bad Request.' })
-	async registerOpenAccount(
-		@Body() user: RegisterOpenAccountDto,
-	): Promise<void> {
+	async registerOpenAccount(@Body() user: RequestEmailDto): Promise<void> {
 		await this.authService.registerOpenAccount(user);
 	}
 	/*
@@ -158,5 +150,38 @@ export class AuthController {
 		return {
 			role: req.user.role,
 		};
+	}
+
+	/*
+     -------------------------------------------------------
+     Reset Password Endpoint
+     -------------------------------------------------------
+     */
+	@Post('request-reset-password')
+	@HttpCode(HttpStatus.NO_CONTENT)
+	@ApiBody({
+		description: 'email',
+		type: RequestEmailDto,
+	})
+	@ApiResponse({
+		status: HttpStatus.NO_CONTENT,
+		description: 'mail send',
+	})
+	async requestResetPassword(@Body() body: RequestEmailDto) {
+		this.authService.requestResetPassword(body);
+	}
+
+	@Patch('reset-password')
+	@HttpCode(HttpStatus.NO_CONTENT)
+	@ApiBody({
+		description: 'Reset password',
+		type: ResetPasswordDto,
+	})
+	@ApiResponse({
+		status: HttpStatus.NO_CONTENT,
+		description: 'Password reset successfully',
+	})
+	async resetPasswordConfirm(@Body() body: ResetPasswordDto) {
+		this.authService.resetPassword(body);
 	}
 }

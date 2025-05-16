@@ -34,3 +34,13 @@ export class OpenAccountDto {
 	@IsOptional()
 	name: string;
 }
+
+export class RequestEmailDto {
+	@IsEmail()
+	@IsNotEmpty()
+	@ApiProperty({
+		example: 'example@gmail.com',
+		description: 'email',
+	})
+	email: string;
+}

@@ -13,13 +13,12 @@ import { LoginDto } from './dtos/login.dto';
 import { AuthResponseDto } from './dtos/auth-response.dto';
 import { ConfigService } from '@nestjs/config';
 import { UserResponseDto } from 'src/user/dtos/user-response.dto';
-import {
-	RegisterOpenAccountDto,
-	RegisterUserDto,
-} from './dtos/register-user.dto';
+import { RegisterUserDto } from './dtos/register-user.dto';
 import { UserService } from 'src/user/user.service';
 import { MailService } from 'src/mail/mail.service';
-import { OpenAccountDto } from './dtos/open-account.dto';
+import { OpenAccountDto, RequestEmailDto } from './dtos/open-account.dto';
+import { ResetPasswordDto } from './dtos/reset-password.dto';
+import { MailOptions } from 'src/mail/interfaces/mail.type';
 
 @Injectable()
 export class AuthService {
@@ -45,7 +44,13 @@ export class AuthService {
 					60 *
 					1000,
 		).toISOString();
-		await this.sendOtp(email, user.name ? otp + '&editName=false' : otp);
+		await this.sendOtp({
+			to: email,
+			subject: 'กรุณาเปิดใช้งานบัญชีของคุณ!~',
+			html: this.mailservice.generateEmailHtmlWithOtp(
+				`${otp}&editName=false&email=${email}`,
+			),
+		});
 		await this.userService.update(user.id, { otp, otpExpires });
 	}
 
@@ -95,9 +100,7 @@ export class AuthService {
 		};
 	}
 
-	async registerOpenAccount(
-		registerUser: RegisterOpenAccountDto,
-	): Promise<void> {
+	async registerOpenAccount(registerUser: RequestEmailDto): Promise<void> {
 		const { email } = registerUser;
 		const existingUser = await this.userService.findOne(
 			{
@@ -123,23 +126,75 @@ export class AuthService {
 						60 *
 						1000,
 			).toISOString();
-			await this.sendOtp(email, otp);
+			await this.sendOtp({
+				to: email,
+				subject: 'กรุณาเปิดใช้งานบัญชีของคุณ!~',
+				html: this.mailservice.generateEmailHtmlWithOtp(
+					`${otp}&editName=false&email=${email}`,
+				),
+			});
 			await this.userService.update(user.id, { otp, otpExpires });
 		} catch (error) {
 			console.error(error);
 			throw new BadRequestException('User already exists');
 		}
 	}
+	async requestResetPassword(
+		requestEmailDto: RequestEmailDto,
+	): Promise<void> {
+		const { email } = requestEmailDto;
+		const user = await this.userService.findOne({ where: { email } });
+		if (!user.isActive)
+			throw new ForbiddenException('Account not activated');
+		const otp = this.generateOtp(
+			this.configService.getOrThrow<number>(GLOBAL_CONFIG.OTP_LENGTH),
+		);
+		const otpExpires = new Date(
+			Date.now() +
+				this.configService.getOrThrow<number>(
+					GLOBAL_CONFIG.OTP_EXPIRY_MINUTE,
+				) *
+					60 *
+					1000,
+		).toISOString();
 
-	private async sendOtp(email: string, otp: string): Promise<void> {
+		await this.sendOtp({
+			to: email,
+			subject: 'รีเซ็ตรหัสผ่านของคุณ',
+			html: this.mailservice.generateEmailHtmlWithOtp(
+				`${otp}&email=${email}`,
+			),
+		});
+		await this.userService.update(user.id, { otp, otpExpires });
+	}
+
+	async resetPassword(resetPasswordDto: ResetPasswordDto) {
+		const { email, password, otp } = resetPasswordDto;
+		const user = await this.userService.findOne({ where: { email } });
+		if (!user) throw new UnauthorizedException('user not found');
+		if (!user.isActive)
+			throw new ForbiddenException('Account not activated');
+		if (user.otp !== otp)
+			throw new UnauthorizedException('Invalid OTP code');
+		if (user.otpExpires && user.otpExpires < new Date())
+			throw new GoneException('OTP code expired');
+
+		await this.userService.update(user.id, {
+			password,
+			otp: null,
+			otpExpires: null,
+		});
+	}
+
+	/*
+     -------------------------------------------------------
+     Helper methods
+     -------------------------------------------------------
+     */
+
+	private async sendOtp(option: MailOptions): Promise<void> {
 		try {
-			await this.mailservice.sendMail({
-				to: email,
-				subject: 'กรุณาเปิดใช้งานบัญชีของคุณ!~',
-				html: this.mailservice.generateEmailHtmlWithOtp(
-					`${otp}&email=${email}`,
-				),
-			});
+			await this.mailservice.sendMail(option);
 		} catch (error) {
 			console.error(error);
 			throw new BadRequestException('fail to send mail');
