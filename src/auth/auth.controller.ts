@@ -22,7 +22,10 @@ import { OpenAccountDto } from './dtos/open-account.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { authenticatedRequest } from './interfaces/authenticated-request.interface';
 import { AuthResponseDto } from './dtos/auth-response.dto';
-import { RegisterUserDto } from './dtos/register-user.dto';
+import {
+	RegisterOpenAccountDto,
+	RegisterUserDto,
+} from './dtos/register-user.dto';
 import { Throttle } from '@nestjs/throttler';
 import { RolesGuard } from 'src/shared/guards/roles.guard';
 
@@ -102,6 +105,18 @@ export class AuthController {
 		return { message: 'Registeration successfull' };
 	}
 
+	@Post('register-open-account')
+	@HttpCode(HttpStatus.NO_CONTENT)
+	@ApiResponse({
+		status: HttpStatus.NO_CONTENT,
+		description: 'Registeration successfull',
+	})
+	@ApiResponse({ status: 400, description: 'Bad Request.' })
+	async registerOpenAccount(
+		@Body() user: RegisterOpenAccountDto,
+	): Promise<void> {
+		await this.authService.registerOpenAccount(user);
+	}
 	/*
 	-------------------------------------------------------
 	Login Endpoint

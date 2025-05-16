@@ -13,7 +13,10 @@ import { LoginDto } from './dtos/login.dto';
 import { AuthResponseDto } from './dtos/auth-response.dto';
 import { ConfigService } from '@nestjs/config';
 import { UserResponseDto } from 'src/user/dtos/user-response.dto';
-import { RegisterUserDto } from './dtos/register-user.dto';
+import {
+	RegisterOpenAccountDto,
+	RegisterUserDto,
+} from './dtos/register-user.dto';
 import { UserService } from 'src/user/user.service';
 import { MailService } from 'src/mail/mail.service';
 import { OpenAccountDto } from './dtos/open-account.dto';
@@ -29,7 +32,7 @@ export class AuthService {
 	async requestOpenAccount(email: string): Promise<void> {
 		const user = await this.userService.findOne({ where: { email } });
 		if (!user) throw new BadRequestException('user not found');
-		if (!!user.password)
+		if (!!user.isActive)
 			throw new BadRequestException('account already opened');
 		const otp = this.generateOtp(
 			this.configService.getOrThrow<number>(GLOBAL_CONFIG.OTP_LENGTH),
@@ -42,19 +45,7 @@ export class AuthService {
 					60 *
 					1000,
 		).toISOString();
-		try {
-			const targetLink = `${this.configService.getOrThrow<string>(GLOBAL_CONFIG.FRONT_HOST)}/open-account?otp=${otp}`;
-
-			await this.mailservice.sendMail({
-				to: email,
-				subject: 'your activation code',
-				html: `<h1>${otp}</h1><a href="${targetLink}">${targetLink}</a>`,
-			});
-		} catch (error) {
-			console.error(error);
-			throw new BadRequestException('fail to send mail');
-		}
-
+		await this.sendOtp(email, otp);
 		await this.userService.update(user.id, { otp, otpExpires });
 	}
 
@@ -62,7 +53,7 @@ export class AuthService {
 		const { email, password, name, otp } = data;
 		const user = await this.userService.findOne({ where: { email } });
 		if (!user) throw new UnauthorizedException('user not found');
-		if (!!user.password)
+		if (!!user.isActive)
 			throw new ConflictException('Email already confirm');
 		if (!user.otp) throw new BadRequestException('OTP not found');
 		if (user.otp !== otp)
@@ -73,6 +64,7 @@ export class AuthService {
 		const userResponse = await this.userService.update(user.id, {
 			password,
 			name,
+			isActive: true,
 			otp: null,
 			otpExpires: null,
 		});
@@ -102,6 +94,57 @@ export class AuthService {
 			user,
 		};
 	}
+
+	async registerOpenAccount(
+		registerUser: RegisterOpenAccountDto,
+	): Promise<void> {
+		const { email } = registerUser;
+		const existingUser = await this.userService.findOne(
+			{
+				where: { email },
+			},
+			false,
+		);
+		if (existingUser) {
+			throw new ConflictException('Email already exists');
+		}
+		try {
+			const user = await this.userService.create(registerUser);
+			const otp = this.generateOtp(
+				this.configService.getOrThrow<number>(
+					GLOBAL_CONFIG.OTP_LENGTH,
+				),
+			);
+			const otpExpires = new Date(
+				Date.now() +
+					this.configService.getOrThrow<number>(
+						GLOBAL_CONFIG.OTP_EXPIRY_MINUTE,
+					) *
+						60 *
+						1000,
+			).toISOString();
+			await this.sendOtp(email, otp);
+			await this.userService.update(user.id, { otp, otpExpires });
+		} catch (error) {
+			console.error(error);
+			throw new BadRequestException('User already exists');
+		}
+	}
+
+	private async sendOtp(email: string, otp: string): Promise<void> {
+		try {
+			const targetLink = `${this.configService.getOrThrow<string>(GLOBAL_CONFIG.FRONT_HOST)}/open-account?otp=${otp}`;
+
+			await this.mailservice.sendMail({
+				to: email,
+				subject: 'your activation code',
+				html: `<h1>${otp}</h1><a href="${targetLink}">${targetLink}</a>`,
+			});
+		} catch (error) {
+			console.error(error);
+			throw new BadRequestException('fail to send mail');
+		}
+	}
 	private async validateUser(
 		email: string,
 		password: string,
@@ -109,7 +152,7 @@ export class AuthService {
 		const user = await this.userService.findOne({
 			where: { email },
 		});
-		if (!!user && !user.password)
+		if (!!user && !user.password && !user.isActive)
 			throw new ForbiddenException('Account not activated');
 		if (!user) throw new UnauthorizedException('Wrong email or password');
 		const passwordCompare = await bcrypt.compare(password, user.password);
