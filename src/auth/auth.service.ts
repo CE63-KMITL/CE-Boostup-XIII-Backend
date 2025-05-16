@@ -48,7 +48,9 @@ export class AuthService {
 			to: email,
 			subject: 'กรุณาเปิดใช้งานบัญชีของคุณ!~',
 			html: this.mailservice.generateEmailHtmlOpenAccount(
-				`${otp}&editName=false&email=${email}`,
+				user.name
+					? `${otp}&editName=false&email=${email}`
+					: `${otp}&email=${email}`,
 			),
 		});
 		await this.userService.update(user.id, { otp, otpExpires });
@@ -130,7 +132,7 @@ export class AuthService {
 				to: email,
 				subject: 'กรุณาเปิดใช้งานบัญชีของคุณ!~',
 				html: this.mailservice.generateEmailHtmlOpenAccount(
-					`${otp}&editName=false&email=${email}`,
+					`${otp}&email=${email}`,
 				),
 			});
 			await this.userService.update(user.id, { otp, otpExpires });
