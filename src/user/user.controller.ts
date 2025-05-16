@@ -12,7 +12,6 @@ import {
 	ParseUUIDPipe,
 	Patch,
 	Post,
-	
 	Query,
 	Request,
 	UploadedFile,
@@ -89,7 +88,7 @@ export class UserController {
 		return await this.userService.getData(req.user.userId);
 	}
 
-	@Get(':id')
+	@Get('score-data/:id')
 	@AllowRole(Role.MEMBER)
 	@ApiResponse({
 		status: HttpStatus.OK,
