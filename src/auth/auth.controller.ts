@@ -42,11 +42,7 @@ export class AuthController {
 	@Post('request-open-account')
 	@ApiBody({
 		description: 'email',
-		schema: {
-			example: {
-				email: 'example@gmail.com',
-			},
-		},
+		type: RegisterOpenAccountDto,
 	})
 	@ApiResponse({
 		status: HttpStatus.NO_CONTENT,
@@ -60,7 +56,9 @@ export class AuthController {
 			blockDuration: 60 * 1000,
 		},
 	})
-	async requestOpenAccount(@Body() body: { email: string }): Promise<void> {
+	async requestOpenAccount(
+		@Body() body: RegisterOpenAccountDto,
+	): Promise<void> {
 		await this.authService.requestOpenAccount(body.email);
 	}
 
