@@ -1,16 +1,6 @@
 import { IsEmail, IsNotEmpty, IsObject } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-
-export interface EmailTemplateVariables {
-	PreheaderText?: string;
-	MainTitle?: string;
-	ActionPromptText?: string;
-	OTPValue?: string;
-	ButtonText?: string;
-	ExpirationMessage?: string;
-	SecurityWarning?: string;
-	CustomBodyContent?: string;
-}
+import { EmailTemplateVariables } from '../../../mail/interfaces/templated-mail';
 
 export class SendTemplatedMailDto {
 	@ApiProperty({
