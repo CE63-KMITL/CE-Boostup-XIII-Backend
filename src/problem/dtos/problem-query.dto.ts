@@ -14,11 +14,7 @@ import {
 	ProblemStatusEnum,
 } from '../enums/problem-staff-status.enum';
 import { SCORE_VALUES, ScoreValue } from '../types/score-value.type';
-
-enum ProblemSearchSortBy {
-	ASC = 'ASC',
-	DESC = 'DESC',
-}
+import { SortBy } from 'src/shared/enum/sort-by.enum';
 
 export class ProblemSearchQueryDto extends PaginationMetaDto {
 	@IsOptional()
@@ -82,12 +78,12 @@ export class ProblemSearchQueryDto extends PaginationMetaDto {
 
 	@IsOptional()
 	@IsString()
-	@IsEnum(ProblemSearchSortBy)
+	@IsEnum(SortBy)
 	@ApiPropertyOptional({
-		example: ProblemSearchSortBy.ASC,
-		enum: ProblemSearchSortBy,
+		example: SortBy.ASC,
+		enum: SortBy,
 	})
-	difficultySortBy: ProblemSearchSortBy = null;
+	difficultySortBy: SortBy = null;
 
 	@IsOptional()
 	@IsBoolean()
