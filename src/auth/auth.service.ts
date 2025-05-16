@@ -47,8 +47,10 @@ export class AuthService {
 		await this.sendOtp({
 			to: email,
 			subject: 'กรุณาเปิดใช้งานบัญชีของคุณ!~',
-			html: this.mailservice.generateEmailHtmlWithOtp(
-				`${otp}&editName=false&email=${email}`,
+			html: this.mailservice.generateEmailHtmlOpenAccount(
+				user.name
+					? `${otp}&editName=false&email=${email}`
+					: `${otp}&email=${email}`,
 			),
 		});
 		await this.userService.update(user.id, { otp, otpExpires });
@@ -109,7 +111,7 @@ export class AuthService {
 			false,
 		);
 		if (existingUser) {
-			throw new ConflictException('Email already exists');
+			return await this.requestOpenAccount(email);
 		}
 		try {
 			const user = await this.userService.create(registerUser);
@@ -129,8 +131,8 @@ export class AuthService {
 			await this.sendOtp({
 				to: email,
 				subject: 'กรุณาเปิดใช้งานบัญชีของคุณ!~',
-				html: this.mailservice.generateEmailHtmlWithOtp(
-					`${otp}&editName=false&email=${email}`,
+				html: this.mailservice.generateEmailHtmlOpenAccount(
+					`${otp}&email=${email}`,
 				),
 			});
 			await this.userService.update(user.id, { otp, otpExpires });
@@ -161,8 +163,8 @@ export class AuthService {
 		await this.sendOtp({
 			to: email,
 			subject: 'รีเซ็ตรหัสผ่านของคุณ',
-			html: this.mailservice.generateEmailHtmlWithOtp(
-				`${otp}&email=${email}`,
+			html: this.mailservice.generateEmailHtmlResetPassword(
+				`${otp}&email=${email}&reset=true&editName=false`,
 			),
 		});
 		await this.userService.update(user.id, { otp, otpExpires });
