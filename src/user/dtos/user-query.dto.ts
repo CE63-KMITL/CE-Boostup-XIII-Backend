@@ -69,4 +69,13 @@ export class UserQueryDto extends PaginationMetaDto {
 	@IsString()
 	@IsOptional()
 	studentId: string;
+
+	@ApiPropertyOptional({
+		example: 'search term',
+		type: String,
+		description: 'search by email, name, or student ID',
+	})
+	@IsString()
+	@IsOptional()
+	searchText?: string;
 }

@@ -24,8 +24,6 @@ export function Filter<T, K extends ReadonlyArray<keyof T>>(
 		constructor(sourceObject: Partial<T>) {
 			super(sourceObject);
 
-			console.log(Object.keys(this));
-
 			for (const key of Object.keys(this)) {
 				if (keys.filter((k) => k == key).length == 0) {
 					delete (this as any)[key];

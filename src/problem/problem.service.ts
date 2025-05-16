@@ -109,11 +109,6 @@ export class ProblemService {
 		return problem;
 	}
 
-	async getDetail(id: number): Promise<string> {
-		const problem = await this.findOne(id);
-		return problem.description || 'No detail available';
-	}
-
 	async update(
 		id: number,
 		updateProblemRequest: UpdateProblemDto,
@@ -466,8 +461,6 @@ export class ProblemService {
 		const { code } = problemSubmission;
 		const problem = await this.findOne(problemId);
 		const { testCases } = problem;
-
-		console.log(problem.difficulty, typeof problem.difficulty);
 
 		if (testCases.length === 0)
 			throw new BadRequestException('no test case for this problem');

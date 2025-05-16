@@ -190,8 +190,6 @@ export class ProblemSearchedDto extends Filter(ProblemResponseDto, [
 	) {
 		super(problem);
 		this.status = status;
-
-		console.log(this);
 	}
 }
 

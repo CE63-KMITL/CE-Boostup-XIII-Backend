@@ -7,16 +7,14 @@ import {
 	HttpCode,
 	HttpStatus,
 	Param,
-	ParseFilePipeBuilder,
 	ParseIntPipe,
 	ParseUUIDPipe,
 	Patch,
 	Post,
-	
 	Query,
 	Request,
-	UploadedFile,
-	UseInterceptors,
+	UsePipes,
+	ValidationPipe,
 } from '@nestjs/common';
 import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -32,12 +30,12 @@ import { ModifyScoreDto } from './score/dtos/modify-score.dto';
 import { UserScoreResponseDto } from './score/dtos/score-response.dto';
 import { UserService } from './user.service';
 
-import { FileInterceptor } from '@nestjs/platform-express';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { UserQueryDto } from './dtos/user-query.dto';
 import { UserSaveCodeDto } from './dtos/user-request.dto';
 import { AllowRole } from 'src/shared/decorators/auth.decorator';
+import { UploadIconDto } from './dtos/upload-icon.dto';
 
 @Controller('user')
 @ApiTags('User')
@@ -89,7 +87,7 @@ export class UserController {
 		return await this.userService.getData(req.user.userId);
 	}
 
-	@Get(':id')
+	@Get('score-data/:id')
 	@AllowRole(Role.MEMBER)
 	@ApiResponse({
 		status: HttpStatus.OK,
@@ -263,42 +261,27 @@ export class UserController {
 
 	@Post('upload-icon')
 	@AllowRole(Role.MEMBER, Role.DEV)
-	@UseInterceptors(FileInterceptor('file'))
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@ApiResponse({
 		status: HttpStatus.NO_CONTENT,
-		description: 'successfully upload file',
+		description: 'successfully upload icon base64 string',
 	})
 	@ApiBody({
 		schema: {
 			type: 'object',
 			properties: {
-				file: {
+				iconBase64: {
 					type: 'string',
-					format: 'binary',
 				},
 			},
 		},
 	})
-	@ApiConsumes('multipart/form-data')
+	@ApiConsumes('application/json')
+	@UsePipes(ValidationPipe)
 	async uploadIcon(
 		@Request() req: authenticatedRequest,
-		@UploadedFile(
-			new ParseFilePipeBuilder()
-				.addFileTypeValidator({
-					fileType: 'image/*',
-				})
-				.addMaxSizeValidator({
-					maxSize: 100 * 1024, // limite file size = 100kb
-				})
-				.build({
-					fileIsRequired: true,
-					errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-				}),
-		)
-		file: Express.Multer.File,
+		@Body() body: UploadIconDto,
 	): Promise<void> {
-		const iconBase64 = file.buffer.toString('base64');
-		this.userService.uploadIcon(req.user.userId, iconBase64);
+		this.userService.uploadIcon(req.user.userId, body.iconBase64);
 	}
 }

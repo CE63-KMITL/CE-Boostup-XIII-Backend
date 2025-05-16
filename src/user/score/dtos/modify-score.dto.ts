@@ -23,6 +23,7 @@ export class ModifyScoreDto {
 		description: 'Message',
 		type: String,
 	})
+	@IsString()
 	@IsOptional()
 	message: string = 'ไม่รู้อะแค่เปลี่ยนคะแนนเฉยๆ';
 }
