@@ -1,7 +1,17 @@
-import { Controller, Get, Post, Body, Delete, Param } from '@nestjs/common';
+import {
+	Controller,
+	Get,
+	Post,
+	Body,
+	Delete,
+	Param,
+	Request,
+	ForbiddenException,
+} from '@nestjs/common';
 import { RewardService } from './reward.service';
 import { Role } from '../shared/enum/role.enum';
 import { AllowRole } from 'src/shared/decorators/auth.decorator';
+import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 
 @Controller('rewards')
 export class RewardController {
@@ -23,9 +33,22 @@ export class RewardController {
 	async cancelRedeem(@Param('id') id: string) {
 		return this.rewardService.cancelRedeem(id);
 	}
+
 	@Get('user/:id/status')
 	@AllowRole(Role.MEMBER)
-	async getUserRewardStatus(@Param('id') id: string) {
+	async getUserRewardStatus(
+		@Param('id') id: string,
+		@Request() req: authenticatedRequest,
+	) {
+		if (req.user.role === Role.MEMBER && req.user.userId !== id)
+			throw new ForbiddenException();
+
 		return this.rewardService.getUserRewardStatus(id);
+	}
+
+	@Get()
+	@AllowRole(Role.MEMBER)
+	async allReward(@Request() req: authenticatedRequest) {
+		return this.rewardService.getAllRewards();
 	}
 }

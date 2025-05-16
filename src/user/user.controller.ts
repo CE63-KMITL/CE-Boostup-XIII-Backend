@@ -2,6 +2,7 @@ import {
 	Body,
 	Controller,
 	Delete,
+	ForbiddenException,
 	Get,
 	HttpCode,
 	HttpStatus,
@@ -11,6 +12,7 @@ import {
 	ParseUUIDPipe,
 	Patch,
 	Post,
+	
 	Query,
 	Request,
 	UploadedFile,
@@ -91,10 +93,10 @@ export class UserController {
 	@AllowRole(Role.MEMBER)
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: 'Get a user detail by id',
+		description: 'Get a user getScoreData by id',
 		type: UserScoreDataResponseDto,
 	})
-	async findOne(
+	async getScoreData(
 		@Param(
 			'id',
 			new ParseUUIDPipe({
@@ -103,7 +105,10 @@ export class UserController {
 			}),
 		)
 		id: string,
+		@Request() req: authenticatedRequest,
 	): Promise<UserScoreDataResponseDto> {
+		if (req.user.role === Role.MEMBER && req.user.userId !== id)
+			throw new ForbiddenException();
 		return await this.userService.getScoreData(id);
 	}
 

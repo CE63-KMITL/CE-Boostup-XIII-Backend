@@ -202,7 +202,9 @@ async function createAndInitializeUser(
 		}
 
 		const userId = createUserResponse.id;
-		console.log(`User ${email} created successfully with ID: ${userId}.`);
+		console.log(`User ${email} created successfully with ID: ${userId}..`);
+		// Log password for created user as requested
+		console.log(`-> User ${email} password: ${DEFAULT_USER_PASSWORD}`);
 
 		const randomHouse = HOUSES[Math.floor(Math.random() * HOUSES.length)]; // Assign random house
 		const randomStudentId = Math.floor(

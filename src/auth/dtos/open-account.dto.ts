@@ -31,6 +31,6 @@ export class OpenAccountDto {
 		example: 'john_doe',
 	})
 	@IsString()
-	@IsNotEmpty()
+	@IsOptional()
 	name: string;
 }

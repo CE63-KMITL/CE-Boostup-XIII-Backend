@@ -2,11 +2,12 @@ import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AllowRole } from 'src/shared/decorators/auth.decorator';
 import { Role } from 'src/shared/enum/role.enum';
-import { MailService } from 'src/mail/mail.service';
+import { MailService } from 'src/mail/mail.service'; // Import EmailTemplateVariables
 import { UserService } from 'src/user/user.service';
 import { AutoSendMailDto } from './dtos/auto-send-mail';
 import { AuthService } from '../auth.service';
 import { IsNull } from 'typeorm'; // Added IsNull import
+import { SendTemplatedMailDto } from './dtos/send-templated-mail.dto'; // Import the new DTO
 
 @ApiTags('Auth (DEV)')
 @Controller('dev/auth/')
@@ -106,5 +107,37 @@ export class DevAuthController {
 			html: body?.html,
 			text: body?.text,
 		});
+	}
+
+	//-------------------------------------------------------
+	// Templated Mail Endpoint
+	//-------------------------------------------------------
+
+	@Post('send-templated-mail')
+	@AllowRole(Role.DEV)
+	@ApiResponse({
+		status: 200,
+		description: 'Templated email sent successfully',
+	})
+	@ApiResponse({ status: 400, description: 'Invalid request body' })
+	@ApiResponse({ status: 401, description: 'Unauthorized' })
+	@ApiResponse({ status: 403, description: 'Forbidden (Requires DEV role)' })
+	async sendTemplatedMail(@Body() body: SendTemplatedMailDto) {
+		const { to, variables } = body;
+
+		const subject = variables.MainTitle || 'CE BOOSTUP  XIII';
+
+		const htmlContent = this.mailService.generateEmailHtml(variables);
+
+		console.log(htmlContent);
+
+		await this.mailService.sendMail({
+			to,
+			subject,
+			html: htmlContent,
+			text: 'Please view this email in an HTML-enabled client.',
+		});
+
+		return { message: 'Templated email queued successfully', to };
 	}
 }

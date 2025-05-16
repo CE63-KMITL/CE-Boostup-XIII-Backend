@@ -45,7 +45,7 @@ export class AuthService {
 					60 *
 					1000,
 		).toISOString();
-		await this.sendOtp(email, otp);
+		await this.sendOtp(email, user.name ? otp + '&editName=false' : otp);
 		await this.userService.update(user.id, { otp, otpExpires });
 	}
 
@@ -63,7 +63,7 @@ export class AuthService {
 
 		const userResponse = await this.userService.update(user.id, {
 			password,
-			name,
+			name: name ?? user.name,
 			isActive: true,
 			otp: null,
 			otpExpires: null,
@@ -133,18 +133,19 @@ export class AuthService {
 
 	private async sendOtp(email: string, otp: string): Promise<void> {
 		try {
-			const targetLink = `${this.configService.getOrThrow<string>(GLOBAL_CONFIG.FRONT_HOST)}/open-account?otp=${otp}`;
-
 			await this.mailservice.sendMail({
 				to: email,
-				subject: 'your activation code',
-				html: `<h1>${otp}</h1><a href="${targetLink}">${targetLink}</a>`,
+				subject: 'กรุณาเปิดใช้งานบัญชีของคุณ!~',
+				html: this.mailservice.generateEmailHtmlWithOtp(
+					`${otp}&email=${email}`,
+				),
 			});
 		} catch (error) {
 			console.error(error);
 			throw new BadRequestException('fail to send mail');
 		}
 	}
+
 	private async validateUser(
 		email: string,
 		password: string,
