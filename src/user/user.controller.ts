@@ -36,6 +36,7 @@ import { UserQueryDto } from './dtos/user-query.dto';
 import { UserSaveCodeDto } from './dtos/user-request.dto';
 import { AllowRole } from 'src/shared/decorators/auth.decorator';
 import { UploadIconDto } from './dtos/upload-icon.dto';
+import { SetUserNameDto } from './dtos/set-user-name.dto';
 
 @Controller('user')
 @ApiTags('User')
@@ -168,6 +169,22 @@ export class UserController {
 			req.user.userId,
 			modifyScoreDto.message,
 		);
+	}
+
+	@Patch('set-name')
+	@AllowRole(Role.MEMBER)
+	@ApiResponse({
+		status: HttpStatus.OK,
+		description: 'Set user name',
+		type: UserResponseDto,
+	})
+	async setName(
+		@Request() req: authenticatedRequest,
+		@Body() body: SetUserNameDto,
+	): Promise<UserResponseDto> {
+		return await this.userService.update(req.user.userId, {
+			name: body.name,
+		});
 	}
 
 	@Patch(':id')
