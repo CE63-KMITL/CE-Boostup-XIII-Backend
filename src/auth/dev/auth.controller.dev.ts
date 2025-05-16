@@ -2,12 +2,12 @@ import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AllowRole } from 'src/shared/decorators/auth.decorator';
 import { Role } from 'src/shared/enum/role.enum';
-import { MailService } from 'src/mail/mail.service'; // Import EmailTemplateVariables
+import { MailService } from 'src/mail/mail.service';
 import { UserService } from 'src/user/user.service';
 import { AutoSendMailDto } from './dtos/auto-send-mail';
 import { AuthService } from '../auth.service';
-import { IsNull } from 'typeorm'; // Added IsNull import
-import { SendTemplatedMailDto } from './dtos/send-templated-mail.dto'; // Import the new DTO
+import { IsNull } from 'typeorm';
+import { SendTemplatedMailDto } from './dtos/send-templated-mail.dto';
 
 @ApiTags('Auth (DEV)')
 @Controller('dev/auth/')
