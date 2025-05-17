@@ -538,7 +538,6 @@ export class UserService implements OnModuleInit {
 		);
 
 		const problem = await this.problemService.findOne(problemId);
-
 		return problemStatus?.code || problem.defaultCode;
 	}
 

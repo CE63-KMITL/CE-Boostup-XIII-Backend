@@ -27,6 +27,7 @@ import {
 import { ModifyScoreDto } from './score/dtos/modify-score.dto';
 import { UserScoreResponseDto } from './score/dtos/score-response.dto';
 import { UserService } from './user.service';
+import { ProblemStatus } from './problem_status/problem-status.entity';
 
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
@@ -230,6 +231,28 @@ export class UserController {
 		id: string,
 	): Promise<void> {
 		await this.userService.delete(id);
+	}
+
+	//-------------------------------------------------------
+	// Problem Status Endpoints
+	//-------------------------------------------------------
+
+	@Get('problem-status/:problemId')
+	@AllowRole(Role.MEMBER)
+	@ApiResponse({
+		status: HttpStatus.OK,
+		description: 'Get problem status for a user and problem ID',
+		type: ProblemStatus,
+	})
+	async getProblemStatus(
+		@Request() req: authenticatedRequest,
+		@Param('problemId', ParseIntPipe) problemId: number,
+	): Promise<ProblemStatus> {
+		return await this.userService.findOneProblemStatus(
+			req.user.userId,
+			problemId,
+			true,
+		);
 	}
 
 	//-------------------------------------------------------
