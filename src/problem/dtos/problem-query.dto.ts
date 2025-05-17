@@ -54,7 +54,7 @@ export class ProblemSearchQueryDto extends PaginationMetaDto {
 		example: '0.5',
 		type: String,
 	})
-	minDifficulty: ScoreValue = 0.5;
+	minDifficulty: ScoreValue = 1;
 
 	@IsOptional()
 	@Type(() => Number)
