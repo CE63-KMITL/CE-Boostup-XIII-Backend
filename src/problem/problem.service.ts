@@ -533,6 +533,16 @@ export class ProblemService {
 	}
 
 	async approve(id: number, user: jwtPayloadDto) {
+		const problem = await this.problemsRepository.findOne({
+			where: { id },
+		});
+		if (!problem)
+			throw new NotFoundException(`Problem with ID ${id} not found`);
+		if (problem.testCases.length === 0) {
+			throw new BadRequestException(
+				'No test case for this problem (should have at least 1 test case before publish)',
+			);
+		}
 		await this.problemsRepository.update(id, {
 			devStatus: ProblemStaffStatusEnum.PUBLISHED,
 		});
