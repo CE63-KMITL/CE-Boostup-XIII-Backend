@@ -13,8 +13,6 @@ import {
 	Post,
 	Query,
 	Request,
-	UsePipes,
-	ValidationPipe,
 } from '@nestjs/common';
 import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -277,7 +275,7 @@ export class UserController {
 	//-------------------------------------------------------
 
 	@Post('upload-icon')
-	@AllowRole(Role.MEMBER, Role.DEV)
+	@AllowRole(Role.MEMBER)
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@ApiResponse({
 		status: HttpStatus.NO_CONTENT,
@@ -294,7 +292,6 @@ export class UserController {
 		},
 	})
 	@ApiConsumes('application/json')
-	@UsePipes(ValidationPipe)
 	async uploadIcon(
 		@Request() req: authenticatedRequest,
 		@Body() body: UploadIconDto,
