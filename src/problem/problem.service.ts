@@ -168,6 +168,7 @@ export class ProblemService {
 				JSON.stringify(problem.functions);
 
 		importantChanged =
+			importantChanged ||
 			problem.testCases.filter((testCase) => testCase.expectOutput)
 				.length !== problem.testCases.length;
 
