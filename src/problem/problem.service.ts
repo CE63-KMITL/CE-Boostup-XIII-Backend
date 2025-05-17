@@ -73,11 +73,13 @@ export class ProblemService {
 		const problem = this.problemsRepository.create({
 			...createProblemRequest,
 			author: author,
-			testCases: [],
 		});
 
 		await this.checkSameTestCase(problem);
-		await this.fillExpectOutput(problem);
+
+		try {
+			await this.fillExpectOutput(problem);
+		} catch (error) {}
 
 		return this.problemsRepository.save(problem);
 	}
@@ -165,6 +167,10 @@ export class ProblemService {
 			JSON.stringify(updateProblemRequest.functions) !=
 				JSON.stringify(problem.functions);
 
+		importantChanged =
+			problem.testCases.filter((testCase) => testCase.expectOutput)
+				.length !== problem.testCases.length;
+
 		Object.assign(problem, updateProblemRequest);
 
 		if (importantChanged) {
@@ -176,7 +182,13 @@ export class ProblemService {
 				updateProblemRequest.solutionCode ?? problem.solutionCode;
 
 			await this.checkSameTestCase(problem);
-			await this.fillExpectOutput(problem);
+
+			try {
+				await this.fillExpectOutput(problem);
+			} catch (error) {
+				await this.problemsRepository.save(problem);
+				throw error;
+			}
 
 			const users = await this.userService.findAll(
 				{
