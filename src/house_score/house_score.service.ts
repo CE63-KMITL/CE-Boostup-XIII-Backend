@@ -152,7 +152,10 @@ export class HouseScoreService implements OnModuleInit {
 
 		if (users.length === 0) return;
 
-		const perUser = Math.floor(amount / users.length);
+		const perUser =
+			amount >= 0
+				? Math.floor(amount / users.length)
+				: Math.ceil(amount / users.length);
 
 		for (const user of users) {
 			user.score += perUser;
