@@ -1,53 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
-import {
-	ProblemStaffStatusEnum,
-	ProblemStatusEnum,
-} from '../enums/problem-staff-status.enum';
-
-enum ProblemSearchSortBy {
-	ASC = 'ASC',
-	DESC = 'DESC',
-}
-
-export class ProblemSearchRequest {
-	@IsOptional()
-	@IsString()
-	searchText: string;
-
-	@IsOptional()
-	@IsString()
-	idReverse: string;
-
-	@IsOptional()
-	@IsString()
-	staff: string;
-
-	@IsOptional()
-	@IsString()
-	tags: string;
-
-	@IsOptional()
-	@IsString()
-	minDifficulty: string = '0.5';
-
-	@IsOptional()
-	@IsString()
-	maxDifficulty: string = '5';
-
-	@IsOptional()
-	@IsString()
-	status: ProblemStatusEnum | ProblemStaffStatusEnum;
-
-	@IsOptional()
-	@IsString()
-	page: string = '1';
-
-	@IsOptional()
-	@IsString()
-	@IsEnum(ProblemSearchSortBy)
-	difficultySortBy: ProblemSearchSortBy = ProblemSearchSortBy.ASC;
-}
+import { IsOptional, IsString, IsNotEmpty } from 'class-validator';
 
 export class ProblemRunCodeRequest {
 	@ApiProperty({
@@ -55,12 +7,15 @@ export class ProblemRunCodeRequest {
 		example: '1 2',
 	})
 	@IsString()
+	@IsOptional()
 	input: string;
 
 	@ApiProperty({
 		description: 'Code to be executed',
 		example: '#include <stdio.h>\n\nint main() {\n\tprintf("Hello, World!");\n\treturn 0;\n}',
+		required: false,
 	})
 	@IsString()
+	@IsNotEmpty()
 	code: string;
 }
