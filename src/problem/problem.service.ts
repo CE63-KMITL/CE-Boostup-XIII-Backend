@@ -149,6 +149,7 @@ export class ProblemService {
 		importantChanged =
 			importantChanged ||
 			(updateProblemRequest.solutionCode &&
+				problem.solutionCode &&
 				updateProblemRequest.solutionCode.trim() !=
 					problem.solutionCode.trim());
 
