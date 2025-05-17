@@ -499,7 +499,7 @@ export class ProblemService {
 			response.some((d) => d.isPass === false)
 				? ProblemStatusEnum.IN_PROGRESS
 				: ProblemStatusEnum.DONE,
-			JSON.stringify(code),
+			code,
 			problem.difficulty,
 		);
 
