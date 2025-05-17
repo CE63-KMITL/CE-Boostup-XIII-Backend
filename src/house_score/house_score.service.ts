@@ -1,6 +1,8 @@
 import {
+	forwardRef,
 	HttpException,
 	HttpStatus,
+	Inject,
 	Injectable,
 	NotFoundException,
 	OnModuleInit,
@@ -17,6 +19,8 @@ export class HouseScoreService implements OnModuleInit {
 	constructor(
 		@InjectRepository(HouseScore)
 		private readonly houseRepository: Repository<HouseScore>,
+
+		@Inject(forwardRef(() => UserService))
 		private readonly userService: UserService,
 	) {}
 
