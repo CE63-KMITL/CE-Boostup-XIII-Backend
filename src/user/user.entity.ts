@@ -11,6 +11,7 @@ import {
 import { Role } from '../shared/enum/role.enum';
 import { ProblemStatus } from './problem_status/problem-status.entity';
 import { ScoreLog } from './score/score-log.entity';
+import { Redeem } from 'src/reward/redeem.entity';
 
 @Entity()
 export class User {
@@ -43,6 +44,9 @@ export class User {
 
 	@OneToMany(() => ProblemStatus, (problemStatus) => problemStatus.user)
 	problemStatus: ProblemStatus[];
+
+	@OneToMany(() => Redeem, (redeem) => redeem.userId)
+	redeem: Redeem[];
 
 	@Column({ nullable: false, default: 0, type: 'double precision' })
 	@IsNumber()
