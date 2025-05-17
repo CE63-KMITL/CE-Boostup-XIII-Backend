@@ -1,9 +1,16 @@
-FROM node:23-alpine AS build
+FROM node:23-alpine AS pnpm
+WORKDIR /app
+
+COPY package.json package.json
+
+RUN npm i -g pnpm && pnpm i
+
+FROM pnpm AS build
 WORKDIR /app
 
 COPY . .
 
-RUN npm i -g pnpm && pnpm i && pnpm run build && pnpm prune --prod
+RUN pnpm run build && pnpm prune --prod
 
 FROM node:23-alpine
 WORKDIR /app

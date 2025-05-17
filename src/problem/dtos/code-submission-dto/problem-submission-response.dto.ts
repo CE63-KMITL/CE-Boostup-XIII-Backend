@@ -11,7 +11,8 @@ export class ProblemSubmissionResponseDto extends RunCodeResponseDto {
 
 	constructor(testCaseDto: TestCase, runCodeDto: RunCodeResponseDto) {
 		super(runCodeDto);
-		this.isPass = testCaseDto.expectOutput.trim() === this.output.trim();
+		this.isPass =
+			testCaseDto.expectOutput?.trim() === this.output?.trim();
 	}
 }
 
