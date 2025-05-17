@@ -4,7 +4,6 @@ import {
 	Injectable,
 	ForbiddenException,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import { ProblemService } from '../problem.service';
 import { Role } from '../../shared/enum/role.enum';
 import { ProblemStaffStatusEnum } from '../enums/problem-staff-status.enum';
@@ -12,10 +11,7 @@ import { authenticatedRequest } from '../../auth/interfaces/authenticated-reques
 
 @Injectable()
 export class ProblemPublishedGuard implements CanActivate {
-	constructor(
-		private readonly reflector: Reflector,
-		private readonly problemService: ProblemService,
-	) {}
+	constructor(private readonly problemService: ProblemService) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context
@@ -33,7 +29,9 @@ export class ProblemPublishedGuard implements CanActivate {
 			request.user.role === Role.MEMBER &&
 			problem.devStatus !== ProblemStaffStatusEnum.PUBLISHED
 		) {
-			throw new ForbiddenException();
+			throw new ForbiddenException(
+				'You do not have permission to access this problem',
+			);
 		}
 
 		return true;
