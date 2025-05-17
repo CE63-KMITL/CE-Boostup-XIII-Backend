@@ -14,7 +14,7 @@ import {
 	Query,
 	Request,
 } from '@nestjs/common';
-import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { Role } from '../shared/enum/role.enum';
 import { UpdateUserDto } from './dtos/update-user.dto';
@@ -35,6 +35,7 @@ import { UserSaveCodeDto } from './dtos/user-request.dto';
 import { AllowRole } from 'src/shared/decorators/auth.decorator';
 import { UploadIconDto } from './dtos/upload-icon.dto';
 import { SetUserNameDto } from './dtos/set-user-name.dto';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('user')
 @ApiTags('User')
@@ -176,6 +177,12 @@ export class UserController {
 		description: 'Set user name',
 		type: UserResponseDto,
 	})
+	@Throttle({
+		default: {
+			ttl: 60 * 1000,
+			limit: 1,
+		},
+	})
 	async setName(
 		@Request() req: authenticatedRequest,
 		@Body() body: SetUserNameDto,
@@ -291,7 +298,12 @@ export class UserController {
 			},
 		},
 	})
-	@ApiConsumes('application/json')
+	@Throttle({
+		default: {
+			ttl: 60 * 1000,
+			limit: 1,
+		},
+	})
 	async uploadIcon(
 		@Request() req: authenticatedRequest,
 		@Body() body: UploadIconDto,
