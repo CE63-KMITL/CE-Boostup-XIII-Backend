@@ -168,6 +168,7 @@ export class ProblemService {
 				JSON.stringify(problem.functions);
 
 		importantChanged =
+			importantChanged ||
 			problem.testCases.filter((testCase) => testCase.expectOutput)
 				.length !== problem.testCases.length;
 
@@ -498,7 +499,7 @@ export class ProblemService {
 			response.some((d) => d.isPass === false)
 				? ProblemStatusEnum.IN_PROGRESS
 				: ProblemStatusEnum.DONE,
-			JSON.stringify(code),
+			code,
 			problem.difficulty,
 		);
 
