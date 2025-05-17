@@ -469,6 +469,7 @@ export class UserService implements OnModuleInit {
 	): Promise<void> {
 		const userProblem = await this.problemStatusRepository.findOne({
 			where: { userId, problemId },
+			relations: { problem: true },
 		});
 		if (!userProblem) {
 			await this.problemStatusRepository.save({
@@ -480,7 +481,12 @@ export class UserService implements OnModuleInit {
 			});
 			if (status === ProblemStatusEnum.DONE) {
 				const score = this.problemService.calScore(difficulty);
-				this.modifyScore(userId, score, userId, 'แก้โจทย์');
+				this.modifyScore(
+					userId,
+					score,
+					userId,
+					`แก้โจทย์ ${problemId}. ${userProblem.problem.title}`,
+				);
 			}
 		} else {
 			await this.problemStatusRepository.update(
