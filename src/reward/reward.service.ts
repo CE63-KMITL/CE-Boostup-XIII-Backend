@@ -102,11 +102,11 @@ export class RewardService {
 
 		const redeemdId = user.redeem.map((redeem) => redeem.rewardId);
 		const rewards = await this.rewardRepo.find();
-		const availableRewards = rewards.map((reward) => {
+		const availableRewards = rewards.filter((reward) => {
 			if (reward.points < user.score && !redeemdId.includes(reward.id))
 				return reward;
 		});
-		const lockedRewards = rewards.map((reward) => {
+		const lockedRewards = rewards.filter((reward) => {
 			if (reward.points > user.score && !redeemdId.includes(reward.id))
 				return reward;
 		});
@@ -117,8 +117,8 @@ export class RewardService {
 					this.rewardRepo.findOneBy({ id: redeem.rewardId }),
 				),
 			),
-			available: availableRewards.filter((reward) => reward),
-			locked: lockedRewards.filter((reward) => reward),
+			available: availableRewards,
+			locked: lockedRewards,
 		};
 
 		return {
