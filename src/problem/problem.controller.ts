@@ -77,7 +77,13 @@ export class ProblemController {
 	@AllowRole(Role.STAFF)
 	@Patch(':id')
 	async update(
-		@Param('id', ParseIntPipe) id: number,
+		@Param(
+			'id',
+			new ParseIntPipe({
+				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+			}),
+		)
+		id: number,
 		@Body() updateProblemRequest: UpdateProblemDto,
 		@Req() req: authenticatedRequest,
 	): Promise<ProblemResponseDto> {
