@@ -73,11 +73,13 @@ export class ProblemService {
 		const problem = this.problemsRepository.create({
 			...createProblemRequest,
 			author: author,
-			testCases: [],
 		});
 
 		await this.checkSameTestCase(problem);
-		await this.fillExpectOutput(problem);
+
+		try {
+			await this.fillExpectOutput(problem);
+		} catch (error) {}
 
 		return this.problemsRepository.save(problem);
 	}
@@ -107,11 +109,6 @@ export class ProblemService {
 		}
 
 		return problem;
-	}
-
-	async getDetail(id: number): Promise<string> {
-		const problem = await this.findOne(id);
-		return problem.description || 'No detail available';
 	}
 
 	async update(
@@ -170,6 +167,10 @@ export class ProblemService {
 			JSON.stringify(updateProblemRequest.functions) !=
 				JSON.stringify(problem.functions);
 
+		importantChanged =
+			problem.testCases.filter((testCase) => testCase.expectOutput)
+				.length !== problem.testCases.length;
+
 		Object.assign(problem, updateProblemRequest);
 
 		if (importantChanged) {
@@ -181,7 +182,13 @@ export class ProblemService {
 				updateProblemRequest.solutionCode ?? problem.solutionCode;
 
 			await this.checkSameTestCase(problem);
-			await this.fillExpectOutput(problem);
+
+			try {
+				await this.fillExpectOutput(problem);
+			} catch (error) {
+				await this.problemsRepository.save(problem);
+				throw error;
+			}
 
 			const users = await this.userService.findAll(
 				{
@@ -466,8 +473,6 @@ export class ProblemService {
 		const { code } = problemSubmission;
 		const problem = await this.findOne(problemId);
 		const { testCases } = problem;
-
-		console.log(problem.difficulty, typeof problem.difficulty);
 
 		if (testCases.length === 0)
 			throw new BadRequestException('no test case for this problem');

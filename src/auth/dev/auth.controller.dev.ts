@@ -129,8 +129,6 @@ export class DevAuthController {
 
 		const htmlContent = this.mailService.generateEmailHtml(variables);
 
-		console.log(htmlContent);
-
 		await this.mailService.sendMail({
 			to,
 			subject,

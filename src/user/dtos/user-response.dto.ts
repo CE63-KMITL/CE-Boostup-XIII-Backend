@@ -117,7 +117,16 @@ export class UserFrontDataResponseDto extends Filter(UserResponseDto, [
 //-------------------------------------------------------
 // User Score Data Response DTO (Includes Rank and House Info)
 //-------------------------------------------------------
-export class UserScoreDataResponseDto extends UserFrontDataResponseDto {
+export class UserScoreDataResponseDto extends Filter(UserResponseDto, [
+	'id',
+	'role',
+	'icon',
+	'name',
+	'studentId',
+	'house',
+	'score',
+	'email',
+]) {
 	@ApiProperty({ description: 'User rank among all users' })
 	rank: number;
 
@@ -127,7 +136,12 @@ export class UserScoreDataResponseDto extends UserFrontDataResponseDto {
 	@ApiProperty({ description: "Total score of the user's house" })
 	houseScore: number;
 
-	constructor(data: { user: User; rank: number; houseRank: number; houseScore: number }) {
+	constructor(data: {
+		user: User;
+		rank: number;
+		houseRank: number;
+		houseScore: number;
+	}) {
 		super(data.user);
 		this.rank = data.rank;
 		this.houseRank = data.houseRank;

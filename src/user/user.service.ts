@@ -181,33 +181,46 @@ export class UserService implements OnModuleInit {
 			house,
 			role,
 			studentId,
+			searchText,
 		} = query;
 
 		const users = await createPaginationQuery({
 			repository: this.userRepository,
 			dto: { limit, page },
 		});
-		users.andWhere('entity.isActive = true');
-		if (!!name)
-			users.where('LOWER(entity.name) LIKE LOWER(:name)', {
-				name: `%${name}%`,
-			});
 
-		if (!!email)
-			users.andWhere('LOWER(entity.email) LIKE LOWER(:email)', {
-				email: `%${email}%`,
-			});
+		users.where('entity.isActive = true');
+
+		if (!!searchText) {
+			users.andWhere(
+				'(LOWER(entity.name) LIKE LOWER(:searchText) OR LOWER(entity.email) LIKE LOWER(:searchText) OR CAST(entity.studentId AS TEXT) LIKE :searchText)',
+				{ searchText: `%${searchText}%` },
+			);
+		} else {
+			if (!!name)
+				users.andWhere('LOWER(entity.name) LIKE LOWER(:name)', {
+					name: `%${name}%`,
+				});
+
+			if (!!email)
+				users.andWhere('LOWER(entity.email) LIKE LOWER(:email)', {
+					email: `%${email}%`,
+				});
+
+			if (!!studentId)
+				users.andWhere(
+					'CAST(entity.studentId AS TEXT) LIKE :studentId',
+					{
+						studentId: `%${studentId}%`,
+					},
+				);
+		}
 
 		if (orderByScore !== undefined) {
 			users.orderBy('entity.score', orderByScore ? 'DESC' : 'ASC');
 		}
 
 		if (!!house) users.andWhere('entity.house  = :house', { house });
-
-		if (!!studentId)
-			users.andWhere('entity.studentId = :studentId', {
-				studentId: `%${studentId}%`,
-			});
 
 		if (role === null || role === undefined) {
 			users.andWhere('entity.role IN (:...roles)', {
@@ -358,6 +371,10 @@ export class UserService implements OnModuleInit {
 		modifiedById: string,
 		message: string,
 	): Promise<UserResponseDto> {
+		if (!message || message == '') {
+			message = 'ไม่รู้อะแค่เปลี่ยนคะแนนเฉยๆ';
+		}
+
 		const user = await this.findOne({
 			where: { id: userId },
 		});
@@ -375,41 +392,37 @@ export class UserService implements OnModuleInit {
 		scoreLog.message = message;
 		await this.scoreLogRepository.save(scoreLog);
 		const response = await this.userRepository.save(user);
-		const house = await this.HouseScoreRepo.findOneBy({
-			name: user.house,
-		});
-		if (!house) throw new NotFoundException('House not found');
 
-		house.value += amount;
-		if (house.value < 0) {
-			house.value = 0;
+		if (user.role == Role.MEMBER && user.house) {
+			const house = await this.HouseScoreRepo.findOneBy({
+				name: user.house,
+			});
+			if (!house) throw new NotFoundException('House not found');
+
+			house.value += amount;
+			if (house.value < 0) {
+				house.value = 0;
+			}
+
+			await this.HouseScoreRepo.update(
+				{ name: user.house },
+				{ value: house.value },
+			);
 		}
 
-		await this.HouseScoreRepo.update(
-			{ name: user.house },
-			{ value: house.value },
-		);
 		return new UserResponseDto(response);
 	}
 
 	async getUserScoreLogs(id: string): Promise<ScoreLog[]> {
-		const user = await this.userRepository
-			.createQueryBuilder('user')
-			.leftJoinAndSelect('user.scoreLogs', 'scoreLogs')
-			.leftJoinAndSelect('scoreLogs.user', 'scoreLogUser')
-			.leftJoinAndSelect('scoreLogs.modifiedBy', 'modifiedByUser')
-			.select([
-				'user.id',
-				'scoreLogs.id',
-				'scoreLogs.amount',
-				'scoreLogs.date',
-				'modifiedByUser.id',
-				'modifiedByUser.name',
-				'modifiedByUser.studentId',
-				'modifiedByUser.icon',
-			])
-			.where('user.id = :id', { id })
-			.getOne();
+		const user = await this.userRepository.findOne({
+			where: { id },
+			relations: ['scoreLogs', 'scoreLogs.modifiedBy'],
+			order: {
+				scoreLogs: {
+					date: 'DESC', // Sort by date descending (latest first)
+				},
+			},
+		});
 
 		if (!user || !user.scoreLogs) return [];
 		return user.scoreLogs;

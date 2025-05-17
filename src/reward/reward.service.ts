@@ -85,16 +85,18 @@ export class RewardService {
 	}
 
 	async cancelRedeem(id: string) {
-		const redeem = await this.redeemRepo.findOneBy({ id });
+		const redeem = await this.redeemRepo.findOne({
+			where: { rewardId: id },
+		});
 		if (!redeem) {
 			throw new NotFoundException('Redeem not found');
 		}
 
-		if (redeem.isApproved) {
-			throw new BadRequestException('Cannot cancel this redeem');
-		}
+		// if (redeem.isApproved) {
+		// 	throw new BadRequestException('Cannot cancel this redeem');
+		// }
 
-		await this.redeemRepo.delete(id);
+		await this.redeemRepo.delete(redeem.id);
 
 		return {
 			success: true,
@@ -110,7 +112,7 @@ export class RewardService {
 			where: { userId },
 		});
 
-		const redeemedIds = new Set(redeemed.map((r) => r.rewardId));
+		const redeemedIds = redeemed.map((r) => r.rewardId);
 
 		const result = {
 			redeemed: [],
@@ -119,7 +121,7 @@ export class RewardService {
 		};
 
 		for (const reward of this.rewards) {
-			if (redeemedIds.has(reward.id)) {
+			if (redeemedIds.filter((r) => r == reward.id).length > 0) {
 				result.redeemed.push(reward);
 			} else if (user.score >= reward.points) {
 				result.available.push(reward);

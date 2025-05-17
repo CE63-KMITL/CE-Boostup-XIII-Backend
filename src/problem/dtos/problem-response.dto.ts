@@ -172,6 +172,7 @@ export class ProblemSearchedDto extends Filter(ProblemResponseDto, [
 	'title',
 	'difficulty',
 	'tags',
+	'author',
 ]) {
 	@ApiProperty({
 		example: ProblemStaffStatusEnum.PUBLISHED,
@@ -188,7 +189,6 @@ export class ProblemSearchedDto extends Filter(ProblemResponseDto, [
 		status?: ProblemStatusEnum | ProblemStaffStatusEnum,
 	) {
 		super(problem);
-
 		this.status = status;
 	}
 }

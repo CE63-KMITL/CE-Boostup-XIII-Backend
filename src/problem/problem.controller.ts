@@ -10,6 +10,7 @@ import {
 	Query,
 	Req,
 } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import {
 	ApiCreatedResponse,
 	ApiOkResponse,
@@ -18,6 +19,7 @@ import {
 } from '@nestjs/swagger';
 import { authenticatedRequest } from 'src/auth/interfaces/authenticated-request.interface';
 import { Role } from 'src/shared/enum/role.enum';
+import { ProblemPublishedGuard } from './guards/problem-published.guard';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { CreateProblemDto } from './dtos/problem-create.dto';
 import {
@@ -37,6 +39,7 @@ import { THROTTLE_RUNCODE } from 'src/shared/configs/throttle.config';
 import { UpdateProblemDto } from './dtos/problem-update.dto';
 import { ProblemSearchQueryDto } from './dtos/problem-query.dto';
 import { AllowRole } from 'src/shared/decorators/auth.decorator';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('problem')
 @ApiTags('Problem')
@@ -108,24 +111,32 @@ export class ProblemController {
 
 	@ApiOkResponse({ type: ProblemResponseDto })
 	@AllowRole(Role.MEMBER)
+	@UseGuards(JwtAuthGuard, ProblemPublishedGuard)
 	@Get(':id')
-	async findOne(@Param('id') id: number): Promise<ProblemResponseDto> {
-		return new ProblemResponseDto(await this.problemService.findOne(id));
+	async findOne(
+		@Param('id') id: number,
+		@Req() req: authenticatedRequest,
+	): Promise<ProblemResponseDto> {
+		const problem = await this.problemService.findOne(id);
+		return new ProblemResponseDto(problem);
 	}
 
 	@ApiOkResponse({ type: ProblemResponseDto })
 	@AllowRole(Role.MEMBER)
+	@UseGuards(JwtAuthGuard, ProblemPublishedGuard)
 	@Get('code/:id')
 	async code(@Param('id') id: number): Promise<ProblemCodeResponseDto> {
-		return new ProblemCodeResponseDto(
-			await this.problemService.findOne(id),
-		);
+		const problem = await this.problemService.findOne(id);
+		return new ProblemCodeResponseDto(problem);
 	}
 
 	@ApiOkResponse({ type: String })
+	@AllowRole(Role.MEMBER)
+	@UseGuards(JwtAuthGuard, ProblemPublishedGuard)
 	@Get('detail/:id')
 	async getDetail(@Param('id') id: number) {
-		return this.problemService.getDetail(id);
+		const problem = await this.problemService.findOne(id);
+		return problem.description || 'No detail available';
 	}
 
 	//-------------------------------------------------------
@@ -136,6 +147,7 @@ export class ProblemController {
 		default: THROTTLE_RUNCODE,
 	})
 	@AllowRole(Role.MEMBER)
+	@UseGuards(JwtAuthGuard, ProblemPublishedGuard)
 	async runCode(
 		@Param('id', ParseIntPipe) id: number,
 		@Body() body: ProblemRunCodeRequest,
@@ -151,6 +163,7 @@ export class ProblemController {
 	@Throttle({
 		default: THROTTLE_RUNCODE,
 	})
+	@UseGuards(JwtAuthGuard, ProblemPublishedGuard)
 	async submission(
 		@Param(
 			'problemId',
