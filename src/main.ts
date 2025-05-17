@@ -26,7 +26,7 @@ async function bootstrap() {
 		credentials: true,
 	});
 
-	app.set('trust proxy', 'loopback');
+	app.set('trust proxy', true);
 
 	const config = new DocumentBuilder()
 		.setTitle('CE-Boostup-XIII-Backend (API)')
