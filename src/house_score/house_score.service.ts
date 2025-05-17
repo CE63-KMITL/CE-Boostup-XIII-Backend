@@ -158,18 +158,13 @@ export class HouseScoreService implements OnModuleInit {
 				: Math.ceil(amount / users.length);
 
 		for (const user of users) {
-			user.score += perUser;
-			if (user.score < 0) {
-				user.score = 0;
-			}
-			await this.userService.update(user.id, user);
+			await this.userService.modifyScore(
+				user.id,
+				perUser,
+				user.id,
+				`แก้ไขคะแนนบ้าน : ${name}`,
+			);
 		}
-
-		house.value += amount;
-		if (house.value < 0) {
-			house.value = 0;
-		}
-		await this.houseRepository.save(house);
 
 		return {
 			message:
