@@ -70,7 +70,7 @@ export class AuthService {
 
 		const userResponse = await this.userService.update(user.id, {
 			password,
-			name: name ?? user.name,
+			name: !name || name.trim() === '' ? user.name : name,
 			isActive: true,
 			otp: null,
 			otpExpires: null,

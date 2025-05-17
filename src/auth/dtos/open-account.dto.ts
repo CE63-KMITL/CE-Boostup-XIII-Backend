@@ -32,7 +32,7 @@ export class OpenAccountDto {
 	})
 	@IsString()
 	@IsOptional()
-	name: string;
+	name?: string;
 }
 
 export class RequestEmailDto {
