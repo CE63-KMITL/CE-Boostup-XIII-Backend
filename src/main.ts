@@ -4,11 +4,12 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { GLOBAL_CONFIG } from './shared/constants/global-config.constant';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
 	const configService = new ConfigService();
 
-	const app = await NestFactory.create(AppModule);
+	const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
 	if (!process.env.FRONT_HOST || process.env.FRONT_HOST == '')
 		process.env.FRONT_HOST =
@@ -24,6 +25,8 @@ async function bootstrap() {
 		allowedHeaders: 'Content-Type, Accept, Authorization',
 		credentials: true,
 	});
+
+	app.set('trust proxy', 'loopback');
 
 	const config = new DocumentBuilder()
 		.setTitle('CE-Boostup-XIII-Backend (API)')
