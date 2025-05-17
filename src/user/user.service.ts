@@ -371,7 +371,7 @@ export class UserService implements OnModuleInit {
 		modifiedById: string,
 		message: string,
 	): Promise<UserResponseDto> {
-		if (amount < 0) {
+		if (amount == 0) {
 			throw new BadRequestException('amount must be a valid number');
 		}
 
