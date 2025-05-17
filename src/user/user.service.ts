@@ -456,14 +456,14 @@ export class UserService implements OnModuleInit {
 	async setProblemStatus(
 		problemId: number,
 		userId: string,
-	): Promise<ProblemStatus> {
+		status: ProblemStatusEnum,
+	): Promise<void> {
 		const userProblem = await this.findOneProblemStatus(
 			userId,
 			problemId,
 		);
-		userProblem.status = ProblemStatusEnum.IN_PROGRESS;
+		userProblem.status = status;
 		await this.problemStatusRepository.save(userProblem);
-		return userProblem;
 	}
 
 	async updateProblemStatus(
@@ -509,6 +509,7 @@ export class UserService implements OnModuleInit {
 					lastSubmitted: new Date(),
 				},
 			);
+
 			if (
 				status === ProblemStatusEnum.DONE &&
 				userProblem?.status !== ProblemStatusEnum.DONE

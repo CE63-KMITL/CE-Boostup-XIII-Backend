@@ -144,7 +144,14 @@ export class ProblemService {
 
 		let importantChanged =
 			JSON.stringify(updateProblemRequest.testCases) !=
-			JSON.stringify(problem.testCases);
+			JSON.stringify(
+				problem.testCases.map((testCase) => {
+					return {
+						input: testCase.input,
+						isHiddenTestcase: testCase.isHiddenTestcase,
+					};
+				}),
+			);
 
 		importantChanged =
 			importantChanged ||
@@ -206,12 +213,10 @@ export class ProblemService {
 			);
 
 			for (const user of users) {
-				await this.userService.updateProblemStatus(
+				await this.userService.setProblemStatus(
 					problem.id,
 					user.id,
 					ProblemStatusEnum.IN_PROGRESS,
-					user.problemStatus[0].code,
-					problem.difficulty,
 				);
 
 				const scoreToRemove = this.calScore(originalDifficulty);
@@ -222,6 +227,8 @@ export class ProblemService {
 					problem.author.id,
 					`โจทย์มีการแก้ไข : ${problem.title}`,
 				);
+
+				await this.problemsRepository.save(problem);
 
 				await this.submission(
 					new ProblemSubmissionDto({

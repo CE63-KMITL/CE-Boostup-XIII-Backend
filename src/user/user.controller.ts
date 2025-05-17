@@ -232,15 +232,6 @@ export class UserController {
 		await this.userService.delete(id);
 	}
 
-	@AllowRole(Role.MEMBER)
-	@Post('setProblemStatus/:id')
-	async tryProblem(
-		@Request() req: authenticatedRequest,
-		@Param('id') id: number,
-	) {
-		return this.userService.setProblemStatus(id, req.user.userId);
-	}
-
 	//-------------------------------------------------------
 	// Problem Code Endpoints
 	//-------------------------------------------------------
