@@ -15,6 +15,7 @@ import {
 	TestCaseResponseDto,
 } from '../test_case/dtos/test-case-response.dto';
 import { Exclude, Filter } from 'src/shared/dto.extension';
+import { ProblemAllowMode } from '../enums/problem-allow-mode.enum';
 
 export class ProblemResponseDto {
 	@ApiProperty({
@@ -109,11 +110,21 @@ export class ProblemResponseDto {
 	})
 	author: UserMediumResponseDto;
 
+	@ApiPropertyOptional({
+		example: ProblemAllowMode.DISALLOWED,
+	})
+	functionMode?: ProblemAllowMode;
+
+	@ApiPropertyOptional({
+		example: ProblemAllowMode.DISALLOWED,
+	})
+	headerMode?: ProblemAllowMode;
+
 	@ApiPropertyOptional({ example: ['string.h'] })
-	disallowHeaders?: string[] = [];
+	headers?: string[] = [];
 
 	@ApiPropertyOptional({ example: ['for'] })
-	disallowFunctions?: string[] = [];
+	functions?: string[] = [];
 
 	constructor(problem: Problem) {
 		this.id = problem.id;
@@ -130,6 +141,10 @@ export class ProblemResponseDto {
 		this.author = new UserMediumResponseDto(problem.author);
 		this.timeLimit = problem.timeLimit;
 		this.solutionCode = problem.solutionCode;
+		this.headers = problem.headers;
+		this.functions = problem.functions;
+		this.functionMode = problem.functionMode;
+		this.headerMode = problem.headerMode;
 	}
 }
 
