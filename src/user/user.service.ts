@@ -512,7 +512,12 @@ export class UserService implements OnModuleInit {
 				userProblem?.status !== ProblemStatusEnum.DONE
 			) {
 				const score = this.problemService.calScore(difficulty);
-				this.modifyScore(userId, score, userId, 'แก้โจทย์');
+				this.modifyScore(
+					userId,
+					score,
+					userId,
+					`แก้โจทย์ ${problemId}. ${userProblem.problem.title}`,
+				);
 			}
 		}
 	}
