@@ -1,66 +1,59 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Redeem } from './redeem.entity';
 import { User } from '../user/user.entity';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
+import { Reward } from './reward.entity';
+import { Role } from 'src/shared/enum/role.enum';
+import { CreateRewardDto } from './dtos/create-reward.dto';
+import { UpdateRewardDto } from './dtos/update-reward.dto';
 
 //Ex .env
 //REWARDS=[{"id":1,"name":"แก้วน้ำ","points":100},{"id":2,"name":"เสื้อยืด","points":250}]
 
 @Injectable()
 export class RewardService {
-	private rewards: { id: string; name: string; points: number }[];
-
 	constructor(
-		private configService: ConfigService,
-
 		@InjectRepository(User)
 		public readonly userRepo: Repository<User>,
 
 		@InjectRepository(Redeem)
 		private redeemRepo: Repository<Redeem>,
-	) {
-		this.rewards = this.configService.getOrThrow(GLOBAL_CONFIG.REWARDS);
+
+		@InjectRepository(Reward)
+		private readonly rewardRepo: Repository<Reward>,
+	) {}
+
+	async getAllRewards() {
+		return await this.rewardRepo.find();
 	}
 
-	getAllRewards() {
-		return this.rewards;
+	async createReward(createRewardDto: CreateRewardDto) {
+		return await this.rewardRepo.save(createRewardDto);
 	}
 
-	// async redeemReward(userId: string, rewardId: string) {
-	//   const reward = this.rewards.find(r => r.id === rewardId);
-	//   let id=userId
-	//   if (!reward) {
-	//       throw new NotFoundException('Reward not found');
-	//   }
-	//   const user = await this.userRepo.findOne({ where: { id } });
-	//   if(!user){
-	//       throw new NotFoundException('User not found');
-	//   }
+	async updateReward(id: string, update: UpdateRewardDto) {
+		const reward = await this.rewardRepo.findOne({ where: { id } });
+		if (!reward) throw new NotFoundException('Reward not found');
+		await this.rewardRepo.update(id, update);
+		return await this.rewardRepo.findOne({ where: { id } });
+	}
 
-	//   if (user.score<reward.points){
-	//       throw new BadRequestException('Insufficient score');
-	//   }
+	async deleteReward(id: string) {
+		const reward = await this.rewardRepo.findOne({ where: { id } });
+		if (!reward) throw new NotFoundException('Reward not found');
+		await this.rewardRepo.delete(id);
+	}
 
-	//   const redeem = this.redeemRepo.create({ userId, rewardId,isApproved: false });
-
-	//   user.rewards.push({ redeemId: redeem.id,rewardId:rewardId});
-	//   await this.userRepo.save(user);
-
-	//   return {
-	//       success: true,
-	//       message: "Redeem created successfully",
-	//       data:this.redeemRepo.save(redeem)
-	//       };
-	//   }
 	async redeemReward(userId: string, rewardId: string) {
 		const user = await this.userRepo.findOneBy({ id: userId });
-		const reward = this.rewards.find((r) => r.id === rewardId);
-
-		if (!user || !reward) throw new NotFoundException();
+		if (!user) throw new NotFoundException('User not found');
+		if (user.role !== Role.MEMBER)
+			throw new BadRequestException('Do not redeem it!');
+		const reward = await this.rewardRepo.findOne({
+			where: { id: rewardId },
+		});
 
 		if (user.score < reward.points) {
 			throw new BadRequestException('คะแนนไม่เพียงพอ');
@@ -92,10 +85,6 @@ export class RewardService {
 			throw new NotFoundException('Redeem not found');
 		}
 
-		// if (redeem.isApproved) {
-		// 	throw new BadRequestException('Cannot cancel this redeem');
-		// }
-
 		await this.redeemRepo.delete(redeem.id);
 
 		return {
@@ -105,30 +94,32 @@ export class RewardService {
 	}
 
 	async getUserRewardStatus(userId: string) {
-		const user = await this.userRepo.findOneBy({ id: userId });
+		const user = await this.userRepo.findOne({
+			where: { id: userId },
+			relations: { redeem: true },
+		});
 		if (!user) throw new NotFoundException('User not found');
 
-		const redeemed = await this.redeemRepo.find({
-			where: { userId },
+		const redeemdId = user.redeem.map((redeem) => redeem.rewardId);
+		const rewards = await this.rewardRepo.find();
+		const availableRewards = rewards.map((reward) => {
+			if (reward.points < user.score && !redeemdId.includes(reward.id))
+				return reward;
+		});
+		const lockedRewards = rewards.map((reward) => {
+			if (reward.points < user.score && !redeemdId.includes(reward.id))
+				return reward;
 		});
 
-		const redeemedIds = redeemed.map((r) => r.rewardId);
-
 		const result = {
-			redeemed: [],
-			available: [],
-			locked: [],
+			redeemed: await Promise.all(
+				user.redeem.map((redeem) =>
+					this.rewardRepo.findOneBy({ id: redeem.rewardId }),
+				),
+			),
+			available: availableRewards,
+			locked: lockedRewards,
 		};
-
-		for (const reward of this.rewards) {
-			if (redeemedIds.filter((r) => r == reward.id).length > 0) {
-				result.redeemed.push(reward);
-			} else if (user.score >= reward.points) {
-				result.available.push(reward);
-			} else {
-				result.locked.push(reward);
-			}
-		}
 
 		return {
 			success: true,
