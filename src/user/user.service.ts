@@ -149,7 +149,9 @@ export class UserService implements OnModuleInit {
 
 		const allUsers = await this.userRepository.find({
 			order: { score: 'DESC' },
+			where: { isActive: true },
 		});
+
 		const rank = allUsers.findIndex((u) => u.id === user.id) + 1;
 
 		const houseScoreResult = await this.houseScoreService.findOne(
