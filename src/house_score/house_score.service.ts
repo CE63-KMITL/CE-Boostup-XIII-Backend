@@ -9,15 +9,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { HouseScore } from './house_score.entity';
 import { House } from 'src/shared/enum/house.enum';
-import { User } from 'src/user/user.entity';
+import { UserService } from 'src/user/user.service';
+import { Role } from 'src/shared/enum/role.enum';
 
 @Injectable()
 export class HouseScoreService implements OnModuleInit {
 	constructor(
 		@InjectRepository(HouseScore)
 		private readonly houseRepository: Repository<HouseScore>,
-		@InjectRepository(User)
-		private readonly userRepository: Repository<User>,
+		private readonly userService: UserService,
 	) {}
 
 	async onModuleInit() {
@@ -135,9 +135,17 @@ export class HouseScoreService implements OnModuleInit {
 		const house = await this.houseRepository.findOneBy({ name });
 		if (!house) throw new NotFoundException('House not found');
 
-		const users = await this.userRepository.find({
-			where: { house: name as House },
-		});
+		const users = await this.userService.findAll(
+			{
+				where: {
+					house: house.name as House,
+					isActive: true,
+					role: Role.MEMBER,
+				},
+			},
+			false,
+		);
+
 		if (users.length === 0) return;
 
 		const perUser = Math.floor(amount / users.length);
@@ -147,8 +155,8 @@ export class HouseScoreService implements OnModuleInit {
 			if (user.score < 0) {
 				user.score = 0;
 			}
+			await this.userService.update(user.id, user);
 		}
-		await this.userRepository.save(users);
 
 		house.value += amount;
 		if (house.value < 0) {
