@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
 	IsArray,
 	IsEnum,
+	IsIn,
 	IsNotEmpty,
 	IsNumber,
 	IsOptional,
@@ -11,7 +12,7 @@ import {
 import { ProblemAllowMode } from '../enums/problem-allow-mode.enum';
 import { CreateTestCase, TestCase } from '../test_case/test-case.object';
 import { Type } from 'class-transformer';
-import { ScoreValue } from '../types/score-value.type';
+import { SCORE_VALUES, ScoreValue } from '../types/score-value.type';
 
 export class CreateProblemDto {
 	@ApiProperty({ example: 'Sample Problem Title' })
@@ -82,6 +83,8 @@ export class CreateProblemDto {
 	@ApiProperty({ example: 3, description: 'Difficulty level (0.5 to 5)' })
 	@IsNumber()
 	@IsOptional()
+	@Type(() => Number)
+	@IsIn(SCORE_VALUES)
 	difficulty: ScoreValue;
 
 	@ApiProperty({ example: ['Basic I/O', 'If - else'] })
