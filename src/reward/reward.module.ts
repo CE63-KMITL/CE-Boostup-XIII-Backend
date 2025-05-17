@@ -5,10 +5,11 @@ import { RewardService } from './reward.service';
 import { Redeem } from './redeem.entity';
 import { UserModule } from 'src/user/user.module';
 import { User } from 'src/user/user.entity';
+import { Reward } from './reward.entity';
 
 @Module({
 	imports: [
-		TypeOrmModule.forFeature([Redeem, User]),
+		TypeOrmModule.forFeature([Redeem, User, Reward]),
 		forwardRef(() => UserModule),
 	],
 	controllers: [RewardController],
