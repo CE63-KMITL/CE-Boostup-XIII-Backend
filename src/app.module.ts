@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -19,6 +19,7 @@ import { HouseScoreModule } from './house_score/house_score.module';
 import { DevUserModule } from './user/dev/user.module.dev';
 import { DevAuthModule } from './auth/dev/auth.module.dev';
 import { RewardModule } from './reward/reward.module';
+import { ThrottlerBehindProxyGuard } from './shared/guards/custom-throttle.guard';
 
 const imports = [
 	UserModule,
@@ -76,7 +77,7 @@ if (process.env.IS_DEVELOPMENT === 'true') {
 		AppService,
 		{
 			provide: APP_GUARD,
-			useClass: ThrottlerGuard,
+			useClass: ThrottlerBehindProxyGuard,
 		},
 	],
 })
