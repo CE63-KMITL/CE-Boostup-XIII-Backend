@@ -251,3 +251,11 @@ export class ProblemCodeResponseDto extends Exclude(ProblemFilteredResponse, [
 		);
 	}
 }
+
+export class ProblemMoreDetailsDto extends Filter(ProblemResponseDto, [
+	'description',
+	'headerMode',
+	'headers',
+	'functionMode',
+	'functions',
+]) {}

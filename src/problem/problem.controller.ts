@@ -24,6 +24,7 @@ import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto
 import { CreateProblemDto } from './dtos/problem-create.dto';
 import {
 	ProblemCodeResponseDto,
+	ProblemMoreDetailsDto,
 	ProblemPaginatedDto,
 	ProblemResponseDto,
 	ProblemSearchedPaginatedDto,
@@ -139,10 +140,10 @@ export class ProblemController {
 	@ApiOkResponse({ type: String })
 	@AllowRole(Role.MEMBER)
 	@UseGuards(JwtAuthGuard, ProblemPublishedGuard)
-	@Get('detail/:id')
-	async getDetail(@Param('id') id: number) {
+	@Get('more-detail/:id')
+	async getMoreDetail(@Param('id') id: number) {
 		const problem = await this.problemService.findOne(id);
-		return problem.description || 'No detail available';
+		return new ProblemMoreDetailsDto(problem);
 	}
 
 	//-------------------------------------------------------
