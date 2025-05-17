@@ -17,7 +17,7 @@ export class UpdateProblemDto {
 	@ApiPropertyOptional({ example: 'Sample Problem Title' })
 	@IsOptional()
 	@IsString()
-	title: string;
+	title?: string;
 
 	@ApiPropertyOptional({ example: 'Sample problem description' })
 	@IsOptional()
@@ -31,7 +31,7 @@ export class UpdateProblemDto {
 	})
 	@IsNumber()
 	@IsOptional()
-	timeLimit?: number = 100;
+	timeLimit?: number;
 
 	@ApiPropertyOptional({
 		example: ProblemAllowMode.DISALLOWED,

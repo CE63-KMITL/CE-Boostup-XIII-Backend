@@ -118,10 +118,6 @@ export class ProblemService {
 	): Promise<Problem> {
 		const problem = await this.findOne(id);
 
-		if (!problem) {
-			throw new NotFoundException(`Problem with ID ${id} not found`);
-		}
-
 		if (problem.author.id !== user.userId) {
 			throw new ForbiddenException(
 				'Must be the owner of the problem to update.',
@@ -129,8 +125,27 @@ export class ProblemService {
 		}
 
 		const originalDifficulty = problem.difficulty;
+		const originalTestCases = problem.testCases;
+		const originalSolutionCode = problem.solutionCode;
+		const originalHeaderMode = problem.headerMode;
+		const originalFunctionMode = problem.functionMode;
+		const originalHeaders = problem.headers;
+		const originalFunctions = problem.functions;
+		const originalTimeLimit = problem.timeLimit;
 
-		if (updateProblemRequest.title) {
+		// Update basic properties first
+		problem.title = updateProblemRequest.title ?? problem.title;
+		problem.description =
+			updateProblemRequest.description ?? problem.description;
+		problem.tags = updateProblemRequest.tags ?? problem.tags;
+		problem.difficulty =
+			updateProblemRequest.difficulty ?? problem.difficulty;
+
+		// Check for duplicate title if title is updated
+		if (
+			updateProblemRequest.title &&
+			updateProblemRequest.title !== problem.title
+		) {
 			const existProblem = await this.problemsRepository.findOneBy({
 				title: updateProblemRequest.title,
 			});
@@ -142,64 +157,95 @@ export class ProblemService {
 			}
 		}
 
-		let importantChanged =
-			JSON.stringify(updateProblemRequest.testCases) !=
+		// Determine if "important" changes occurred
+		let importantChanged = false;
+
+		// Check test cases change (input or isHiddenTestcase)
+		if (
+			JSON.stringify(updateProblemRequest.testCases) !==
 			JSON.stringify(
-				problem.testCases.map((testCase) => {
-					return {
-						input: testCase.input,
-						isHiddenTestcase: testCase.isHiddenTestcase,
-					};
-				}),
-			);
+				originalTestCases.map((tc) => ({
+					input: tc.input,
+					isHiddenTestcase: tc.isHiddenTestcase,
+				})),
+			)
+		) {
+			importantChanged = true;
+			// Map CreateTestCase[] to TestCase[] with undefined expectOutput initially
+			problem.testCases = updateProblemRequest.testCases.map((tc) => ({
+				input: tc.input,
+				isHiddenTestcase: tc.isHiddenTestcase,
+				expectOutput: undefined, // Initialize expectOutput as undefined
+			}));
+		}
 
-		importantChanged =
-			importantChanged ||
-			(updateProblemRequest.solutionCode &&
-				problem.solutionCode &&
-				updateProblemRequest.solutionCode.trim() !=
-					problem.solutionCode.trim());
+		// Check solution code change
+		if (
+			updateProblemRequest.solutionCode &&
+			updateProblemRequest.solutionCode.trim() !==
+				(originalSolutionCode?.trim() ?? '')
+		) {
+			importantChanged = true;
+			problem.solutionCode = updateProblemRequest.solutionCode; // Update solution code immediately if changed
+		}
 
-		importantChanged =
-			importantChanged ||
-			updateProblemRequest?.headerMode !== problem.headerMode ||
-			updateProblemRequest?.functionMode !== problem.functionMode;
+		// Check mode changes
+		if (
+			updateProblemRequest.headerMode !== originalHeaderMode ||
+			updateProblemRequest.functionMode !== originalFunctionMode
+		) {
+			importantChanged = true;
+			problem.headerMode = updateProblemRequest.headerMode;
+			problem.functionMode = updateProblemRequest.functionMode;
+		}
 
-		importantChanged =
-			importantChanged ||
-			JSON.stringify(updateProblemRequest.headers) !=
-				JSON.stringify(problem.headers);
+		// Check headers change
+		if (
+			JSON.stringify(updateProblemRequest.headers) !==
+			JSON.stringify(originalHeaders)
+		) {
+			importantChanged = true;
+			problem.headers = updateProblemRequest.headers;
+		}
 
-		importantChanged =
-			importantChanged ||
-			JSON.stringify(updateProblemRequest.functions) !=
-				JSON.stringify(problem.functions);
+		// Check functions change
+		if (
+			JSON.stringify(updateProblemRequest.functions) !==
+			JSON.stringify(originalFunctions)
+		) {
+			importantChanged = true;
+			problem.functions = updateProblemRequest.functions;
+		}
 
-		importantChanged =
-			importantChanged ||
-			problem.testCases.filter((testCase) => testCase.expectOutput)
-				.length !== problem.testCases.length;
+		// Check time limit change
+		if (updateProblemRequest.timeLimit !== originalTimeLimit) {
+			importantChanged = true;
+			problem.timeLimit = updateProblemRequest.timeLimit;
+		}
 
-		Object.assign(problem, updateProblemRequest);
+		// Check if any existing test case was missing expectOutput (implies it needs recalculation)
+		if (originalTestCases.some((tc) => !tc.expectOutput)) {
+			importantChanged = true;
+		}
 
 		if (importantChanged) {
 			problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
 
-			problem.timeLimit =
-				updateProblemRequest.timeLimit ?? problem.timeLimit;
-			problem.solutionCode =
-				updateProblemRequest.solutionCode ?? problem.solutionCode;
-
-			await this.checkSameTestCase(problem);
-
+			// Re-calculate expectOutput for all test cases
+			await this.checkSameTestCase(problem); // Clean up duplicate test cases
 			try {
 				await this.fillExpectOutput(problem);
 			} catch (error) {
-				await this.problemsRepository.save(problem);
+				// Save the problem state before throwing the error
+				await this.problemsRepository.save(problem); // Use save instead of update to handle relations/test cases
 				throw error;
 			}
 
-			const users = await this.userService.findAll(
+			// Save the problem here so submission uses the updated data
+			await this.problemsRepository.save(problem);
+
+			// Find users who completed the problem based on the OLD state
+			const usersToReset = await this.userService.findAll(
 				{
 					where: {
 						problemStatus: {
@@ -212,45 +258,46 @@ export class ProblemService {
 				false,
 			);
 
-			for (const user of users) {
-				await this.userService.setProblemStatus(
-					problem.id,
-					user.id,
-					ProblemStatusEnum.IN_PROGRESS,
-				);
-
+			// Reset status and score for users who completed the problem
+			for (const userToReset of usersToReset) {
+				// Calculate score to remove based on the ORIGINAL difficulty
 				const scoreToRemove = this.calScore(originalDifficulty);
 
 				await this.userService.modifyScore(
-					user.id,
+					userToReset.id,
 					-scoreToRemove,
 					problem.author.id,
 					`โจทย์มีการแก้ไข : ${problem.title}`,
 				);
 
-				await this.problemsRepository.save(problem);
-
-				await this.submission(
-					new ProblemSubmissionDto({
-						code: user.problemStatus[0].code,
-					}),
-					user.id,
+				await this.userService.setProblemStatus(
 					problem.id,
+					userToReset.id,
+					ProblemStatusEnum.IN_PROGRESS,
 				);
-			}
-		}
 
-		//-------------------------------------------------------
-		// Handle difficulty update (only if solution code didn't change)
-		//-------------------------------------------------------
-		if (
-			!importantChanged &&
-			updateProblemRequest.difficulty &&
-			updateProblemRequest.difficulty !== originalDifficulty
-		) {
+				// Re-submit their code - this will update their status and score based on the NEW problem state
+				// Need to find the specific problemStatus entry for this problem and user
+				const userProblemStatusEntry =
+					userToReset.problemStatus.find(
+						(ps) => ps.problemId === problem.id,
+					);
+				if (userProblemStatusEntry) {
+					await this.submission(
+						new ProblemSubmissionDto({
+							code: userProblemStatusEntry.code,
+						}),
+						userToReset.id,
+						problem.id,
+					);
+				}
+			}
+		} else if (updateProblemRequest.difficulty !== originalDifficulty) {
+			// Only difficulty changed, and no important changes occurred
 			const newDifficulty = updateProblemRequest.difficulty;
 
-			const users = await this.userService.findAll(
+			// Find users who completed the problem
+			const usersToAdjustScore = await this.userService.findAll(
 				{
 					where: {
 						problemStatus: {
@@ -263,28 +310,31 @@ export class ProblemService {
 				false,
 			);
 
-			for (const user of users) {
-				const scoreToRemove = this.calScore(originalDifficulty);
-				await this.userService.modifyScore(
-					user.id,
-					-scoreToRemove,
-					problem.author.id,
-					`โจทย์มีการปรับความยาก : ${problem.title}`,
-				);
+			const scoreDifference =
+				this.calScore(newDifficulty) -
+				this.calScore(originalDifficulty);
 
-				const scoreToAdd = this.calScore(newDifficulty);
-				await this.userService.modifyScore(
-					user.id,
-					scoreToAdd,
-					problem.author.id,
-					`โจทย์มีการปรับความยาก : ${problem.title}`,
-				);
+			// Adjust score for users who completed the problem
+			// Only modify score if there is a difference
+			if (scoreDifference !== 0) {
+				for (const userToAdjust of usersToAdjustScore) {
+					await this.userService.modifyScore(
+						userToAdjust.id,
+						scoreDifference,
+						problem.author.id,
+						`โจทย์มีการปรับความยาก : ${problem.title}`,
+					);
+				}
 			}
-
-			problem.difficulty = newDifficulty;
 		}
 
-		return await this.problemsRepository.save(problem);
+		// Save the problem entity after all updates and side effects
+		// This save is needed for basic property updates or if only difficulty changed
+		// If importantChanged was true, the problem was already saved after fillExpectOutput
+		// However, saving again here is harmless and ensures the final state is persisted.
+		await this.problemsRepository.save(problem);
+
+		return problem; // Return the updated problem entity
 	}
 
 	async remove(id: number): Promise<void> {
