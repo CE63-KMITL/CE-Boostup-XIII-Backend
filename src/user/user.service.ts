@@ -390,8 +390,10 @@ export class UserService implements OnModuleInit {
 			where: { id: modifiedById },
 		});
 
+		let oldUserScore = user.score;
 		user.score += amount;
 		if (user.score < 0) user.score = 0;
+		amount = user.score - oldUserScore;
 
 		const scoreLog = new ScoreLog();
 		scoreLog.amount = amount;
