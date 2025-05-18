@@ -24,6 +24,7 @@ export class HouseScoreController {
 	constructor(private readonly scoreService: HouseScoreService) {}
 
 	@Post()
+	@AllowRole(Role.DEV)
 	@ApiOperation({ summary: 'Create a new house score' })
 	@ApiResponse({ status: 201, description: 'Score created successfully' })
 	@ApiResponse({ status: 400, description: 'Bad request' })
@@ -36,6 +37,7 @@ export class HouseScoreController {
 	}
 
 	@Put(':name')
+	@AllowRole(Role.STAFF)
 	@ApiOperation({ summary: 'Update house score' })
 	@ApiResponse({ status: 200, description: 'Score updated successfully' })
 	@ApiResponse({ status: 404, description: 'House not found' })
@@ -51,6 +53,7 @@ export class HouseScoreController {
 	}
 
 	@Get(':name')
+	@AllowRole(Role.MEMBER)
 	@ApiOperation({ summary: 'Get score by house name' })
 	@ApiResponse({ status: 200, description: 'Returns the house score' })
 	@ApiResponse({ status: 404, description: 'House not found' })
@@ -63,6 +66,7 @@ export class HouseScoreController {
 	}
 
 	@Get()
+	@AllowRole(Role.MEMBER)
 	@ApiOperation({ summary: 'Get all house scores' })
 	@ApiResponse({ status: 200, description: 'Returns all house scores' })
 	async findAll(@Query() query: QueryHouseScoreDto) {
@@ -74,6 +78,7 @@ export class HouseScoreController {
 	}
 
 	@Delete(':name')
+	@AllowRole(Role.DEV)
 	@ApiOperation({ summary: 'Delete house score' })
 	@ApiResponse({ status: 200, description: 'Score deleted successfully' })
 	@ApiResponse({ status: 404, description: 'House not found' })

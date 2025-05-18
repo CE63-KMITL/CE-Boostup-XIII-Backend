@@ -112,6 +112,7 @@ export class UserController {
 	}
 
 	@Get('score/:id')
+	@AllowRole(Role.MEMBER)
 	@ApiResponse({
 		status: HttpStatus.OK,
 		description: 'Get user score by id',
@@ -194,6 +195,7 @@ export class UserController {
 	}
 
 	@Patch(':id')
+	@AllowRole(Role.DEV)
 	@ApiResponse({
 		status: HttpStatus.OK,
 		description: 'Update a user by id',
@@ -215,6 +217,7 @@ export class UserController {
 	}
 
 	@Delete(':id')
+	@AllowRole(Role.DEV)
 	@HttpCode(HttpStatus.NO_CONTENT)
 	@ApiResponse({
 		status: HttpStatus.NO_CONTENT,
