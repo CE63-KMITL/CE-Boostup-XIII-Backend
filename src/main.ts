@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { GLOBAL_CONFIG } from './shared/constants/global-config.constant';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { ThrottleExceptionFilter } from './shared/filters/throttle-exception.filter';
 
 async function bootstrap() {
 	const configService = new ConfigService();
@@ -54,6 +55,7 @@ async function bootstrap() {
 			forbidNonWhitelisted: true,
 		}),
 	);
+	app.useGlobalFilters(new ThrottleExceptionFilter());
 	await app.listen(configService.get<string>(GLOBAL_CONFIG.PORT) ?? 3000);
 }
 bootstrap();

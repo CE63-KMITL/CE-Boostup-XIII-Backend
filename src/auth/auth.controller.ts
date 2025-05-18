@@ -49,13 +49,6 @@ export class AuthController {
 		description: 'mail send',
 	})
 	@HttpCode(HttpStatus.NO_CONTENT)
-	@Throttle({
-		default: {
-			ttl: 60 * 1000,
-			limit: 1,
-			blockDuration: 60 * 1000,
-		},
-	})
 	async requestOpenAccount(@Body() body: RequestEmailDto): Promise<void> {
 		await this.authService.requestOpenAccount(body.email);
 	}

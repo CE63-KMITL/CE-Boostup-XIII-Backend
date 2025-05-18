@@ -27,7 +27,7 @@ export class MailService implements OnModuleInit {
 	}
 
 	async onModuleInit() {
-		const templatePath = path.join(__dirname, '..', 'email.html');
+		const templatePath = path.join(__dirname, '../..', 'email.html');
 		try {
 			this.emailTemplate = readFileSync(templatePath, 'utf-8');
 		} catch (error) {
@@ -44,9 +44,11 @@ export class MailService implements OnModuleInit {
 
 		if (exists) {
 			const ttl = await this.redis.ttl(throttleKey);
-			throw new ThrottlerException(
-				`Too many requests with this mail. Please try again in ${ttl} seconds`,
-			);
+			return {
+				success: false,
+				message: `Please wait ${ttl} seconds before sending another email.`,
+				ttl,
+			};
 		}
 
 		await this.redis.set(throttleKey, '1', 'EX', this.THROTTLE_TTL);
@@ -56,6 +58,7 @@ export class MailService implements OnModuleInit {
 			{ ...mail },
 			{ removeOnComplete: true, removeOnFail: false },
 		);
+		return { success: true };
 	}
 
 	generateEmailHtml(variables: EmailTemplateVariables): string {
