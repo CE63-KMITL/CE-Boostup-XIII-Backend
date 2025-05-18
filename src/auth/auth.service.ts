@@ -19,6 +19,7 @@ import { MailService } from 'src/mail/mail.service';
 import { OpenAccountDto, RequestEmailDto } from './dtos/open-account.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { MailOptions } from 'src/mail/interfaces/mail.type';
+import { ThrottlerException } from '@nestjs/throttler';
 
 @Injectable()
 export class AuthService {
@@ -195,11 +196,9 @@ export class AuthService {
      */
 
 	private async sendOtp(option: MailOptions): Promise<void> {
-		try {
-			await this.mailservice.sendMail(option);
-		} catch (error) {
-			console.error(error);
-			throw new BadRequestException('fail to send mail');
+		const result = await this.mailservice.sendMail(option);
+		if (!result.success) {
+			throw new ThrottlerException(result.message);
 		}
 	}
 

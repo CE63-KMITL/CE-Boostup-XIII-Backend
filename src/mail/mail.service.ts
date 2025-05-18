@@ -7,19 +7,27 @@ import * as path from 'path';
 import { ConfigService } from '@nestjs/config';
 import { GLOBAL_CONFIG } from 'src/shared/constants/global-config.constant';
 import { EmailTemplateVariables } from './interfaces/templated-mail';
+import { ThrottlerException } from '@nestjs/throttler';
+import Redis from 'ioredis';
+import { RedisService } from '@liaoliaots/nestjs-redis';
 
 @Injectable()
 export class MailService implements OnModuleInit {
 	private emailTemplate: string;
+	private readonly THROTTLE_TTL = 60;
+	private readonly redis: Redis | null;
 
 	constructor(
 		@InjectQueue('mailQueue')
 		private readonly mailQueue: Queue<MailOptions>,
 		private readonly confgiService: ConfigService,
-	) {}
+		private readonly redisService: RedisService,
+	) {
+		this.redis = this.redisService.getOrThrow();
+	}
 
 	async onModuleInit() {
-		const templatePath = path.join(__dirname, '..', 'email.html');
+		const templatePath = path.join(__dirname, '../..', 'email.html');
 		try {
 			this.emailTemplate = readFileSync(templatePath, 'utf-8');
 		} catch (error) {
@@ -31,11 +39,26 @@ export class MailService implements OnModuleInit {
 	}
 
 	async sendMail(mail: MailOptions) {
+		const throttleKey = `email:${mail.to}`;
+		const exists = await this.redis.exists(throttleKey);
+
+		if (exists) {
+			const ttl = await this.redis.ttl(throttleKey);
+			return {
+				success: false,
+				message: `Please wait ${ttl} seconds before sending another email.`,
+				ttl,
+			};
+		}
+
+		await this.redis.set(throttleKey, '1', 'EX', this.THROTTLE_TTL);
+
 		await this.mailQueue.add(
 			'sendMail',
 			{ ...mail },
 			{ removeOnComplete: true, removeOnFail: false },
 		);
+		return { success: true };
 	}
 
 	generateEmailHtml(variables: EmailTemplateVariables): string {

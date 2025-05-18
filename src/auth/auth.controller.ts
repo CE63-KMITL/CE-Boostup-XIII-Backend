@@ -26,8 +26,8 @@ import { RegisterUserDto } from './dtos/register-user.dto';
 import { Throttle } from '@nestjs/throttler';
 import { RolesGuard } from 'src/shared/guards/roles.guard';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
-import { AllowRole } from 'src/shared/decorators/auth.decorator';
 import { Role } from 'src/shared/enum/role.enum';
+import { AllowRole } from 'src/shared/decorators/auth.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -49,13 +49,6 @@ export class AuthController {
 		description: 'mail send',
 	})
 	@HttpCode(HttpStatus.NO_CONTENT)
-	@Throttle({
-		default: {
-			ttl: 60 * 1000,
-			limit: 1,
-			blockDuration: 60 * 1000,
-		},
-	})
 	async requestOpenAccount(@Body() body: RequestEmailDto): Promise<void> {
 		await this.authService.requestOpenAccount(body.email);
 	}
