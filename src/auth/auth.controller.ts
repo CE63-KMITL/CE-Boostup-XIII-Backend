@@ -26,6 +26,8 @@ import { RegisterUserDto } from './dtos/register-user.dto';
 import { Throttle } from '@nestjs/throttler';
 import { RolesGuard } from 'src/shared/guards/roles.guard';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
+import { Role } from 'src/shared/enum/role.enum';
+import { AllowRole } from 'src/shared/decorators/auth.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -91,7 +93,7 @@ export class AuthController {
 		description: 'Registeration successfull',
 	})
 	@ApiResponse({ status: 400, description: 'Bad Request.' })
-	// @AllowRole(Role.DEV) มาเอาออกด้วย
+	@AllowRole(Role.DEV)
 	async register(
 		@Body() user: RegisterUserDto,
 	): Promise<{ message: string }> {

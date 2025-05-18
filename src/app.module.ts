@@ -20,6 +20,8 @@ import { DevUserModule } from './user/dev/user.module.dev';
 import { DevAuthModule } from './auth/dev/auth.module.dev';
 import { RewardModule } from './reward/reward.module';
 import { ThrottlerBehindProxyGuard } from './shared/guards/custom-throttle.guard';
+import { RedisModule } from '@liaoliaots/nestjs-redis';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 
 const imports = [
 	UserModule,
@@ -30,12 +32,19 @@ const imports = [
 	HouseScoreModule,
 	AuthModule,
 	RewardModule,
-	ThrottlerModule.forRoot([
-		{
-			ttl: 10000,
-			limit: 50,
-		},
-	]),
+	ThrottlerModule.forRootAsync({
+		imports: [ConfigModule],
+		inject: [ConfigService],
+		useFactory: (configService: ConfigService) => ({
+			throttlers: [{ ttl: 10000, limit: 50 }],
+			storage: new ThrottlerStorageRedisService({
+				host: configService.getOrThrow<string>(
+					GLOBAL_CONFIG.REDIS_HOST,
+				),
+				port: 6379,
+			}),
+		}),
+	}),
 	ConfigModule.forRoot({
 		isGlobal: true,
 		validationSchema: dotenvConfig,
@@ -62,6 +71,18 @@ const imports = [
 			),
 		}),
 		inject: [ConfigService],
+	}),
+	RedisModule.forRootAsync({
+		imports: [ConfigModule],
+		inject: [ConfigService],
+		useFactory: (configService: ConfigService) => ({
+			config: {
+				host: configService.getOrThrow<string>(
+					GLOBAL_CONFIG.REDIS_HOST,
+				),
+				port: 6379,
+			},
+		}),
 	}),
 ];
 

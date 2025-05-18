@@ -198,6 +198,9 @@ export class AuthService {
 		try {
 			await this.mailservice.sendMail(option);
 		} catch (error) {
+			if (error instanceof Error) {
+				throw Error;
+			}
 			console.error(error);
 			throw new BadRequestException('fail to send mail');
 		}
