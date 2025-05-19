@@ -148,9 +148,10 @@ export class UserService implements OnModuleInit {
 		}
 
 		const allUsers = await this.userRepository
-			.createQueryBuilder('entity')
-			.where('entity.isActive = true')
-			.orderBy('entity.score', 'DESC')
+			.createQueryBuilder('user')
+			.where('user.isActive = true')
+			.orderBy('user.score', 'DESC')
+			.addOrderBy('user.name', 'ASC')
 			.getMany();
 
 		const rank = allUsers.findIndex((u) => u.id === user.id) + 1;
@@ -222,6 +223,9 @@ export class UserService implements OnModuleInit {
 
 		if (orderByScore !== undefined) {
 			users.orderBy('entity.score', orderByScore ? 'DESC' : 'ASC');
+			users.addOrderBy('entity.name', 'ASC');
+		} else {
+			users.orderBy('entity.name', 'ASC');
 		}
 
 		if (!!house) users.andWhere('entity.house  = :house', { house });
