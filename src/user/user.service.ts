@@ -147,16 +147,18 @@ export class UserService implements OnModuleInit {
 			throw new NotFoundException('User not found');
 		}
 
-		const allUsers = await this.userRepository.find({
-			order: { score: 'DESC' },
-			where: { isActive: true },
-		});
+		const allUsers = await this.userRepository
+			.createQueryBuilder('entity')
+			.where('entity.isActive = true')
+			.orderBy('entity.score', 'DESC')
+			.getMany();
 
 		const rank = allUsers.findIndex((u) => u.id === user.id) + 1;
 
 		const houseScoreResult = await this.houseScoreService.findOne(
 			user.house,
 		);
+
 		const houseScore = houseScoreResult.data?.value ?? 0;
 
 		const allHousesResult =
