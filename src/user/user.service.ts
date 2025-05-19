@@ -150,6 +150,9 @@ export class UserService implements OnModuleInit {
 		const allUsers = await this.userRepository
 			.createQueryBuilder('user')
 			.where('user.isActive = true')
+			.andWhere('user.role IN (:...roles)', {
+				roles: [Role.MEMBER, Role.STAFF],
+			})
 			.orderBy('user.score', 'DESC')
 			.addOrderBy('user.name', 'ASC')
 			.getMany();
