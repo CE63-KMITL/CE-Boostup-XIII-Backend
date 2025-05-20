@@ -3,20 +3,12 @@ import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AllowRole } from 'src/shared/decorators/auth.decorator';
 import { Role } from 'src/shared/enum/role.enum';
 import { MailService } from 'src/mail/mail.service';
-import { UserService } from 'src/user/user.service';
-import { AutoSendMailDto } from './dtos/auto-send-mail';
-import { AuthService } from '../auth.service';
-import { IsNull } from 'typeorm';
 import { SendTemplatedMailDto } from './dtos/send-templated-mail.dto';
 
 @ApiTags('Auth (DEV)')
 @Controller('dev/auth/')
 export class DevAuthController {
-	constructor(
-		private readonly mailService: MailService,
-		private readonly userService: UserService,
-		private readonly authService: AuthService,
-	) {}
+	constructor(private readonly mailService: MailService) {}
 
 	/*
 	-------------------------------------------------------
@@ -63,39 +55,6 @@ export class DevAuthController {
 	})
 	getall() {
 		return 'everyone can see this (MEMBER or DEV)';
-	}
-
-	@Post('auto-send-mail')
-	@AllowRole(Role.DEV)
-	async autoSendMail(@Body() body: AutoSendMailDto) {
-		const users = await this.userService.findAll(
-			{ where: { role: body.role, password: IsNull() } },
-			false,
-		);
-
-		if (users.length === 0) return 'No user found';
-
-		console.log(users);
-
-		const result = [];
-
-		for (const user of users) {
-			try {
-				await this.authService.requestOpenAccount(user.email);
-				result.push({
-					email: user.email,
-					status: 'success',
-				});
-			} catch (error) {
-				result.push({
-					email: user.email,
-					status: 'fail',
-					message: error.message,
-				});
-			}
-		}
-
-		return result;
 	}
 
 	@Post('email')

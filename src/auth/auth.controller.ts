@@ -23,16 +23,21 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { authenticatedRequest } from './interfaces/authenticated-request.interface';
 import { AuthResponseDto } from './dtos/auth-response.dto';
 import { RegisterUserDto } from './dtos/register-user.dto';
-import { Throttle } from '@nestjs/throttler';
 import { RolesGuard } from 'src/shared/guards/roles.guard';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { Role } from 'src/shared/enum/role.enum';
 import { AllowRole } from 'src/shared/decorators/auth.decorator';
+import { IsNull } from 'typeorm';
+import { AutoSendMailDto } from './dev/dtos/auto-send-mail';
+import { UserService } from 'src/user/user.service';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-	constructor(private readonly authService: AuthService) {}
+	constructor(
+		private readonly authService: AuthService,
+		private readonly userService: UserService,
+	) {}
 
 	/*
 	-------------------------------------------------------
@@ -103,6 +108,39 @@ export class AuthController {
 	@ApiResponse({ status: 400, description: 'Bad Request.' })
 	async registerOpenAccount(@Body() user: RequestEmailDto): Promise<void> {
 		await this.authService.registerOpenAccount(user);
+	}
+
+	@Post('auto-send-mail')
+	@AllowRole(Role.DEV)
+	async autoSendMail(@Body() body: AutoSendMailDto) {
+		const users = await this.userService.findAll(
+			{ where: { role: body.role, password: IsNull() } },
+			false,
+		);
+
+		if (users.length === 0) return 'No user found';
+
+		console.log(users);
+
+		const result = [];
+
+		for (const user of users) {
+			try {
+				await this.authService.requestOpenAccount(user.email);
+				result.push({
+					email: user.email,
+					status: 'success',
+				});
+			} catch (error) {
+				result.push({
+					email: user.email,
+					status: 'fail',
+					message: error.message,
+				});
+			}
+		}
+
+		return result;
 	}
 	/*
 	-------------------------------------------------------
