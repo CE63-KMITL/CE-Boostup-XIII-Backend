@@ -5,7 +5,10 @@ import {
 	IsOptional,
 	IsNumber,
 	Matches,
+	IsEnum,
 } from 'class-validator';
+import { Role } from '../../shared/enum/role.enum';
+import { House } from 'src/shared/enum/house.enum';
 
 export class UpdateUserDto {
 	@IsString()
@@ -52,4 +55,18 @@ export class UpdateUserDto {
 		type: String,
 	})
 	studentId?: string;
+
+	@IsOptional()
+	@IsEnum(Role)
+	role?: Role;
+
+	@IsOptional()
+	@IsEnum(House)
+	@ApiPropertyOptional({
+		example: House.BARBARIAN,
+		description: 'House',
+		enum: House,
+		type: String,
+	})
+	house?: House;
 }
