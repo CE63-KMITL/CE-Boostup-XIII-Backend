@@ -63,6 +63,11 @@ async function bootstrap() {
 		}
 
 		const authHeader = req.headers.authorization;
+		if (!authHeader) {
+			res.status(404).send('Not Found');
+			return;
+		}
+
 		const [authType, encodedCredentials] = authHeader.split(' ');
 
 		let decodedCredentials;
