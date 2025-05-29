@@ -12,7 +12,7 @@ import { Role } from 'src/shared/enum/role.enum';
 import { createPaginationQuery } from 'src/shared/pagination/create-pagination';
 import { PaginationMetaDto } from 'src/shared/pagination/dto/pagination-meta.dto';
 import { UserService } from 'src/user/user.service';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { CreateProblemDto } from './dtos/problem-create.dto';
 import { ProblemSearchQueryDto } from './dtos/problem-query.dto';
 import {
@@ -374,17 +374,30 @@ export class ProblemService {
 		searchProblems.leftJoinAndSelect('entity.author', 'author');
 
 		if (!!author) {
-			searchProblems.andWhere('author.name ILIKE :author', {
-				author: `%${author}%`,
-			});
+			searchProblems.andWhere(
+				'LOWER(author.name) LIKE LOWER(:author)',
+				{
+					author: `%${author}%`,
+				},
+			);
 		}
 
 		if (searchText) {
+			const numericSearchText = parseInt(searchText, 10);
+			const isNumeric = !isNaN(numericSearchText);
+
 			searchProblems.andWhere(
-				'(LOWER(author.name) LIKE LOWER(:term) OR LOWER(entity.title) LIKE LOWER(:term))',
-				{
-					term: `%${searchText}%`,
-				},
+				new Brackets((qb) => {
+					qb.where(
+						'(LOWER(author.name) LIKE LOWER(:term) OR LOWER(entity.title) LIKE LOWER(:term))',
+						{ term: `%${searchText}%` },
+					);
+					if (isNumeric) {
+						qb.orWhere('entity.id = :idParam', {
+							idParam: numericSearchText,
+						});
+					}
+				}),
 			);
 		}
 
