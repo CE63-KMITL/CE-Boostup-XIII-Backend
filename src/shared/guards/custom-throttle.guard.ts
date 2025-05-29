@@ -29,8 +29,6 @@ export class ThrottlerBehindProxyGuard extends ThrottlerGuard {
 			.switchToHttp()
 			.getRequest<authenticatedRequest & Request>();
 
-		console.log(request);
-
 		if (request.user && request.user.role === Role.DEV) {
 			return true;
 		}
