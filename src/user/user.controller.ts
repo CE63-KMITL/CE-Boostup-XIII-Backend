@@ -1,4 +1,5 @@
 import {
+	BadRequestException,
 	Body,
 	Controller,
 	Delete,
@@ -37,11 +38,15 @@ import { AllowRole } from 'src/shared/decorators/auth.decorator';
 import { UploadIconDto } from './dtos/upload-icon.dto';
 import { SetUserNameDto } from './dtos/set-user-name.dto';
 import { Throttle } from '@nestjs/throttler';
+import { AuthService } from '../auth/auth.service';
 
 @Controller('user')
 @ApiTags('User')
 export class UserController {
-	constructor(private readonly userService: UserService) {}
+	constructor(
+		private readonly userService: UserService,
+		private readonly authService: AuthService,
+	) {}
 
 	//-------------------------------------------------------
 	// Public Endpoints
@@ -76,16 +81,25 @@ export class UserController {
 	//-------------------------------------------------------
 
 	@Get('data')
-	@AllowRole(Role.MEMBER)
+	@AllowRole(Role.DEV)
 	@ApiResponse({
 		status: HttpStatus.OK,
 		description: 'Get user data for front-end server',
 		type: UserFrontDataResponseDto,
 	})
 	async getData(
-		@Request() req: authenticatedRequest,
+		@Query('user_token') userToken?: string,
 	): Promise<UserFrontDataResponseDto> {
-		return await this.userService.getData(req.user.userId);
+		if (userToken) {
+			const targetUserPayload =
+				await this.authService.validateUserTokenAndGetUser(
+					userToken,
+				);
+			return await this.userService.getData(targetUserPayload.userId);
+		}
+		throw new BadRequestException(
+			"'user_token' query parameter is required for this operation.",
+		);
 	}
 
 	@Get('full-data/:id')

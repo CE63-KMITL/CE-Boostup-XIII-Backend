@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { GLOBAL_CONFIG } from './shared/constants/global-config.constant';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { Request, Response, NextFunction } from 'express';
 import { ThrottleExceptionFilter } from './shared/filters/throttle-exception.filter';
 
 async function bootstrap() {
@@ -43,8 +44,56 @@ async function bootstrap() {
 		)
 		.build();
 
+	//-------------------------------------------------------
+	// Swagger Docs Authentication Middleware
+	//-------------------------------------------------------
+	const swaggerAuthMiddleware = (
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	) => {
+		const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+		const ADMIN_PASS = process.env.ADMIN_PASS;
+
+		if (!ADMIN_EMAIL || !ADMIN_PASS) {
+			console.error(
+				'Error: ADMIN_EMAIL or ADMIN_PASS not set in environment variables for /docs route.',
+			);
+			return;
+		}
+
+		const authHeader = req.headers.authorization;
+		const [authType, encodedCredentials] = authHeader.split(' ');
+
+		let decodedCredentials;
+		try {
+			decodedCredentials = Buffer.from(
+				encodedCredentials,
+				'base64',
+			).toString();
+		} catch (error) {
+			console.error(
+				'Error decoding base64 credentials for /docs:',
+				error,
+			);
+			res.status(404).send('Not Found');
+			return;
+		}
+
+		const [username, password] = decodedCredentials.split(':', 2);
+
+		if (username === ADMIN_EMAIL && password === ADMIN_PASS) {
+			next();
+		} else {
+			res.status(404).send('Not Found');
+		}
+	};
+
+	app.use(['/docs', '/docs-json', '/docs-yaml'], swaggerAuthMiddleware);
+
 	const documentFactory = SwaggerModule.createDocument(app, config);
 	SwaggerModule.setup('docs', app, documentFactory);
+
 	app.useGlobalPipes(
 		new ValidationPipe({
 			disableErrorMessages: !configService.getOrThrow<boolean>(

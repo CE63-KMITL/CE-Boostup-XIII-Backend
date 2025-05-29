@@ -21,6 +21,7 @@ import { DevAuthModule } from './auth/dev/auth.module.dev';
 import { RewardModule } from './reward/reward.module';
 import { ThrottlerBehindProxyGuard } from './shared/guards/custom-throttle.guard';
 import { RedisModule } from '@liaoliaots/nestjs-redis';
+import { JwtPublicAuthGuard } from './auth/jwt-auth.guard';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 
 const imports = [
@@ -96,6 +97,10 @@ if (process.env.IS_DEVELOPMENT === 'true') {
 	controllers: [AppController],
 	providers: [
 		AppService,
+		{
+			provide: APP_GUARD,
+			useClass: JwtPublicAuthGuard,
+		},
 		{
 			provide: APP_GUARD,
 			useClass: ThrottlerBehindProxyGuard,

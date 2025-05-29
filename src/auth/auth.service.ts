@@ -20,6 +20,7 @@ import { OpenAccountDto, RequestEmailDto } from './dtos/open-account.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { MailOptions } from 'src/mail/interfaces/mail.type';
 import { ThrottlerException } from '@nestjs/throttler';
+import { jwtPayloadDto } from './dtos/jwt-payload.dto';
 
 @Injectable()
 export class AuthService {
@@ -189,6 +190,43 @@ export class AuthService {
 		});
 	}
 
+	//-------------------------------------------------------
+	// Token Validation Helper
+	//-------------------------------------------------------
+	public async validateUserTokenAndGetUser(
+		token: string,
+	): Promise<jwtPayloadDto> {
+		if (!token) {
+			throw new BadRequestException('User token is required.');
+		}
+		try {
+			const payload = jwt.verify(
+				token,
+				this.configService.getOrThrow<string>(
+					GLOBAL_CONFIG.TOKEN_KEY,
+				),
+			) as jwtPayloadDto;
+
+			if (!payload || !payload.userId) {
+				throw new UnauthorizedException(
+					'Invalid user token: User ID missing in token payload.',
+				);
+			}
+			return payload;
+		} catch (error) {
+			if (error instanceof jwt.JsonWebTokenError) {
+				throw new UnauthorizedException(
+					`Invalid user token: ${error.message}`,
+				);
+			}
+			if (error instanceof jwt.TokenExpiredError) {
+				throw new UnauthorizedException('User token has expired.');
+			}
+			throw new UnauthorizedException(
+				error.message || 'Failed to validate user token.',
+			);
+		}
+	}
 	/*
      -------------------------------------------------------
      Helper methods
