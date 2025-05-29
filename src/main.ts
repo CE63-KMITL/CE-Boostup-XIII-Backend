@@ -96,6 +96,11 @@ async function bootstrap() {
 
 	app.use(['/docs', '/docs-json', '/docs-yaml'], swaggerAuthMiddleware);
 
+	app.use('/login', (req: Request, res: Response, next: NextFunction) => {
+		res.setHeader('WWW-Authenticate', 'Basic realm="Documentation"');
+		res.status(401).send();
+	});
+
 	const documentFactory = SwaggerModule.createDocument(app, config);
 	SwaggerModule.setup('docs', app, documentFactory);
 
