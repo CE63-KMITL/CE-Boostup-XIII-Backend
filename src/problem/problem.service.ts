@@ -133,7 +133,6 @@ export class ProblemService {
 		const originalFunctions = problem.functions;
 		const originalTimeLimit = problem.timeLimit;
 
-		// Update basic properties first
 		problem.title = updateProblemRequest.title ?? problem.title;
 		problem.description =
 			updateProblemRequest.description ?? problem.description;
@@ -143,7 +142,6 @@ export class ProblemService {
 		problem.defaultCode =
 			updateProblemRequest.defaultCode ?? problem.defaultCode;
 
-		// Check for duplicate title if title is updated
 		if (
 			updateProblemRequest.title &&
 			updateProblemRequest.title !== problem.title
@@ -159,10 +157,8 @@ export class ProblemService {
 			}
 		}
 
-		// Determine if "important" changes occurred
 		let importantChanged = false;
 
-		// Check test cases change (input or isHiddenTestcase)
 		if (
 			JSON.stringify(updateProblemRequest.testCases) !==
 			JSON.stringify(
@@ -173,25 +169,22 @@ export class ProblemService {
 			)
 		) {
 			importantChanged = true;
-			// Map CreateTestCase[] to TestCase[] with undefined expectOutput initially
 			problem.testCases = updateProblemRequest.testCases.map((tc) => ({
 				input: tc.input,
 				isHiddenTestcase: tc.isHiddenTestcase,
-				expectOutput: undefined, // Initialize expectOutput as undefined
+				expectOutput: undefined,
 			}));
 		}
 
-		// Check solution code change
 		if (
 			updateProblemRequest.solutionCode &&
 			updateProblemRequest.solutionCode.trim() !==
 				(originalSolutionCode?.trim() ?? '')
 		) {
 			importantChanged = true;
-			problem.solutionCode = updateProblemRequest.solutionCode; // Update solution code immediately if changed
+			problem.solutionCode = updateProblemRequest.solutionCode;
 		}
 
-		// Check mode changes
 		if (
 			updateProblemRequest.headerMode !== originalHeaderMode ||
 			updateProblemRequest.functionMode !== originalFunctionMode
@@ -201,7 +194,6 @@ export class ProblemService {
 			problem.functionMode = updateProblemRequest.functionMode;
 		}
 
-		// Check headers change
 		if (
 			JSON.stringify(updateProblemRequest.headers) !==
 			JSON.stringify(originalHeaders)
@@ -210,7 +202,6 @@ export class ProblemService {
 			problem.headers = updateProblemRequest.headers;
 		}
 
-		// Check functions change
 		if (
 			JSON.stringify(updateProblemRequest.functions) !==
 			JSON.stringify(originalFunctions)
@@ -219,13 +210,11 @@ export class ProblemService {
 			problem.functions = updateProblemRequest.functions;
 		}
 
-		// Check time limit change
 		if (updateProblemRequest.timeLimit !== originalTimeLimit) {
 			importantChanged = true;
 			problem.timeLimit = updateProblemRequest.timeLimit;
 		}
 
-		// Check if any existing test case was missing expectOutput (implies it needs recalculation)
 		if (originalTestCases.some((tc) => !tc.expectOutput)) {
 			importantChanged = true;
 		}
@@ -233,20 +222,16 @@ export class ProblemService {
 		if (importantChanged) {
 			problem.devStatus = ProblemStaffStatusEnum.IN_PROGRESS;
 
-			// Re-calculate expectOutput for all test cases
-			await this.checkSameTestCase(problem); // Clean up duplicate test cases
+			await this.checkSameTestCase(problem);
 			try {
 				await this.fillExpectOutput(problem);
 			} catch (error) {
-				// Save the problem state before throwing the error
-				await this.problemsRepository.save(problem); // Use save instead of update to handle relations/test cases
+				await this.problemsRepository.save(problem);
 				throw error;
 			}
 
-			// Save the problem here so submission uses the updated data
 			await this.problemsRepository.save(problem);
 
-			// Find users who completed the problem based on the OLD state
 			const usersToReset = await this.userService.findAll(
 				{
 					where: {
@@ -262,7 +247,6 @@ export class ProblemService {
 
 			// Reset status and score for users who completed the problem
 			for (const userToReset of usersToReset) {
-				// Calculate score to remove based on the ORIGINAL difficulty
 				const scoreToRemove = this.calScore(originalDifficulty);
 
 				await this.userService.modifyScore(
@@ -278,8 +262,6 @@ export class ProblemService {
 					ProblemStatusEnum.IN_PROGRESS,
 				);
 
-				// Re-submit their code - this will update their status and score based on the NEW problem state
-				// Need to find the specific problemStatus entry for this problem and user
 				const userProblemStatusEntry =
 					userToReset.problemStatus.find(
 						(ps) => ps.problemId === problem.id,
@@ -295,10 +277,8 @@ export class ProblemService {
 				}
 			}
 		} else if (updateProblemRequest.difficulty !== originalDifficulty) {
-			// Only difficulty changed, and no important changes occurred
 			const newDifficulty = updateProblemRequest.difficulty;
 
-			// Find users who completed the problem
 			const usersToAdjustScore = await this.userService.findAll(
 				{
 					where: {
@@ -316,8 +296,6 @@ export class ProblemService {
 				this.calScore(newDifficulty) -
 				this.calScore(originalDifficulty);
 
-			// Adjust score for users who completed the problem
-			// Only modify score if there is a difference
 			if (scoreDifference !== 0) {
 				for (const userToAdjust of usersToAdjustScore) {
 					await this.userService.modifyScore(
@@ -330,13 +308,9 @@ export class ProblemService {
 			}
 		}
 
-		// Save the problem entity after all updates and side effects
-		// This save is needed for basic property updates or if only difficulty changed
-		// If importantChanged was true, the problem was already saved after fillExpectOutput
-		// However, saving again here is harmless and ensures the final state is persisted.
 		await this.problemsRepository.save(problem);
 
-		return problem; // Return the updated problem entity
+		return problem;
 	}
 
 	async remove(id: number): Promise<void> {
@@ -689,9 +663,6 @@ export class ProblemService {
 			if (!clearedTestCases.find((t) => t.input === testCase.input)) {
 				clearedTestCases.push(testCase);
 			} else {
-				// throw new BadRequestException(
-				// 	`Have duplicate test case that have input :\n\n>>>>>>>>>>>>>\n${testCase.input}\n>>>>>>>>>>>>>`,
-				// );
 			}
 		}
 
