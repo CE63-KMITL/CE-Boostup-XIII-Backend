@@ -33,7 +33,7 @@ export class ProblemResponseDto {
 	title: string;
 
 	@ApiProperty({
-		example: 1000,
+		example: 100,
 		description: 'time limit of problem',
 		type: Number,
 	})
