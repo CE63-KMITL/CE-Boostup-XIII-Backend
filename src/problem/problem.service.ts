@@ -140,6 +140,8 @@ export class ProblemService {
 		problem.tags = updateProblemRequest.tags ?? problem.tags;
 		problem.difficulty =
 			updateProblemRequest.difficulty ?? problem.difficulty;
+		problem.defaultCode =
+			updateProblemRequest.defaultCode ?? problem.defaultCode;
 
 		// Check for duplicate title if title is updated
 		if (
