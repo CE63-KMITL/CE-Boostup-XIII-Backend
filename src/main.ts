@@ -64,7 +64,11 @@ async function bootstrap() {
 
 		const authHeader = req.headers.authorization;
 		if (!authHeader) {
-			res.status(404).send('Not Found');
+			res.json({
+				message: 'Cannot GET /docs',
+				error: 'Not Found',
+				statusCode: 404,
+			}).send();
 			return;
 		}
 
@@ -81,7 +85,11 @@ async function bootstrap() {
 				'Error decoding base64 credentials for /docs:',
 				error,
 			);
-			res.status(404).send('Not Found');
+			res.json({
+				message: 'Cannot GET /docs',
+				error: 'Not Found',
+				statusCode: 404,
+			}).send();
 			return;
 		}
 
@@ -90,16 +98,31 @@ async function bootstrap() {
 		if (username === ADMIN_EMAIL && password === ADMIN_PASS) {
 			next();
 		} else {
-			res.status(404).send('Not Found');
+			res.json({
+				message: 'Cannot GET /docs',
+				error: 'Not Found',
+				statusCode: 404,
+			}).send();
 		}
 	};
 
 	app.use(['/docs', '/docs-json', '/docs-yaml'], swaggerAuthMiddleware);
 
-	app.use('/login', (req: Request, res: Response, next: NextFunction) => {
-		res.setHeader('WWW-Authenticate', 'Basic realm="Documentation"');
-		res.status(401).send();
-	});
+	app.use(
+		'/login',
+		async (req: Request, res: Response, _next: NextFunction) => {
+			if (req.headers.authorization) {
+				await new Promise((resolve, reject) => {
+					setTimeout(() => {
+						resolve(true);
+					}, 5000);
+				});
+			}
+
+			res.setHeader('WWW-Authenticate', 'Basic realm="Swagger Docs"');
+			res.status(401).send('Authentication required');
+		},
+	);
 
 	const documentFactory = SwaggerModule.createDocument(app, config);
 	SwaggerModule.setup('docs', app, documentFactory);
