@@ -662,7 +662,6 @@ export class ProblemService {
 		for (const testCase of problem.testCases) {
 			if (!clearedTestCases.find((t) => t.input === testCase.input)) {
 				clearedTestCases.push(testCase);
-			} else {
 			}
 		}
 
