@@ -636,7 +636,6 @@ export class ProblemService {
 	// Problem Statistics
 	//-------------------------------------------------------
 	async getPassedCount(problemId: number): Promise<number> {
-		// Verify problem exists without causing recursion
 		const problemExists = await this.problemsRepository.findOneBy({ id: problemId });
 		if (!problemExists) {
 			throw new NotFoundException(`Problem with ID ${problemId} not found`);
