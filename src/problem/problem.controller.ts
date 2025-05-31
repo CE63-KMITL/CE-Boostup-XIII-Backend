@@ -125,7 +125,7 @@ export class ProblemController {
 		@Req() req: authenticatedRequest,
 	): Promise<ProblemResponseDto> {
 		const problem = await this.problemService.findOne(id);
-		return new ProblemResponseDto(problem);
+		return new ProblemResponseDto(problem, (problem as any).passedCount);
 	}
 
 	@ApiOkResponse({ type: ProblemResponseDto })

@@ -126,7 +126,14 @@ export class ProblemResponseDto {
 	@ApiPropertyOptional({ example: ['for'] })
 	functions?: string[] = [];
 
-	constructor(problem: Problem) {
+	@ApiProperty({
+		example: 5,
+		description: 'number of times the problem has been passed',
+		type: Number,
+	})
+	passedCount: number;
+
+	constructor(problem: Problem, passedCount: number = 0) {
 		this.id = problem.id;
 		this.title = problem.title;
 		this.description = problem.description;
@@ -141,6 +148,7 @@ export class ProblemResponseDto {
 		this.author = new UserMediumResponseDto(problem.author);
 		this.timeLimit = problem.timeLimit;
 		this.solutionCode = problem.solutionCode;
+		this.passedCount = passedCount;
 		this.headers = problem.headers;
 		this.functions = problem.functions;
 		this.functionMode = problem.functionMode;
@@ -188,6 +196,7 @@ export class ProblemSearchedDto extends Filter(ProblemResponseDto, [
 	'difficulty',
 	'tags',
 	'author',
+	'passedCount',
 ]) {
 	@ApiProperty({
 		example: ProblemStaffStatusEnum.PUBLISHED,
@@ -202,9 +211,11 @@ export class ProblemSearchedDto extends Filter(ProblemResponseDto, [
 	constructor(
 		problem: Problem,
 		status?: ProblemStatusEnum | ProblemStaffStatusEnum,
+		passedCount?: number,
 	) {
 		super(problem);
 		this.status = status;
+		this.passedCount = passedCount;
 	}
 }
 
@@ -258,4 +269,5 @@ export class ProblemMoreDetailsDto extends Filter(ProblemResponseDto, [
 	'headers',
 	'functionMode',
 	'functions',
+	'passedCount',
 ]) {}

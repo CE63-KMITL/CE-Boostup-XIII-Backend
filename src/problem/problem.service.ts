@@ -42,6 +42,9 @@ export class ProblemService {
 		@InjectRepository(Problem)
 		private readonly problemsRepository: Repository<Problem>,
 
+		@InjectRepository(ProblemStatus)
+		private readonly problemStatusRepository: Repository<ProblemStatus>,
+
 		@Inject(forwardRef(() => UserService))
 		private readonly userService: UserService,
 
@@ -91,11 +94,21 @@ export class ProblemService {
 		});
 		qb.leftJoinAndSelect('entity.author', 'author');
 		const [data, totalItem] = await qb.getManyAndCount();
+
+		const dataWithPassedCount = await Promise.all(
+			data.map(async (problem) => {
+				(problem as any).passedCount = await this.getPassedCount(
+					problem.id,
+				);
+				return problem;
+			}),
+		);
+
 		return new ProblemPaginatedDto(
-			data,
+			dataWithPassedCount,
 			totalItem,
-			query.limit,
 			query.page,
+			query.limit,
 		);
 	}
 
@@ -108,7 +121,9 @@ export class ProblemService {
 			throw new NotFoundException(`Problem with ID ${id} not found`);
 		}
 
-		return problem;
+		const response = problem;
+		(response as any).passedCount = await this.getPassedCount(id);
+		return response;
 	}
 
 	async update(
@@ -474,22 +489,29 @@ export class ProblemService {
 		}
 
 		const [data, totalItem] = await searchProblems.getManyAndCount();
-		result.data = data.map((d) => {
-			let status;
 
-			if (staff) {
-				status = d.devStatus;
-			} else {
-				const getUserProblemStatus = userProblemStatus.find(
-					(userProblem) => userProblem.problemId === d.id,
-				);
-				status =
-					getUserProblemStatus?.status ??
-					ProblemStatusEnum.NOT_STARTED;
-			}
+		const transformedData = await Promise.all(
+			data.map(async (d) => {
+				let status;
 
-			return new ProblemSearchedDto(d, status);
-		});
+				if (staff) {
+					status = d.devStatus;
+				} else {
+					const getUserProblemStatus = userProblemStatus.find(
+						(userProblem) => userProblem.problemId === d.id,
+					);
+					status =
+						getUserProblemStatus?.status ??
+						ProblemStatusEnum.NOT_STARTED;
+				}
+
+				const passedCount = await this.getPassedCount(d.id);
+				const dto = new ProblemSearchedDto(d, status, passedCount);
+				return dto;
+			}),
+		);
+
+		result.data = transformedData;
 		result.totalItem = totalItem;
 		result.updateTotalPage();
 		return result;
@@ -608,6 +630,27 @@ export class ProblemService {
 		});
 
 		return 'Success';
+	}
+
+	//-------------------------------------------------------
+	// Problem Statistics
+	//-------------------------------------------------------
+	async getPassedCount(problemId: number): Promise<number> {
+		// Verify problem exists without causing recursion
+		const problemExists = await this.problemsRepository.findOneBy({ id: problemId });
+		if (!problemExists) {
+			throw new NotFoundException(`Problem with ID ${problemId} not found`);
+		}
+
+		return this.problemStatusRepository
+			.createQueryBuilder('status')
+			.innerJoinAndSelect('status.user', 'user')
+			.where('status.problemId = :problemId', { problemId })
+			.andWhere('status.status = :status', {
+				status: ProblemStatusEnum.DONE,
+			})
+			.andWhere('user.role = :role', { role: Role.MEMBER })
+			.getCount();
 	}
 
 	async archiveProblem(id: number, user: jwtPayloadDto) {
