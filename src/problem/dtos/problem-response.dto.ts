@@ -255,8 +255,9 @@ export class ProblemCodeResponseDto extends Exclude(ProblemFilteredResponse, [
 	})
 	testCases: TestCaseFilteredResponseDto[];
 
-	constructor(problem: Problem) {
+	constructor(problem: Problem | any) {
 		super(problem);
+		this.passedCount = problem.passedCount
 		this.testCases = problem.testCases.map(
 			(testCase) => new TestCaseFilteredResponseDto(testCase),
 		);
