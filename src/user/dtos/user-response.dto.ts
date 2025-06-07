@@ -98,8 +98,6 @@ export class UserResponseDto {
 		this.score = user.score;
 		this.studentId = user.studentId;
 		this.icon = user.icon;
-		this.createdAt = user.createdAt;
-		this.updatedAt = user.updatedAt;
 		this.passed = passed;
 	}
 }
