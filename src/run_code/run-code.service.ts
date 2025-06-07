@@ -101,21 +101,6 @@ export class RunCodeService {
 		};
 
 		if (functions.length > 0) {
-			const foundAnyListedFunction = functions.some((func) =>
-				new RegExp(`\\b${func}\\s*\\(`).test(codeString),
-			);
-
-			if (
-				functionMode === ProblemAllowMode.DISALLOWED &&
-				foundAnyListedFunction
-			) {
-				throw new BadRequestException(
-					`Your code should not contain disallowed functions: ${functions.join(
-						', ',
-					)}`,
-				);
-			}
-
 			if (functionMode === ProblemAllowMode.DISALLOWED) {
 				for (const func of functions) {
 					const escapedFunc = escapeRegExp(func);
