@@ -76,7 +76,20 @@ export class UserResponseDto {
 	})
 	updatedAt: Date;
 
-	constructor(user: User) {
+	@ApiPropertyOptional({
+		example: {
+			'1': 0,
+			'2': 0,
+			'3': 0,
+			'4': 0,
+			'5': 0,
+		},
+		description: 'Passed problems count by difficulty',
+		type: Object,
+	})
+	passed?: Record<string, number>;
+
+	constructor(user: User | any, passed?: Record<string, number>) {
 		this.id = user.id;
 		this.name = user.name;
 		this.email = user.email;
@@ -87,6 +100,7 @@ export class UserResponseDto {
 		this.icon = user.icon;
 		this.createdAt = user.createdAt;
 		this.updatedAt = user.updatedAt;
+		this.passed = passed;
 	}
 }
 
@@ -99,6 +113,19 @@ export class UserPaginatedDto extends PaginatedResponseDto(UserResponseDto) {
 	) {
 		const usersResponse = users.map((user) => new UserResponseDto(user));
 		super(usersResponse, totalItem, page, limit);
+	}
+}
+
+export class UserSearchPaginatedDto extends PaginatedResponseDto(
+	UserResponseDto,
+) {
+	constructor(
+		userResponses: UserResponseDto[],
+		totalItem: number,
+		page: number,
+		limit: number,
+	) {
+		super(userResponses, totalItem, page, limit);
 	}
 }
 

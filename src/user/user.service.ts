@@ -26,6 +26,7 @@ import {
 	UserPaginatedDto,
 	UserResponseDto,
 	UserScoreDataResponseDto,
+	UserSearchPaginatedDto,
 } from './dtos/user-response.dto';
 import { ProblemStatus } from './problem_status/problem-status.entity';
 import { ScoreLog } from './score/score-log.entity';
@@ -179,6 +180,32 @@ export class UserService implements OnModuleInit {
 		});
 	}
 
+	private async getPassedProblemsCountByDifficulty(
+		userId: string,
+	): Promise<Record<string, number>> {
+		const solvedStatuses = await this.problemStatusRepository.find({
+			where: {
+				userId: userId,
+				status: ProblemStatusEnum.DONE,
+			},
+			relations: ['problem'],
+		});
+
+		const passedCounts: Record<string, number> = {
+			'1': 0,
+			'2': 0,
+			'3': 0,
+			'4': 0,
+			'5': 0,
+		};
+
+		for (const ps of solvedStatuses) {
+			passedCounts[String(ps.problem.difficulty)]++;
+		}
+		
+		return passedCounts;
+	}
+
 	async search(query: UserQueryDto) {
 		const {
 			limit,
@@ -241,8 +268,22 @@ export class UserService implements OnModuleInit {
 			users.andWhere('entity.role = :role', { role });
 		}
 
-		const [data, totalItem] = await users.getManyAndCount();
-		return new UserPaginatedDto(data, totalItem, page, limit);
+		const [usersRaw, totalItem] = await users.getManyAndCount();
+
+		const userResponseItems = await Promise.all(
+			usersRaw.map(async (user) => {
+				const passed =
+					await this.getPassedProblemsCountByDifficulty(user.id);
+				return new UserResponseDto(user, passed);
+			}),
+		);
+
+		return new UserSearchPaginatedDto(
+			userResponseItems,
+			totalItem,
+			page,
+			limit,
+		);
 	}
 
 	async generateHashedPassword(password: string): Promise<string> {
