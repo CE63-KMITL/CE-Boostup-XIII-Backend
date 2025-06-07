@@ -150,7 +150,8 @@ export class HouseScoreService implements OnModuleInit {
 			false,
 		);
 
-		if (users.length === 0) return;
+		if (users.length === 0)
+			throw new NotFoundException('No one in this house');
 
 		const perUser =
 			amount >= 0

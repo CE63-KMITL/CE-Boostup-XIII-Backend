@@ -97,6 +97,8 @@ export class HouseScoreController {
 		@Param('name') name: string,
 		@Body() body: UpdateHouseScoreDto,
 	) {
+		if (body.value < 0)
+			return { success: false, message: 'Invalid value' };
 		try {
 			return await this.scoreService.changeScore(name, body.value);
 		} catch (error) {
@@ -111,6 +113,8 @@ export class HouseScoreController {
 		@Param('name') name: string,
 		@Body() body: UpdateHouseScoreDto,
 	) {
+		if (body.value < 0)
+			return { success: false, message: 'Invalid value' };
 		try {
 			return await this.scoreService.changeScore(name, -body.value);
 		} catch (error) {
