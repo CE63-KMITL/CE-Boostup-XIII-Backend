@@ -224,7 +224,6 @@ export class UserService implements OnModuleInit {
 			dto: { limit, page },
 		});
 
-		users.where('entity.isActive = true');
 
 		if (!!searchText) {
 			users.andWhere(
