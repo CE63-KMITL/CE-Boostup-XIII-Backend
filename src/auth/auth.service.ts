@@ -21,6 +21,7 @@ import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { MailOptions } from 'src/mail/interfaces/mail.type';
 import { ThrottlerException } from '@nestjs/throttler';
 import { jwtPayloadDto } from './dtos/jwt-payload.dto';
+import { ILike } from 'typeorm';
 
 @Injectable()
 export class AuthService {
@@ -245,7 +246,7 @@ export class AuthService {
 		password: string,
 	): Promise<UserResponseDto> {
 		const user = await this.userService.findOne({
-			where: { email },
+			where: { email: ILike(email) },
 		});
 		if (!!user && !user.password && !user.isActive)
 			throw new ForbiddenException('Account not activated');
