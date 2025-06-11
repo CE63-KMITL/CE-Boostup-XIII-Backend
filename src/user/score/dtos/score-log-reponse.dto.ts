@@ -1,4 +1,3 @@
-import { User } from '../../user.entity';
 import { ScoreLog } from '../score-log.entity';
 import { UserLogReponseDto } from 'src/user/dtos/user-log-response.dto';
 
@@ -17,8 +16,10 @@ export class ScoreLogResponseDto {
 		this.id = scoreLog.id;
 		this.amount = scoreLog.amount;
 		this.date = scoreLog.date;
-		this.modifiedBy = new UserLogReponseDto(scoreLog.modifiedBy);
-		this.modifiedBy = scoreLog.modifiedBy;
+		this.modifiedBy = new UserLogReponseDto(
+			scoreLog.modifiedBy,
+			scoreLog.date,
+		);
 		this.message = scoreLog.message;
 	}
 }
