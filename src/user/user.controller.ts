@@ -144,8 +144,7 @@ export class UserController {
 	): Promise<UserScoreResponseDto> {
 		const user = await this.userService.findOne({ where: { id } });
 		const scoreLogs = await this.userService.getUserScoreLogs(id);
-		const json = { score: user.score, scoreLogs: scoreLogs };
-		return json;
+		return new UserScoreResponseDto(user.score, scoreLogs);
 	}
 
 	@Post('score/add')

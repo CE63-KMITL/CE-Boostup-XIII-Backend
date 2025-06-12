@@ -393,11 +393,14 @@ export class UserService implements OnModuleInit {
 	}
 
 	async delete(id: string): Promise<void> {
-		try {
-			await this.userRepository.delete(id);
-		} catch (error) {
-			throw new NotFoundException('User not found');
+		const user = await this.findOne({ where: { id } }, false);
+
+		if (!user) {
+			throw new NotFoundException(`User with id ${id} not found`);
 		}
+
+		await this.scoreLogRepository.delete({ user: { id } });
+		await this.userRepository.delete(id);
 	}
 
 	async uploadIcon(id: string, iconBase64: string) {
