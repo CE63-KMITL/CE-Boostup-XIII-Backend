@@ -185,7 +185,7 @@ export class UserService implements OnModuleInit {
 
 	private async getPassedProblemsCountByDifficulty(
 		userId: string,
-	): Promise<Record<string, number>> {
+	): Promise<Record<string, Record<string, number>>> {
 		const solvedStatuses = await this.problemStatusRepository.find({
 			where: {
 				userId: userId,
@@ -214,16 +214,17 @@ export class UserService implements OnModuleInit {
 				this.problemService.calScore(ps.problem.difficulty);
 		}
 
-		const passedCounts: Record<string, number> = {};
-		Object.entries(difficultyGroups)
-			.sort(([a], [b]) => Number(b) - Number(a))
-			.forEach(([difficulty, { count }]) => {
-				passedCounts[difficulty] = count;
-			});
+		const passedCounts: Record<string, Record<string, number>> = {};
+		Object.entries(difficultyGroups).sort(
+			([a], [b]) => Number(b) - Number(a),
+		);
 
 		['5', '4', '3', '2', '1'].forEach((difficulty) => {
 			if (!passedCounts[difficulty]) {
-				passedCounts[difficulty] = 0;
+				passedCounts[difficulty] = {
+					count: 0,
+					totalScore: 0,
+				};
 			}
 		});
 
@@ -293,15 +294,23 @@ export class UserService implements OnModuleInit {
 			usersRaw.map(async (user) => {
 				const problemScores =
 					await this.getPassedProblemsCountByDifficulty(user.id);
+
 				const totalProblemScore = Object.values(
 					problemScores,
-				).reduce((sum, score) => sum + score, 0);
+				).reduce((sum, scores) => sum + scores.totalScore, 0);
 
 				user.score = totalProblemScore;
 
+				const simplifiedScores: Record<string, number> = {};
+				Object.entries(problemScores).forEach(
+					([difficulty, data]) => {
+						simplifiedScores[difficulty] = data.count;
+					},
+				);
+
 				return {
 					user,
-					problemScores,
+					problemScores: simplifiedScores,
 				};
 			}),
 		);
