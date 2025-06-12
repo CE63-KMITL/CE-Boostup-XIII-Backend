@@ -148,17 +148,20 @@ export class UserService implements OnModuleInit {
 			throw new NotFoundException('User not found');
 		}
 
-		const allUsers = await this.userRepository
-			.createQueryBuilder('user')
-			.where('user.isActive = true')
-			.andWhere('user.role IN (:...roles)', {
-				roles: [Role.MEMBER, Role.STAFF],
-			})
-			.orderBy('user.score', 'DESC')
-			.addOrderBy('user.name', 'ASC')
-			.getMany();
+		const searchResult = await this.search({
+			limit: Number.MAX_SAFE_INTEGER,
+			page: 1,
+			orderByScore: true,
+			role: null,
+			email: null,
+			name: null,
+			house: null,
+			studentId: null,
+			searchText: null,
+		});
 
-		const rank = allUsers.findIndex((u) => u.id === user.id) + 1;
+		const rank =
+			searchResult.data.findIndex((item) => item.id === user.id) + 1;
 
 		const houseScoreResult = await this.houseScoreService.findOne(
 			user.house,
@@ -189,19 +192,40 @@ export class UserService implements OnModuleInit {
 				status: ProblemStatusEnum.DONE,
 			},
 			relations: ['problem'],
+			order: {
+				problem: {
+					difficulty: 'DESC',
+				},
+			},
 		});
 
-		const passedCounts: Record<string, number> = {
-			'1': 0,
-			'2': 0,
-			'3': 0,
-			'4': 0,
-			'5': 0,
-		};
+		const difficultyGroups: Record<
+			string,
+			{ count: number; totalScore: number }
+		> = {};
 
 		for (const ps of solvedStatuses) {
-			passedCounts[String(ps.problem.difficulty)]++;
+			const difficulty = String(ps.problem.difficulty);
+			if (!difficultyGroups[difficulty]) {
+				difficultyGroups[difficulty] = { count: 0, totalScore: 0 };
+			}
+			difficultyGroups[difficulty].count++;
+			difficultyGroups[difficulty].totalScore +=
+				this.problemService.calScore(ps.problem.difficulty);
 		}
+
+		const passedCounts: Record<string, number> = {};
+		Object.entries(difficultyGroups)
+			.sort(([a], [b]) => Number(b) - Number(a))
+			.forEach(([difficulty, { totalScore }]) => {
+				passedCounts[difficulty] = totalScore;
+			});
+
+		['5', '4', '3', '2', '1'].forEach((difficulty) => {
+			if (!passedCounts[difficulty]) {
+				passedCounts[difficulty] = 0;
+			}
+		});
 
 		return passedCounts;
 	}
@@ -219,29 +243,32 @@ export class UserService implements OnModuleInit {
 			searchText,
 		} = query;
 
-		const users = await createPaginationQuery({
-			repository: this.userRepository,
-			dto: { limit, page },
-		});
+		const usersQuery = this.userRepository.createQueryBuilder('entity');
 
 		if (!!searchText) {
-			users.andWhere(
+			usersQuery.andWhere(
 				'(LOWER(entity.name) LIKE LOWER(:searchText) OR LOWER(entity.email) LIKE LOWER(:searchText) OR CAST(entity.studentId AS TEXT) LIKE :searchText)',
 				{ searchText: `%${searchText}%` },
 			);
 		} else {
 			if (!!name)
-				users.andWhere('LOWER(entity.name) LIKE LOWER(:name)', {
-					name: `%${name}%`,
-				});
+				usersQuery.andWhere(
+					'LOWER(entity.name) LIKE LOWER(:name)',
+					{
+						name: `%${name}%`,
+					},
+				);
 
 			if (!!email)
-				users.andWhere('LOWER(entity.email) LIKE LOWER(:email)', {
-					email: `%${email}%`,
-				});
+				usersQuery.andWhere(
+					'LOWER(entity.email) LIKE LOWER(:email)',
+					{
+						email: `%${email}%`,
+					},
+				);
 
 			if (!!studentId)
-				users.andWhere(
+				usersQuery.andWhere(
 					'CAST(entity.studentId AS TEXT) LIKE :studentId',
 					{
 						studentId: `%${studentId}%`,
@@ -249,31 +276,50 @@ export class UserService implements OnModuleInit {
 				);
 		}
 
-		if (orderByScore !== undefined) {
-			users.orderBy('entity.score', orderByScore ? 'DESC' : 'ASC');
-			users.addOrderBy('entity.name', 'ASC');
-		} else {
-			users.orderBy('entity.name', 'ASC');
-		}
-
-		if (!!house) users.andWhere('entity.house  = :house', { house });
+		if (!!house) usersQuery.andWhere('entity.house = :house', { house });
 
 		if (role === null || role === undefined) {
-			users.andWhere('entity.role IN (:...roles)', {
+			usersQuery.andWhere('entity.role IN (:...roles)', {
 				roles: [Role.MEMBER, Role.STAFF],
 			});
 		} else {
-			users.andWhere('entity.role = :role', { role });
+			usersQuery.andWhere('entity.role = :role', { role });
 		}
 
-		const [usersRaw, totalItem] = await users.getManyAndCount();
+		const usersRaw = await usersQuery.getMany();
+		const totalItem = usersRaw.length;
 
-		const userResponseItems = await Promise.all(
+		const userScores = await Promise.all(
 			usersRaw.map(async (user) => {
-				const passed =
+				const problemScores =
 					await this.getPassedProblemsCountByDifficulty(user.id);
-				return new UserResponseDto(user, passed);
+				const totalProblemScore = Object.values(
+					problemScores,
+				).reduce((sum, score) => sum + score, 0);
+				return {
+					user,
+					problemScores,
+					totalScore: user.score,
+					totalProblemScore,
+				};
 			}),
+		);
+
+		if (orderByScore !== undefined) {
+			userScores.sort((a, b) => {
+				return orderByScore
+					? b.totalProblemScore - a.totalProblemScore
+					: a.totalProblemScore - b.totalProblemScore;
+			});
+		}
+
+		const start = (page - 1) * limit;
+		const end = start + limit;
+		const paginatedUserScores = userScores.slice(start, end);
+
+		const userResponseItems = paginatedUserScores.map(
+			({ user, problemScores }) =>
+				new UserResponseDto(user, problemScores),
 		);
 
 		return new UserSearchPaginatedDto(
