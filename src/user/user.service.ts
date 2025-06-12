@@ -217,8 +217,8 @@ export class UserService implements OnModuleInit {
 		const passedCounts: Record<string, number> = {};
 		Object.entries(difficultyGroups)
 			.sort(([a], [b]) => Number(b) - Number(a))
-			.forEach(([difficulty, { totalScore }]) => {
-				passedCounts[difficulty] = totalScore;
+			.forEach(([difficulty, { count }]) => {
+				passedCounts[difficulty] = count;
 			});
 
 		['5', '4', '3', '2', '1'].forEach((difficulty) => {
@@ -296,11 +296,12 @@ export class UserService implements OnModuleInit {
 				const totalProblemScore = Object.values(
 					problemScores,
 				).reduce((sum, score) => sum + score, 0);
+
+				user.score = totalProblemScore;
+
 				return {
 					user,
 					problemScores,
-					totalScore: user.score,
-					totalProblemScore,
 				};
 			}),
 		);
@@ -308,8 +309,8 @@ export class UserService implements OnModuleInit {
 		if (orderByScore !== undefined) {
 			userScores.sort((a, b) => {
 				return orderByScore
-					? b.totalProblemScore - a.totalProblemScore
-					: a.totalProblemScore - b.totalProblemScore;
+					? b.user.score - a.user.score
+					: a.user.score - b.user.score;
 			});
 		}
 
