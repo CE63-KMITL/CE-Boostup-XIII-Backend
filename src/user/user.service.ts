@@ -215,9 +215,11 @@ export class UserService implements OnModuleInit {
 		}
 
 		const passedCounts: Record<string, Record<string, number>> = {};
-		Object.entries(difficultyGroups).sort(
-			([a], [b]) => Number(b) - Number(a),
-		);
+		Object.entries(difficultyGroups)
+			.sort(([a], [b]) => Number(b) - Number(a))
+			.forEach(([difficulty, data]) => {
+				passedCounts[difficulty] = data;
+			});
 
 		['5', '4', '3', '2', '1'].forEach((difficulty) => {
 			if (!passedCounts[difficulty]) {
