@@ -22,8 +22,6 @@ export class UserScoreResponseDto {
 
 	constructor(score: number, scoreLogs: ScoreLog[]) {
 		this.score = score;
-		this.scoreLogs = scoreLogs.map(
-			(log) => new UserLogReponseDto(log.modifiedBy, log.date),
-		);
+		this.scoreLogs = scoreLogs.map((log) => new UserLogReponseDto(log));
 	}
 }
