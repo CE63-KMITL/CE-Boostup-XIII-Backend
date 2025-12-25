@@ -535,7 +535,11 @@ export class UserService implements OnModuleInit {
 	async getUserScoreLogs(id: string): Promise<ScoreLog[]> {
 		const user = await this.userRepository.findOne({
 			where: { id },
-			relations: ['scoreLogs', 'scoreLogs.modifiedBy'],
+			relations: {
+				scoreLogs: {
+					modifiedBy: true, // Include the user who modified the score
+				},
+			},
 			order: {
 				scoreLogs: {
 					date: 'DESC', // Sort by date descending (latest first)
